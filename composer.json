@@ -1,0 +1,75 @@
+{
+    "name": "mosaiqo/proofread",
+    "description": "The only eval package native to the official Laravel AI stack. Evaluate agents, prompts, and MCP tools from Pest, CI, and production.",
+    "keywords": [
+        "laravel",
+        "ai",
+        "llm",
+        "evals",
+        "testing",
+        "pest",
+        "mcp",
+        "agents",
+        "prompts",
+        "proofread"
+    ],
+    "homepage": "https://github.com/mosaiqo/proofread",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Boudy de Geer",
+            "email": "boudydegeer@mosaiqo.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "laravel/ai": "~0.5",
+        "spatie/laravel-package-tools": "^1.92"
+    },
+    "require-dev": {
+        "laravel/mcp": "~0.6",
+        "laravel/pint": "^1.29",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "phpstan/phpstan": "^2.1"
+    },
+    "suggest": {
+        "laravel/mcp": "Expose Proofread eval suites as MCP tools for use from Claude Code and other MCP clients.",
+        "laravel/boost": "Ship Proofread AI Guidelines and Agent Skill to Boost-powered editors."
+    },
+    "autoload": {
+        "psr-4": {
+            "Mosaiqo\\Proofread\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mosaiqo\\Proofread\\Tests\\": "tests/",
+            "Mosaiqo\\Proofread\\Examples\\": "examples/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mosaiqo\\Proofread\\ProofreadServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,11 @@
+/vendor
+composer.lock
+.phpunit.cache
+.phpunit.result.cache
+/build
+.idea
+.vscode
+.DS_Store
+
+# Design doc — not for public repo
+DESIGN.md
