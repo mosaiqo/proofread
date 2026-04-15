@@ -3,3 +3,12 @@ parameters:
     paths:
         - src
         - tests
+    ignoreErrors:
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectation<[^>]+>::toPassAssertion\(\)#'
+            path: tests/Feature/Pest/ToPassAssertionTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toPassAssertion\(\)#'
+            path: tests/Feature/Pest/ToPassAssertionTest.php
