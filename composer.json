@@ -26,6 +26,7 @@
         "php": "^8.4",
         "illuminate/contracts": "^13.0",
         "laravel/ai": "~0.5",
+        "opis/json-schema": "^2.6",
         "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
