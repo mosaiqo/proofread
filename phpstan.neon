@@ -12,3 +12,11 @@ parameters:
             identifier: method.notFound
             message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toPassAssertion\(\)#'
             path: tests/Feature/Pest/ToPassAssertionTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectation<[^>]+>::toPassEval\(\)#'
+            path: tests/Feature/Pest/ToPassEvalTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toPassEval\(\)#'
+            path: tests/Feature/Pest/ToPassEvalTest.php
