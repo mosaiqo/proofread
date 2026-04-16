@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Spatie\LaravelPackageTools\Package;
@@ -46,6 +47,13 @@ class ProofreadServiceProvider extends PackageServiceProvider
 
     public function registeringPackage(): void
     {
+        $this->app->singleton(PricingTable::class, function ($app): PricingTable {
+            /** @var array<string, array{input_per_1m: float, output_per_1m: float}> $models */
+            $models = $app['config']->get('proofread.pricing.models', []);
+
+            return PricingTable::fromArray($models);
+        });
+
         $this->app->singleton(Judge::class, function ($app): Judge {
             /** @var array<string, mixed> $judgeConfig */
             $judgeConfig = $app['config']->get('proofread.judge', []);

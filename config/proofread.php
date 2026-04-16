@@ -14,6 +14,49 @@ return [
         'default_model' => env('PROOFREAD_EMBEDDING_MODEL', 'text-embedding-3-small'),
     ],
 
+    'pricing' => [
+        /*
+        |--------------------------------------------------------------------------
+        | Token pricing per million input/output tokens, in USD.
+        |--------------------------------------------------------------------------
+        |
+        | These defaults are approximate snapshots intended to give Proofread a
+        | working cost signal out of the box. Model providers update their
+        | pricing regularly, so the numbers below can and will drift from the
+        | latest published rates.
+        |
+        | Override this array in your application config (or merge additional
+        | entries) to pin accurate pricing for the models you actually use.
+        | Any model absent from this table will simply report a null cost,
+        | leaving CostLimit assertions to fail-closed on missing data.
+        |
+        */
+        'models' => [
+            // Anthropic Claude family - approximate pricing, verify against
+            // current Anthropic pricing before relying on these numbers.
+            'claude-opus-4-6' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
+            'claude-opus-4-5' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
+            'claude-opus-4-1' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
+            'claude-sonnet-4-6' => ['input_per_1m' => 3.00, 'output_per_1m' => 15.00],
+            'claude-sonnet-4-5' => ['input_per_1m' => 3.00, 'output_per_1m' => 15.00],
+            'claude-haiku-4-5' => ['input_per_1m' => 1.00, 'output_per_1m' => 5.00],
+
+            // OpenAI - approximate pricing.
+            'gpt-4o' => ['input_per_1m' => 2.50, 'output_per_1m' => 10.00],
+            'gpt-4o-mini' => ['input_per_1m' => 0.15, 'output_per_1m' => 0.60],
+            'o1-preview' => ['input_per_1m' => 15.00, 'output_per_1m' => 60.00],
+            'o1-mini' => ['input_per_1m' => 3.00, 'output_per_1m' => 12.00],
+
+            // Google Gemini - approximate pricing.
+            'gemini-1.5-pro' => ['input_per_1m' => 1.25, 'output_per_1m' => 5.00],
+            'gemini-1.5-flash' => ['input_per_1m' => 0.075, 'output_per_1m' => 0.30],
+
+            // Embedding models (input only - output is 0).
+            'text-embedding-3-small' => ['input_per_1m' => 0.02, 'output_per_1m' => 0.00],
+            'text-embedding-3-large' => ['input_per_1m' => 0.13, 'output_per_1m' => 0.00],
+        ],
+    ],
+
     'snapshots' => [
         'path' => env('PROOFREAD_SNAPSHOTS_PATH', base_path('tests/Snapshots/proofread')),
         'update' => env('PROOFREAD_UPDATE_SNAPSHOTS', false),
