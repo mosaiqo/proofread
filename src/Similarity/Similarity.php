@@ -19,6 +19,11 @@ final class Similarity
         }
     }
 
+    public function defaultModel(): string
+    {
+        return $this->defaultModel;
+    }
+
     /**
      * Compute cosine similarity between two strings using the configured
      * embeddings provider.

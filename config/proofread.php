@@ -25,6 +25,11 @@ return [
         'default_model' => env('PROOFREAD_EMBEDDING_MODEL', 'text-embedding-3-small'),
     ],
 
+    'clustering' => [
+        'default_threshold' => (float) env('PROOFREAD_CLUSTER_THRESHOLD', 0.75),
+        'default_limit' => (int) env('PROOFREAD_CLUSTER_LIMIT', 500),
+    ],
+
     'pricing' => [
         /*
         |--------------------------------------------------------------------------

@@ -8,6 +8,8 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Mosaiqo\Proofread\Clustering\FailureClusterer;
+use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
@@ -50,6 +52,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ShadowEvaluateCommand::class)
             ->hasCommand(ShadowAlertCommand::class)
             ->hasCommand(GenerateDatasetCommand::class)
+            ->hasCommand(ClusterFailuresCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
     }
@@ -127,6 +130,10 @@ class ProofreadServiceProvider extends PackageServiceProvider
                     : 'text-embedding-3-small',
             );
         });
+
+        $this->app->singleton(FailureClusterer::class, fn ($app): FailureClusterer => new FailureClusterer(
+            $app->make(Similarity::class),
+        ));
 
         $this->app->bind(
             RandomNumberProvider::class,
