@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
+use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\EmptySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
@@ -203,4 +205,40 @@ it('handles a suite with an empty dataset', function (): void {
 
     expect($exit)->toBe(0)
         ->and($output)->toContain('No cases to run');
+});
+
+it('persists a run when --persist is provided', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--persist' => true,
+    ]);
+
+    expect($exit)->toBe(0)
+        ->and(EvalDatasetModel::query()->count())->toBe(1)
+        ->and(EvalRunModel::query()->count())->toBe(1);
+
+    $run = EvalRunModel::query()->firstOrFail();
+    expect($run->suite_class)->toBe(PassingSuite::class);
+});
+
+it('does not persist without --persist', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+    ]);
+
+    expect($exit)->toBe(0)
+        ->and(EvalDatasetModel::query()->count())->toBe(0)
+        ->and(EvalRunModel::query()->count())->toBe(0);
+});
+
+it('prints the persisted run id when --persist is provided', function (): void {
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--persist' => true,
+    ]);
+
+    $output = Artisan::output();
+    $run = EvalRunModel::query()->firstOrFail();
+
+    expect($output)->toContain('Persisted as eval_run '.$run->id);
 });

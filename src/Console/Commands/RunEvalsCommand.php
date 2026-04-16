@@ -6,6 +6,7 @@ namespace Mosaiqo\Proofread\Console\Commands;
 
 use Illuminate\Console\Command;
 use Mosaiqo\Proofread\Proofread;
+use Mosaiqo\Proofread\Runner\EvalPersister;
 use Mosaiqo\Proofread\Runner\EvalRunner;
 use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Support\AssertionResult;
@@ -22,14 +23,15 @@ final class RunEvalsCommand extends Command
     protected $signature = 'evals:run {suites* : FQCNs of EvalSuite subclasses to run}
         {--junit= : Write JUnit XML to this path (one file per suite when multiple are given)}
         {--fail-fast : Stop at the first suite that fails or errors}
-        {--filter= : Case-insensitive substring filter against case meta.name or stringified input}';
+        {--filter= : Case-insensitive substring filter against case meta.name or stringified input}
+        {--persist : Persist each run to the database via EvalPersister}';
 
     /**
      * @var string
      */
     protected $description = 'Run one or more Proofread eval suites and report the results.';
 
-    public function handle(EvalRunner $runner): int
+    public function handle(EvalRunner $runner, EvalPersister $persister): int
     {
         /** @var array<int, string> $suiteNames */
         $suiteNames = (array) $this->argument('suites');
@@ -38,6 +40,7 @@ final class RunEvalsCommand extends Command
         $filterOption = $this->option('filter');
         $filter = is_string($filterOption) && $filterOption !== '' ? $filterOption : null;
         $failFast = (bool) $this->option('fail-fast');
+        $persist = (bool) $this->option('persist');
         $multipleSuites = count($suiteNames) > 1;
 
         $suites = [];
@@ -100,6 +103,12 @@ final class RunEvalsCommand extends Command
                 Proofread::writeJUnit($run, $targetPath);
                 $this->line('');
                 $this->line('  JUnit written to: '.$targetPath);
+            }
+
+            if ($persist) {
+                $model = $persister->persist($run, suiteClass: $suite::class);
+                $this->line('');
+                $this->line('  Persisted as eval_run '.$model->id);
             }
 
             $this->line('');
