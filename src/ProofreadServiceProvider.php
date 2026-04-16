@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
+use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Pricing\PricingTable;
@@ -30,6 +31,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasMigration('create_shadow_captures_table')
             ->hasMigration('create_shadow_evals_table')
             ->hasCommand(RunEvalsCommand::class)
+            ->hasCommand(ShadowEvaluateCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
     }

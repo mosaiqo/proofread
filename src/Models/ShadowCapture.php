@@ -7,8 +7,10 @@ namespace Mosaiqo\Proofread\Models;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Persisted Eloquent representation of a shadow capture: a real production
@@ -29,6 +31,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $is_anonymized
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property Collection<int, ShadowEval> $evals
  *
  * @method static Builder<ShadowCapture> forAgent(string $agentClass)
  * @method static Builder<ShadowCapture> capturedBetween(DateTimeInterface $from, DateTimeInterface $to)
@@ -70,6 +73,14 @@ class ShadowCapture extends Model
         'sample_rate' => 'float',
         'is_anonymized' => 'boolean',
     ];
+
+    /**
+     * @return HasMany<ShadowEval, $this>
+     */
+    public function evals(): HasMany
+    {
+        return $this->hasMany(ShadowEval::class, 'capture_id');
+    }
 
     /**
      * @param  Builder<ShadowCapture>  $query

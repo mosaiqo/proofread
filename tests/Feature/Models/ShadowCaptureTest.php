@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Carbon;
 use Mosaiqo\Proofread\Models\ShadowCapture;
+use Mosaiqo\Proofread\Models\ShadowEval;
 
 /**
  * @param  array<string, mixed>  $overrides
@@ -140,4 +141,27 @@ it('filters by captured_at range via scopeCapturedBetween', function (): void {
     $to = Carbon::parse('2026-04-18 00:00:00');
 
     expect(ShadowCapture::capturedBetween($from, $to)->count())->toBe(1);
+});
+
+it('exposes the evals relation', function (): void {
+    $capture = makeCapture();
+
+    $eval = new ShadowEval;
+    $eval->fill([
+        'capture_id' => $capture->id,
+        'agent_class' => $capture->agent_class,
+        'passed' => true,
+        'total_assertions' => 1,
+        'passed_assertions' => 1,
+        'failed_assertions' => 0,
+        'assertion_results' => [],
+        'evaluation_duration_ms' => 1.0,
+        'evaluated_at' => Carbon::parse('2026-04-17 12:00:00'),
+    ]);
+    $eval->save();
+
+    $capture->refresh();
+
+    expect($capture->evals)->toHaveCount(1)
+        ->and($capture->evals->first()?->id)->toBe($eval->id);
 });
