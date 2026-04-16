@@ -7,8 +7,11 @@ use Illuminate\Support\Facades\Bus;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\Data\Usage;
+use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\Jobs\PersistShadowCaptureJob;
+use Mosaiqo\Proofread\Shadow\MtRandRandomNumberProvider;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\ShadowedEchoAgent;
+use Mosaiqo\Proofread\Tests\Fixtures\Shadow\SequenceRandomNumberProvider;
 
 function configureShadow(float $sampleRate = 1.0, bool $enabled = true, string $queue = 'default'): void
 {
@@ -138,6 +141,8 @@ it('records the effective sample rate on the capture', function (): void {
         ShadowedEchoAgent::class => ['sample_rate' => 0.75],
     ]);
 
+    app()->instance(RandomNumberProvider::class, new SequenceRandomNumberProvider(0.0));
+
     Bus::fake();
     fakeShadowedAgent();
 
@@ -146,4 +151,32 @@ it('records the effective sample rate on the capture', function (): void {
     Bus::assertDispatched(PersistShadowCaptureJob::class, function (PersistShadowCaptureJob $job): bool {
         return $job->sampleRate === 0.75;
     });
+});
+
+it('never samples when the provider returns a value >= the sample rate', function (): void {
+    configureShadow(sampleRate: 0.4);
+    app()->instance(RandomNumberProvider::class, new SequenceRandomNumberProvider(0.5));
+
+    Bus::fake();
+    fakeShadowedAgent();
+
+    ShadowedEchoAgent::make()->prompt('hello');
+
+    Bus::assertNotDispatched(PersistShadowCaptureJob::class);
+});
+
+it('samples when the provider returns a value < the sample rate', function (): void {
+    configureShadow(sampleRate: 0.5);
+    app()->instance(RandomNumberProvider::class, new SequenceRandomNumberProvider(0.1));
+
+    Bus::fake();
+    fakeShadowedAgent();
+
+    ShadowedEchoAgent::make()->prompt('hello');
+
+    Bus::assertDispatchedTimes(PersistShadowCaptureJob::class, 1);
+});
+
+it('uses the MtRand provider by default', function (): void {
+    expect(app(RandomNumberProvider::class))->toBeInstanceOf(MtRandRandomNumberProvider::class);
 });

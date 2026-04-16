@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Support\Carbon;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Laravel\Ai\Responses\AgentResponse;
+use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\Jobs\PersistShadowCaptureJob;
 
 /**
@@ -20,6 +21,13 @@ use Mosaiqo\Proofread\Shadow\Jobs\PersistShadowCaptureJob;
  */
 class EvalShadowMiddleware
 {
+    private readonly RandomNumberProvider $random;
+
+    public function __construct(?RandomNumberProvider $random = null)
+    {
+        $this->random = $random ?? new MtRandRandomNumberProvider;
+    }
+
     public function handle(AgentPrompt $prompt, Closure $next): AgentResponse
     {
         if (config('proofread.shadow.enabled') !== true) {
@@ -75,7 +83,7 @@ class EvalShadowMiddleware
             return true;
         }
 
-        return (mt_rand() / mt_getrandmax()) < $sampleRate;
+        return $this->random->between01() < $sampleRate;
     }
 
     /**

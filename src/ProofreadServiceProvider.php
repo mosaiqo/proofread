@@ -11,6 +11,8 @@ use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Pricing\PricingTable;
+use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
+use Mosaiqo\Proofread\Shadow\MtRandRandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\PiiSanitizer;
 use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
@@ -86,6 +88,11 @@ class ProofreadServiceProvider extends PackageServiceProvider
                     : 'text-embedding-3-small',
             );
         });
+
+        $this->app->bind(
+            RandomNumberProvider::class,
+            MtRandRandomNumberProvider::class,
+        );
 
         $this->app->singleton(ShadowAssertionsRegistry::class);
 
