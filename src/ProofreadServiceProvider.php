@@ -64,7 +64,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
     public function registeringPackage(): void
     {
         $this->app->singleton(PricingTable::class, function ($app): PricingTable {
-            /** @var array<string, array{input_per_1m: float, output_per_1m: float}> $models */
+            /** @var array<string, array<string, mixed>> $models */
             $models = $app['config']->get('proofread.pricing.models', []);
 
             return PricingTable::fromArray($models);

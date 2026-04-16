@@ -34,18 +34,59 @@ return [
         'models' => [
             // Anthropic Claude family - approximate pricing, verify against
             // current Anthropic pricing before relying on these numbers.
-            'claude-opus-4-6' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
-            'claude-opus-4-5' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
-            'claude-opus-4-1' => ['input_per_1m' => 15.00, 'output_per_1m' => 75.00],
-            'claude-sonnet-4-6' => ['input_per_1m' => 3.00, 'output_per_1m' => 15.00],
-            'claude-sonnet-4-5' => ['input_per_1m' => 3.00, 'output_per_1m' => 15.00],
-            'claude-haiku-4-5' => ['input_per_1m' => 1.00, 'output_per_1m' => 5.00],
+            // Cache reads are ~10% of input rate; cache writes are ~25%
+            // premium over the regular input rate.
+            'claude-opus-4-6' => [
+                'input_per_1m' => 15.00,
+                'output_per_1m' => 75.00,
+                'cache_read_per_1m' => 1.50,
+                'cache_write_per_1m' => 18.75,
+            ],
+            'claude-opus-4-5' => [
+                'input_per_1m' => 15.00,
+                'output_per_1m' => 75.00,
+                'cache_read_per_1m' => 1.50,
+                'cache_write_per_1m' => 18.75,
+            ],
+            'claude-opus-4-1' => [
+                'input_per_1m' => 15.00,
+                'output_per_1m' => 75.00,
+                'cache_read_per_1m' => 1.50,
+                'cache_write_per_1m' => 18.75,
+            ],
+            'claude-sonnet-4-6' => [
+                'input_per_1m' => 3.00,
+                'output_per_1m' => 15.00,
+                'cache_read_per_1m' => 0.30,
+                'cache_write_per_1m' => 3.75,
+            ],
+            'claude-sonnet-4-5' => [
+                'input_per_1m' => 3.00,
+                'output_per_1m' => 15.00,
+                'cache_read_per_1m' => 0.30,
+                'cache_write_per_1m' => 3.75,
+            ],
+            'claude-haiku-4-5' => [
+                'input_per_1m' => 1.00,
+                'output_per_1m' => 5.00,
+                'cache_read_per_1m' => 0.10,
+                'cache_write_per_1m' => 1.25,
+            ],
 
-            // OpenAI - approximate pricing.
+            // OpenAI - approximate pricing. o1 series bills reasoning
+            // tokens at the same rate as completion tokens.
             'gpt-4o' => ['input_per_1m' => 2.50, 'output_per_1m' => 10.00],
             'gpt-4o-mini' => ['input_per_1m' => 0.15, 'output_per_1m' => 0.60],
-            'o1-preview' => ['input_per_1m' => 15.00, 'output_per_1m' => 60.00],
-            'o1-mini' => ['input_per_1m' => 3.00, 'output_per_1m' => 12.00],
+            'o1-preview' => [
+                'input_per_1m' => 15.00,
+                'output_per_1m' => 60.00,
+                'reasoning_per_1m' => 60.00,
+            ],
+            'o1-mini' => [
+                'input_per_1m' => 3.00,
+                'output_per_1m' => 12.00,
+                'reasoning_per_1m' => 12.00,
+            ],
 
             // Google Gemini - approximate pricing.
             'gemini-1.5-pro' => ['input_per_1m' => 1.25, 'output_per_1m' => 5.00],

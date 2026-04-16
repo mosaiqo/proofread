@@ -212,6 +212,68 @@ it('leaves cost_usd null when the model is not in the pricing table', function (
     expect($invocation->metadata['cost_usd'])->toBeNull();
 });
 
+it('extracts cache read, write and reasoning tokens from usage', function (): void {
+    $resolver = new SubjectResolver;
+    EchoAgent::fake(function ($prompt, $attachments, $provider) {
+        return new AgentResponse(
+            invocationId: 'inv-1',
+            text: 'hello',
+            usage: new Usage(
+                promptTokens: 100,
+                completionTokens: 50,
+                cacheWriteInputTokens: 20,
+                cacheReadInputTokens: 80,
+                reasoningTokens: 300,
+            ),
+            meta: new Meta($provider->name(), 'any-model'),
+        );
+    });
+
+    $resolved = $resolver->resolve(EchoAgent::class);
+    $invocation = $resolved('x', ['input' => 'x']);
+
+    expect($invocation->metadata['cache_read_tokens'])->toBe(80)
+        ->and($invocation->metadata['cache_write_tokens'])->toBe(20)
+        ->and($invocation->metadata['reasoning_tokens'])->toBe(300);
+});
+
+it('computes cost including cache and reasoning tokens', function (): void {
+    $resolver = new SubjectResolver(PricingTable::fromArray([
+        'priced-cached-model' => [
+            'input_per_1m' => 3.0,
+            'output_per_1m' => 15.0,
+            'cache_read_per_1m' => 0.3,
+            'cache_write_per_1m' => 3.75,
+            'reasoning_per_1m' => 15.0,
+        ],
+    ]));
+    EchoAgent::fake(function ($prompt, $attachments, $provider) {
+        return new AgentResponse(
+            invocationId: 'inv-1',
+            text: 'hello',
+            usage: new Usage(
+                promptTokens: 1_000,
+                completionTokens: 500,
+                cacheWriteInputTokens: 4_000,
+                cacheReadInputTokens: 2_000,
+                reasoningTokens: 200,
+            ),
+            meta: new Meta($provider->name(), 'priced-cached-model'),
+        );
+    });
+
+    $resolved = $resolver->resolve(EchoAgent::class);
+    $invocation = $resolved('x', ['input' => 'x']);
+
+    // input:    1000/1e6 * 3.0  = 0.003
+    // output:   500/1e6  * 15.0 = 0.0075
+    // cache_r:  2000/1e6 * 0.3  = 0.0006
+    // cache_w:  4000/1e6 * 3.75 = 0.015
+    // reason:   200/1e6  * 15.0 = 0.003
+    // total                     = 0.0291
+    expect($invocation->metadata['cost_usd'])->toBe(0.0291);
+});
+
 it('uses the injected pricing table when provided', function (): void {
     $custom = PricingTable::fromArray([
         'my-unique-model-xyz' => ['input_per_1m' => 10.0, 'output_per_1m' => 20.0],

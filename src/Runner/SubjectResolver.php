@@ -112,25 +112,51 @@ final class SubjectResolver
 
         $tokensIn = $usage->promptTokens;
         $tokensOut = $usage->completionTokens;
+        $cacheReadTokens = $usage->cacheReadInputTokens;
+        $cacheWriteTokens = $usage->cacheWriteInputTokens;
+        $reasoningTokens = $usage->reasoningTokens;
 
         return [
             'tokens_in' => $tokensIn,
             'tokens_out' => $tokensOut,
             'tokens_total' => $tokensIn + $tokensOut,
-            'cost_usd' => $this->deriveCost($meta->model, $tokensIn, $tokensOut),
+            'cache_read_tokens' => $cacheReadTokens,
+            'cache_write_tokens' => $cacheWriteTokens,
+            'reasoning_tokens' => $reasoningTokens,
+            'cost_usd' => $this->deriveCost(
+                $meta->model,
+                $tokensIn,
+                $tokensOut,
+                $cacheReadTokens,
+                $cacheWriteTokens,
+                $reasoningTokens,
+            ),
             'model' => $meta->model,
             'provider' => $meta->provider,
             'raw' => $response,
         ];
     }
 
-    private function deriveCost(?string $model, int $tokensIn, int $tokensOut): ?float
-    {
+    private function deriveCost(
+        ?string $model,
+        int $tokensIn,
+        int $tokensOut,
+        int $cacheReadTokens,
+        int $cacheWriteTokens,
+        int $reasoningTokens,
+    ): ?float {
         if ($model === null || $model === '') {
             return null;
         }
 
-        return $this->pricingTable()->cost($model, $tokensIn, $tokensOut);
+        return $this->pricingTable()->cost(
+            $model,
+            $tokensIn,
+            $tokensOut,
+            $cacheReadTokens,
+            $cacheWriteTokens,
+            $reasoningTokens,
+        );
     }
 
     private function pricingTable(): PricingTable

@@ -56,11 +56,14 @@ final class Judge
         $lastError = null;
         $tokensIn = null;
         $tokensOut = null;
+        $cacheReadTokens = 0;
+        $cacheWriteTokens = 0;
+        $reasoningTokens = 0;
 
         while ($attempts < $maxAttempts) {
             $response = $this->invokeAgent($prompt, $effectiveModel);
             $lastRaw = $response->text;
-            [$tokensIn, $tokensOut] = $this->extractTokens($response);
+            [$tokensIn, $tokensOut, $cacheReadTokens, $cacheWriteTokens, $reasoningTokens] = $this->extractTokens($response);
 
             try {
                 $verdict = $this->parseVerdict($lastRaw);
@@ -71,7 +74,17 @@ final class Judge
                         'judge_model' => $effectiveModel,
                         'judge_tokens_in' => $tokensIn,
                         'judge_tokens_out' => $tokensOut,
-                        'judge_cost_usd' => $this->deriveCost($effectiveModel, $tokensIn, $tokensOut),
+                        'judge_cache_read_tokens' => $cacheReadTokens,
+                        'judge_cache_write_tokens' => $cacheWriteTokens,
+                        'judge_reasoning_tokens' => $reasoningTokens,
+                        'judge_cost_usd' => $this->deriveCost(
+                            $effectiveModel,
+                            $tokensIn,
+                            $tokensOut,
+                            $cacheReadTokens,
+                            $cacheWriteTokens,
+                            $reasoningTokens,
+                        ),
                         'judge_raw_response' => $lastRaw,
                     ],
                     'retryCount' => $attempts,
@@ -151,8 +164,14 @@ final class Judge
         return new JudgeVerdict($passed, $scoreFloat, $reason);
     }
 
-    private function deriveCost(string $model, ?int $tokensIn, ?int $tokensOut): ?float
-    {
+    private function deriveCost(
+        string $model,
+        ?int $tokensIn,
+        ?int $tokensOut,
+        int $cacheReadTokens,
+        int $cacheWriteTokens,
+        int $reasoningTokens,
+    ): ?float {
         if ($tokensIn === null || $tokensOut === null) {
             return null;
         }
@@ -161,7 +180,14 @@ final class Judge
             return null;
         }
 
-        return $this->pricingTable()->cost($model, $tokensIn, $tokensOut);
+        return $this->pricingTable()->cost(
+            $model,
+            $tokensIn,
+            $tokensOut,
+            $cacheReadTokens,
+            $cacheWriteTokens,
+            $reasoningTokens,
+        );
     }
 
     private function pricingTable(): PricingTable
@@ -170,7 +196,7 @@ final class Judge
     }
 
     /**
-     * @return array{0: int|null, 1: int|null}
+     * @return array{0: int|null, 1: int|null, 2: int, 3: int, 4: int}
      */
     private function extractTokens(TextResponse $response): array
     {
@@ -181,7 +207,13 @@ final class Judge
         $tokensIn = $promptTokens > 0 ? $promptTokens : null;
         $tokensOut = $completionTokens > 0 ? $completionTokens : null;
 
-        return [$tokensIn, $tokensOut];
+        return [
+            $tokensIn,
+            $tokensOut,
+            $usage->cacheReadInputTokens,
+            $usage->cacheWriteInputTokens,
+            $usage->reasoningTokens,
+        ];
     }
 
     private function buildPrompt(string $criteria, mixed $output, mixed $input): string

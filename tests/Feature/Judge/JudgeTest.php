@@ -236,6 +236,37 @@ it('exposes the default model via a public getter', function (): void {
     expect($judge->defaultModel())->toBe('some-default-model');
 });
 
+it('computes judge cost including reasoning tokens', function (): void {
+    $pricing = PricingTable::fromArray([
+        'o1-judge' => [
+            'input_per_1m' => 15.0,
+            'output_per_1m' => 60.0,
+            'reasoning_per_1m' => 60.0,
+        ],
+    ]);
+    JudgeAgent::fake(function ($prompt, $attachments, $provider, $model) {
+        return new TextResponse(
+            '{"passed": true, "score": 1.0, "reason": "ok"}',
+            new Usage(
+                promptTokens: 1_000,
+                completionTokens: 500,
+                reasoningTokens: 2_000,
+            ),
+            new Meta($provider->name(), $model),
+        );
+    });
+
+    $judge = new Judge('o1-judge', pricing: $pricing);
+
+    $outcome = $judge->judge('c', 'o');
+
+    // input:     1000/1e6 * 15.0 = 0.015
+    // output:    500/1e6  * 60.0 = 0.03
+    // reasoning: 2000/1e6 * 60.0 = 0.12
+    // total                       = 0.165
+    expect($outcome['metadata']['judge_cost_usd'])->toBe(0.165);
+});
+
 it('stringifies non-string outputs when injecting into the prompt', function (): void {
     $captured = null;
     JudgeAgent::fake(function ($prompt, $attachments, $provider, $model) use (&$captured): string {
