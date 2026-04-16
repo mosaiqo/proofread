@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
+use Mosaiqo\Proofread\Jobs\RunEvalSuiteJob;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
@@ -241,4 +243,78 @@ it('prints the persisted run id when --persist is provided', function (): void {
     $run = EvalRunModel::query()->firstOrFail();
 
     expect($output)->toContain('Persisted as eval_run '.$run->id);
+});
+
+it('dispatches jobs when --queue is set', function (): void {
+    Bus::fake();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--queue' => true,
+    ]);
+
+    expect($exit)->toBe(0);
+    Bus::assertDispatched(
+        RunEvalSuiteJob::class,
+        fn (RunEvalSuiteJob $job): bool => $job->suiteClass === PassingSuite::class,
+    );
+});
+
+it('prints the queue name when dispatching', function (): void {
+    Bus::fake();
+
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--queue' => true,
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('Queued '.PassingSuite::class)
+        ->and($output)->toContain("queue 'evals'");
+});
+
+it('does not run inline when --queue is set', function (): void {
+    Bus::fake();
+
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--queue' => true,
+    ]);
+
+    expect(EvalRunModel::query()->count())->toBe(0);
+});
+
+it('dispatches one job per suite when multiple suites are provided with --queue', function (): void {
+    Bus::fake();
+
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class, FailingSuite::class],
+        '--queue' => true,
+    ]);
+
+    Bus::assertDispatchedTimes(RunEvalSuiteJob::class, 2);
+    Bus::assertDispatched(
+        RunEvalSuiteJob::class,
+        fn (RunEvalSuiteJob $job): bool => $job->suiteClass === PassingSuite::class,
+    );
+    Bus::assertDispatched(
+        RunEvalSuiteJob::class,
+        fn (RunEvalSuiteJob $job): bool => $job->suiteClass === FailingSuite::class,
+    );
+});
+
+it('applies --commit-sha to the dispatched job', function (): void {
+    Bus::fake();
+
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--queue' => true,
+        '--commit-sha' => 'deadbeef',
+    ]);
+
+    Bus::assertDispatched(
+        RunEvalSuiteJob::class,
+        fn (RunEvalSuiteJob $job): bool => $job->commitSha === 'deadbeef',
+    );
 });

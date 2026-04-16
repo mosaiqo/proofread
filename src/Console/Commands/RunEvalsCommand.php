@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mosaiqo\Proofread\Console\Commands;
 
 use Illuminate\Console\Command;
+use Mosaiqo\Proofread\Jobs\RunEvalSuiteJob;
 use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Runner\EvalPersister;
 use Mosaiqo\Proofread\Runner\EvalRunner;
@@ -24,7 +25,9 @@ final class RunEvalsCommand extends Command
         {--junit= : Write JUnit XML to this path (one file per suite when multiple are given)}
         {--fail-fast : Stop at the first suite that fails or errors}
         {--filter= : Case-insensitive substring filter against case meta.name or stringified input}
-        {--persist : Persist each run to the database via EvalPersister}';
+        {--persist : Persist each run to the database via EvalPersister}
+        {--queue : Dispatch each suite to the queue instead of running inline}
+        {--commit-sha= : Commit SHA attached to the persisted run (only used with --queue)}';
 
     /**
      * @var string
@@ -41,6 +44,9 @@ final class RunEvalsCommand extends Command
         $filter = is_string($filterOption) && $filterOption !== '' ? $filterOption : null;
         $failFast = (bool) $this->option('fail-fast');
         $persist = (bool) $this->option('persist');
+        $queue = (bool) $this->option('queue');
+        $commitShaOption = $this->option('commit-sha');
+        $commitSha = is_string($commitShaOption) && $commitShaOption !== '' ? $commitShaOption : null;
         $multipleSuites = count($suiteNames) > 1;
 
         $suites = [];
@@ -50,6 +56,10 @@ final class RunEvalsCommand extends Command
                 return 2;
             }
             $suites[] = $suite;
+        }
+
+        if ($queue) {
+            return $this->dispatchSuites($suites, $commitSha);
         }
 
         $anyFailure = false;
@@ -134,6 +144,26 @@ final class RunEvalsCommand extends Command
         ));
 
         return $exit;
+    }
+
+    /**
+     * @param  array<int, EvalSuite>  $suites
+     */
+    private function dispatchSuites(array $suites, ?string $commitSha): int
+    {
+        $queueConfig = config('proofread.queue.eval_queue', 'evals');
+        $queueName = is_string($queueConfig) && $queueConfig !== '' ? $queueConfig : 'evals';
+
+        foreach ($suites as $suite) {
+            RunEvalSuiteJob::dispatch($suite::class, $commitSha, true);
+            $this->line(sprintf(
+                "Queued %s for async execution on queue '%s'",
+                $suite::class,
+                $queueName,
+            ));
+        }
+
+        return 0;
     }
 
     private function resolveSuite(string $name): ?EvalSuite
