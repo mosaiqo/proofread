@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\AgentResponse;
+use Laravel\Ai\Responses\Data\Meta;
+use Laravel\Ai\Responses\Data\Usage;
+use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Runner\SubjectInvocation;
 use Mosaiqo\Proofread\Runner\SubjectResolver;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\EchoAgent;
@@ -167,4 +170,65 @@ it('exposes the AgentResponse under the raw metadata key', function (): void {
     $invocation = $resolved('x', ['input' => 'x']);
 
     expect($invocation->metadata['raw'])->toBeInstanceOf(AgentResponse::class);
+});
+
+it('populates cost_usd when the model is in the pricing table', function (): void {
+    $resolver = new SubjectResolver(PricingTable::fromArray([
+        'priced-model' => ['input_per_1m' => 3.0, 'output_per_1m' => 15.0],
+    ]));
+    EchoAgent::fake(function ($prompt, $attachments, $provider) {
+        return new AgentResponse(
+            invocationId: 'inv-1',
+            text: 'hello',
+            usage: new Usage(promptTokens: 1_000, completionTokens: 500),
+            meta: new Meta($provider->name(), 'priced-model'),
+        );
+    });
+
+    $resolved = $resolver->resolve(EchoAgent::class);
+    $invocation = $resolved('x', ['input' => 'x']);
+
+    expect($invocation->metadata['cost_usd'])->toBe(0.0105);
+    expect($invocation->metadata['tokens_in'])->toBe(1_000);
+    expect($invocation->metadata['tokens_out'])->toBe(500);
+});
+
+it('leaves cost_usd null when the model is not in the pricing table', function (): void {
+    $resolver = new SubjectResolver(PricingTable::fromArray([
+        'other-model' => ['input_per_1m' => 3.0, 'output_per_1m' => 15.0],
+    ]));
+    EchoAgent::fake(function ($prompt, $attachments, $provider) {
+        return new AgentResponse(
+            invocationId: 'inv-1',
+            text: 'hello',
+            usage: new Usage(promptTokens: 100, completionTokens: 50),
+            meta: new Meta($provider->name(), 'unknown-model'),
+        );
+    });
+
+    $resolved = $resolver->resolve(EchoAgent::class);
+    $invocation = $resolved('x', ['input' => 'x']);
+
+    expect($invocation->metadata['cost_usd'])->toBeNull();
+});
+
+it('uses the injected pricing table when provided', function (): void {
+    $custom = PricingTable::fromArray([
+        'my-unique-model-xyz' => ['input_per_1m' => 10.0, 'output_per_1m' => 20.0],
+    ]);
+    $resolver = new SubjectResolver($custom);
+    EchoAgent::fake(function ($prompt, $attachments, $provider) {
+        return new AgentResponse(
+            invocationId: 'inv-1',
+            text: 'hi',
+            usage: new Usage(promptTokens: 1_000_000, completionTokens: 500_000),
+            meta: new Meta($provider->name(), 'my-unique-model-xyz'),
+        );
+    });
+
+    $resolved = $resolver->resolve(EchoAgent::class);
+    $invocation = $resolved('x', ['input' => 'x']);
+
+    // (1_000_000 / 1e6) * 10 + (500_000 / 1e6) * 20 = 10 + 10 = 20.0
+    expect($invocation->metadata['cost_usd'])->toBe(20.0);
 });

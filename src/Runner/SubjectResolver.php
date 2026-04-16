@@ -9,9 +9,14 @@ use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\AgentResponse;
+use Mosaiqo\Proofread\Pricing\PricingTable;
 
 final class SubjectResolver
 {
+    public function __construct(
+        private readonly ?PricingTable $pricing = null,
+    ) {}
+
     public function resolve(mixed $subject): Closure
     {
         if ($subject instanceof Closure) {
@@ -112,10 +117,24 @@ final class SubjectResolver
             'tokens_in' => $tokensIn,
             'tokens_out' => $tokensOut,
             'tokens_total' => $tokensIn + $tokensOut,
-            'cost_usd' => null,
+            'cost_usd' => $this->deriveCost($meta->model, $tokensIn, $tokensOut),
             'model' => $meta->model,
             'provider' => $meta->provider,
             'raw' => $response,
         ];
+    }
+
+    private function deriveCost(?string $model, int $tokensIn, int $tokensOut): ?float
+    {
+        if ($model === null || $model === '') {
+            return null;
+        }
+
+        return $this->pricingTable()->cost($model, $tokensIn, $tokensOut);
+    }
+
+    private function pricingTable(): PricingTable
+    {
+        return $this->pricing ?? Container::getInstance()->make(PricingTable::class);
     }
 }
