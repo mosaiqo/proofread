@@ -8,13 +8,14 @@ use Closure;
 use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Responses\AgentResponse;
 
 final class SubjectResolver
 {
     public function resolve(mixed $subject): Closure
     {
         if ($subject instanceof Closure) {
-            return $subject;
+            return $this->wrapCallable($subject);
         }
 
         if ($subject instanceof Agent) {
@@ -26,7 +27,7 @@ final class SubjectResolver
         }
 
         if (is_callable($subject)) {
-            return Closure::fromCallable($subject);
+            return $this->wrapCallable(Closure::fromCallable($subject));
         }
 
         throw new InvalidArgumentException(sprintf(
@@ -40,7 +41,7 @@ final class SubjectResolver
     private function resolveString(string $subject): Closure
     {
         if (is_callable($subject)) {
-            return Closure::fromCallable($subject);
+            return $this->wrapCallable(Closure::fromCallable($subject));
         }
 
         if (! class_exists($subject)) {
@@ -58,7 +59,7 @@ final class SubjectResolver
             ));
         }
 
-        return function (mixed $input, array $case) use ($subject): string {
+        return function (mixed $input, array $case) use ($subject): SubjectInvocation {
             unset($case);
 
             /** @var Agent $agent */
@@ -68,19 +69,53 @@ final class SubjectResolver
         };
     }
 
+    private function wrapCallable(Closure $callable): Closure
+    {
+        return function (mixed $input, array $case) use ($callable): SubjectInvocation {
+            return SubjectInvocation::make($callable($input, $case));
+        };
+    }
+
     private function wrapAgent(Agent $agent): Closure
     {
-        return function (mixed $input, array $case) use ($agent): string {
+        return function (mixed $input, array $case) use ($agent): SubjectInvocation {
             unset($case);
 
             return $this->invokeAgent($agent, $input);
         };
     }
 
-    private function invokeAgent(Agent $agent, mixed $input): string
+    private function invokeAgent(Agent $agent, mixed $input): SubjectInvocation
     {
         $prompt = is_string($input) ? $input : (string) json_encode($input);
 
-        return $agent->prompt($prompt)->text;
+        $response = $agent->prompt($prompt);
+
+        return SubjectInvocation::make(
+            $response->text,
+            $this->metadataFromResponse($response),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function metadataFromResponse(AgentResponse $response): array
+    {
+        $usage = $response->usage;
+        $meta = $response->meta;
+
+        $tokensIn = $usage->promptTokens;
+        $tokensOut = $usage->completionTokens;
+
+        return [
+            'tokens_in' => $tokensIn,
+            'tokens_out' => $tokensOut,
+            'tokens_total' => $tokensIn + $tokensOut,
+            'cost_usd' => null,
+            'model' => $meta->model,
+            'provider' => $meta->provider,
+            'raw' => $response,
+        ];
     }
 }

@@ -78,7 +78,8 @@ final class EvalRunner
         $assertionResults = [];
 
         try {
-            $output = $subject($case['input'], $case);
+            $invocation = $subject($case['input'], $case);
+            $output = $invocation->output;
         } catch (Throwable $e) {
             $error = $e;
         }
