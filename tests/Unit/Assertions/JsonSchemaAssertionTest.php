@@ -75,7 +75,7 @@ it('builds from a JSON string schema', function (): void {
 });
 
 it('builds from a schema file', function (): void {
-    $assertion = JsonSchemaAssertion::fromFile(__DIR__.'/../../fixtures/sample-schema.json');
+    $assertion = JsonSchemaAssertion::fromFile(__DIR__.'/../../Fixtures/sample-schema.json');
 
     $result = $assertion->run(['name' => 'ok']);
     expect($result->passed)->toBeTrue();
