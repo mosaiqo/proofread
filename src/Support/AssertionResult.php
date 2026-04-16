@@ -6,12 +6,16 @@ namespace Mosaiqo\Proofread\Support;
 
 use InvalidArgumentException;
 
-final readonly class AssertionResult
+class AssertionResult
 {
-    private function __construct(
-        public bool $passed,
-        public string $reason,
-        public ?float $score = null,
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    protected function __construct(
+        public readonly bool $passed,
+        public readonly string $reason,
+        public readonly ?float $score = null,
+        public readonly array $metadata = [],
     ) {
         if ($score !== null && ($score < 0.0 || $score > 1.0)) {
             throw new InvalidArgumentException(
@@ -20,13 +24,19 @@ final readonly class AssertionResult
         }
     }
 
-    public static function pass(string $reason = '', ?float $score = null): self
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    public static function pass(string $reason = '', ?float $score = null, array $metadata = []): self
     {
-        return new self(true, $reason, $score);
+        return new self(true, $reason, $score, $metadata);
     }
 
-    public static function fail(string $reason, ?float $score = null): self
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    public static function fail(string $reason, ?float $score = null, array $metadata = []): self
     {
-        return new self(false, $reason, $score);
+        return new self(false, $reason, $score, $metadata);
     }
 }

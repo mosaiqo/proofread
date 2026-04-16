@@ -59,3 +59,32 @@ it('is immutable', function (): void {
         $result->passed = false;
     })())->toThrow(Error::class);
 });
+
+it('defaults metadata to an empty array', function (): void {
+    expect(AssertionResult::pass()->metadata)->toBe([]);
+    expect(AssertionResult::fail('nope')->metadata)->toBe([]);
+});
+
+it('accepts metadata on pass', function (): void {
+    $result = AssertionResult::pass('ok', 0.9, ['tokens' => 10, 'model' => 'x']);
+
+    expect($result->metadata)->toBe(['tokens' => 10, 'model' => 'x']);
+});
+
+it('accepts metadata on fail', function (): void {
+    $result = AssertionResult::fail('bad', 0.2, ['retry_count' => 2]);
+
+    expect($result->metadata)->toBe(['retry_count' => 2]);
+});
+
+it('preserves metadata shape unchanged', function (): void {
+    $nested = [
+        'usage' => ['tokens_in' => 5, 'tokens_out' => 7],
+        'raw' => 'verbatim',
+        'flags' => [true, false, null],
+    ];
+
+    $result = AssertionResult::pass('shape', null, $nested);
+
+    expect($result->metadata)->toBe($nested);
+});
