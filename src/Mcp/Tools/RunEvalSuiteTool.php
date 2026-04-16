@@ -74,7 +74,7 @@ final class RunEvalSuiteTool extends Tool
         $suite = $container->make($suiteClass);
 
         $runner = $container->make(EvalRunner::class);
-        $run = $runner->run($suite->subject(), $suite->dataset(), $suite->assertions());
+        $run = $runner->runSuite($suite);
 
         $persistedRunId = null;
         if ($persist) {

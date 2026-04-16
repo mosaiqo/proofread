@@ -111,3 +111,26 @@ it('returns an array of Assertion instances from assertions()', function (): voi
         expect($assertion)->toBeInstanceOf(Assertion::class);
     }
 });
+
+it('has an empty default setUp implementation', function (): void {
+    $suite = proofread_make_suite_stub();
+
+    $suite->setUp();
+
+    expect(true)->toBeTrue();
+});
+
+it('has an empty default tearDown implementation', function (): void {
+    $suite = proofread_make_suite_stub();
+
+    $suite->tearDown();
+
+    expect(true)->toBeTrue();
+});
+
+it('exposes setUp and tearDown as public methods', function (): void {
+    $reflection = new ReflectionClass(EvalSuite::class);
+
+    expect($reflection->getMethod('setUp')->isPublic())->toBeTrue();
+    expect($reflection->getMethod('tearDown')->isPublic())->toBeTrue();
+});

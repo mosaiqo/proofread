@@ -47,4 +47,23 @@ abstract class EvalSuite
     {
         return static::class;
     }
+
+    /**
+     * Lifecycle hook invoked before dataset/subject/assertions are read.
+     * Override to set up database state, tenant context, or other
+     * prerequisites that the suite's data depends on.
+     */
+    public function setUp(): void
+    {
+        //
+    }
+
+    /**
+     * Lifecycle hook invoked after the suite finishes running.
+     * Called in a finally block so it runs even if the subject throws.
+     */
+    public function tearDown(): void
+    {
+        //
+    }
 }

@@ -68,42 +68,48 @@ final class RunEvalsCommand extends Command
         foreach ($suites as $suite) {
             $this->line('Running '.$suite->name());
 
-            $dataset = $this->applyFilter($suite->dataset(), $filter);
-
-            if ($dataset === null) {
-                $this->line('  No cases matching filter');
-                $executed++;
-
-                continue;
-            }
-
-            if ($dataset->isEmpty()) {
-                $this->line('  No cases to run');
-                $executed++;
-
-                continue;
-            }
-
-            $this->line(sprintf(
-                '  %d cases, %d assertions per case',
-                $dataset->count(),
-                count($suite->assertions()),
-            ));
-            $this->line('');
+            $suite->setUp();
 
             try {
-                $run = $runner->run($suite->subject(), $dataset, $suite->assertions());
-            } catch (Throwable $e) {
-                $this->error('  Suite runner failed: '.$e->getMessage());
-                $anyFailure = true;
-                $executed++;
+                $dataset = $this->applyFilter($suite->dataset(), $filter);
 
-                if ($failFast) {
-                    $this->line('Stopping due to --fail-fast');
-                    break;
+                if ($dataset === null) {
+                    $this->line('  No cases matching filter');
+                    $executed++;
+
+                    continue;
                 }
 
-                continue;
+                if ($dataset->isEmpty()) {
+                    $this->line('  No cases to run');
+                    $executed++;
+
+                    continue;
+                }
+
+                $this->line(sprintf(
+                    '  %d cases, %d assertions per case',
+                    $dataset->count(),
+                    count($suite->assertions()),
+                ));
+                $this->line('');
+
+                try {
+                    $run = $runner->run($suite->subject(), $dataset, $suite->assertions());
+                } catch (Throwable $e) {
+                    $this->error('  Suite runner failed: '.$e->getMessage());
+                    $anyFailure = true;
+                    $executed++;
+
+                    if ($failFast) {
+                        $this->line('Stopping due to --fail-fast');
+                        break;
+                    }
+
+                    continue;
+                }
+            } finally {
+                $suite->tearDown();
             }
 
             $this->printRun($run);

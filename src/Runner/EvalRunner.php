@@ -51,6 +51,29 @@ final class EvalRunner
     }
 
     /**
+     * Run an entire EvalSuite orchestrating its lifecycle.
+     *
+     * Invokes $suite->setUp(), reads dataset/subject/assertions,
+     * runs the eval, and finally invokes $suite->tearDown(). The
+     * tearDown hook runs even if subject or assertions throw; it is
+     * skipped when setUp itself throws, matching classic xUnit semantics.
+     */
+    public function runSuite(EvalSuite $suite): EvalRun
+    {
+        $suite->setUp();
+
+        try {
+            return $this->run(
+                $suite->subject(),
+                $suite->dataset(),
+                $suite->assertions(),
+            );
+        } finally {
+            $suite->tearDown();
+        }
+    }
+
+    /**
      * @param  array<int, mixed>  $assertions
      * @return list<Assertion>
      */

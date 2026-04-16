@@ -61,7 +61,7 @@ class RunEvalSuiteJob implements ShouldQueue
     {
         $suite = $this->resolveSuite();
 
-        $run = $runner->run($suite->subject(), $suite->dataset(), $suite->assertions());
+        $run = $runner->runSuite($suite);
 
         if ($this->persist) {
             $persister->persist(
