@@ -281,3 +281,60 @@ it('exposes the dataset on the resulting EvalRun', function (): void {
 
     expect($run->dataset)->toBe($dataset);
 });
+
+it('passes case_index to assertions', function (): void {
+    $runner = new EvalRunner;
+    $seen = [];
+    $assertion = fakeAssertion('idx', function (mixed $output, array $context) use (&$seen): AssertionResult {
+        $seen[] = $context['case_index'] ?? null;
+
+        return AssertionResult::pass();
+    });
+    $dataset = Dataset::make('d', [
+        ['input' => 'a'],
+        ['input' => 'b'],
+        ['input' => 'c'],
+    ]);
+
+    $runner->run(fn (): string => 'x', $dataset, [$assertion]);
+
+    expect($seen)->toBe([0, 1, 2]);
+});
+
+it('passes latency_ms to assertions', function (): void {
+    $runner = new EvalRunner;
+    $seen = [];
+    $assertion = fakeAssertion('lat', function (mixed $output, array $context) use (&$seen): AssertionResult {
+        $seen[] = $context['latency_ms'] ?? null;
+
+        return AssertionResult::pass();
+    });
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $runner->run(function (): string {
+        usleep(1_000);
+
+        return 'x';
+    }, $dataset, [$assertion]);
+
+    expect($seen[0])->toBeFloat();
+    expect($seen[0])->toBeGreaterThan(0.0);
+});
+
+it('measures latency only around the subject invocation', function (): void {
+    $runner = new EvalRunner;
+    $seen = [];
+    $assertion = fakeAssertion('lat', function (mixed $output, array $context) use (&$seen): AssertionResult {
+        // Burn ~5ms inside the assertion so result.durationMs > latency_ms by a safe margin.
+        usleep(5_000);
+        $seen[] = $context['latency_ms'] ?? null;
+
+        return AssertionResult::pass();
+    });
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $run = $runner->run(fn (): string => 'x', $dataset, [$assertion]);
+
+    expect($seen[0])->toBeFloat();
+    expect($run->results[0]->durationMs)->toBeGreaterThan($seen[0]);
+});

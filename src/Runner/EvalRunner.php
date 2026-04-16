@@ -76,16 +76,23 @@ final class EvalRunner
         $output = null;
         $error = null;
         $assertionResults = [];
+        $invocation = null;
+        $subjectLatencyMs = 0.0;
 
+        $subjectStart = hrtime(true);
         try {
             $invocation = $subject($case['input'], $case);
             $output = $invocation->output;
         } catch (Throwable $e) {
             $error = $e;
         }
+        $subjectLatencyMs = $this->roundMs((hrtime(true) - $subjectStart) / 1_000_000);
 
-        if ($error === null) {
-            $context = $case + ['case_index' => $index];
+        if ($error === null && $invocation !== null) {
+            $context = $case + [
+                'case_index' => $index,
+                'latency_ms' => $subjectLatencyMs,
+            ] + $invocation->metadata;
             foreach ($assertions as $assertion) {
                 $assertionResults[] = $this->runAssertion($assertion, $output, $context);
             }

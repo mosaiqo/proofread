@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Mosaiqo\Proofread\Assertions\ContainsAssertion;
+use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Runner\EvalRunner;
+use Mosaiqo\Proofread\Support\AssertionResult;
 use Mosaiqo\Proofread\Support\Dataset;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\EchoAgent;
 
@@ -70,3 +72,52 @@ it('rejects a non-Agent class FQCN', function (): void {
 
     $runner->run(stdClass::class, $dataset, []);
 })->throws(InvalidArgumentException::class);
+
+it('passes subject metadata to assertions', function (): void {
+    EchoAgent::fake(['out']);
+    $seen = [];
+    $assertion = new class($seen) implements Assertion
+    {
+        /** @var array<int, array<string, mixed>> */
+        public array $seen;
+
+        /**
+         * @param  array<int, array<string, mixed>>  $seen
+         */
+        public function __construct(array &$seen)
+        {
+            $this->seen = &$seen;
+        }
+
+        public function run(mixed $output, array $context = []): AssertionResult
+        {
+            $this->seen[] = $context;
+
+            return AssertionResult::pass();
+        }
+
+        public function name(): string
+        {
+            return 'meta';
+        }
+    };
+    $dataset = Dataset::make('agent-meta', [['input' => 'x']]);
+    $runner = new EvalRunner;
+
+    $runner->run(EchoAgent::class, $dataset, [$assertion]);
+
+    expect($assertion->seen[0])->toHaveKeys([
+        'tokens_in',
+        'tokens_out',
+        'tokens_total',
+        'cost_usd',
+        'model',
+        'provider',
+    ]);
+    expect($assertion->seen[0]['tokens_in'])->toBe(0);
+    expect($assertion->seen[0]['tokens_out'])->toBe(0);
+    expect($assertion->seen[0]['tokens_total'])->toBe(0);
+    expect($assertion->seen[0]['cost_usd'])->toBeNull();
+    expect($assertion->seen[0]['model'])->toBeString();
+    expect($assertion->seen[0]['provider'])->toBeString();
+});
