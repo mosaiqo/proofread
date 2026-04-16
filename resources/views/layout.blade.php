@@ -13,8 +13,8 @@
         <div class="proofread-nav-inner">
             <a href="{{ route('proofread.runs.index') }}" class="proofread-logo">Proofread</a>
             <div class="proofread-nav-links">
-                <a href="{{ route('proofread.runs.index') }}" class="active">Runs</a>
-                {{-- Datasets + Shadow links come in future slices --}}
+                <a href="{{ route('proofread.runs.index') }}" class="{{ request()->routeIs('proofread.runs.*') ? 'active' : '' }}">Runs</a>
+                <a href="{{ route('proofread.datasets.index') }}" class="{{ request()->routeIs('proofread.datasets.*') ? 'active' : '' }}">Datasets</a>
             </div>
         </div>
     </nav>

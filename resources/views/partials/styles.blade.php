@@ -341,6 +341,88 @@ table.table tbody tr:hover {
     display: none !important;
 }
 
+.dataset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.dataset-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.dataset-card:hover {
+    border-color: var(--accent);
+    background: var(--surface-hover);
+    color: inherit;
+}
+
+.dataset-card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dataset-name {
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.dataset-card-sub {
+    font-size: 12px;
+}
+
+.sparkline-wrap {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+    color: var(--text-muted);
+}
+
+.sparkline-wrap.sparkline-pass {
+    color: var(--success);
+}
+
+.sparkline-wrap.sparkline-fail {
+    color: var(--danger);
+}
+
+.sparkline-wrap.sparkline-warn {
+    color: var(--warning);
+}
+
+.sparkline-wrap.sparkline-neutral {
+    color: var(--text-muted);
+}
+
+.sparkline {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.sparkline-empty {
+    font-size: 13px;
+}
+
+.dataset-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
 .breadcrumb {
     display: flex;
     align-items: center;
