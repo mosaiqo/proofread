@@ -57,7 +57,7 @@ final class FailureClusterer
             $placed = false;
 
             foreach ($buckets as $bucketKey => $bucket) {
-                $score = $this->cosine($bucket['vector'], $vector);
+                $score = Similarity::cosineFromVectors($bucket['vector'], $vector);
                 if ($score >= $threshold) {
                     $buckets[$bucketKey]['indexes'][] = $index;
                     $placed = true;
@@ -141,41 +141,5 @@ final class FailureClusterer
         }
 
         return $normalized;
-    }
-
-    /**
-     * @param  list<float>  $a
-     * @param  list<float>  $b
-     */
-    private function cosine(array $a, array $b): float
-    {
-        if (count($a) !== count($b)) {
-            throw new SimilarityException(sprintf(
-                'Embedding vectors have mismatched dimensions: %d vs %d.',
-                count($a),
-                count($b),
-            ));
-        }
-
-        if ($a === []) {
-            throw new SimilarityException('Embedding vectors must not be empty.');
-        }
-
-        $dot = 0.0;
-        $normA = 0.0;
-        $normB = 0.0;
-
-        foreach ($a as $i => $av) {
-            $bv = $b[$i];
-            $dot += $av * $bv;
-            $normA += $av * $av;
-            $normB += $bv * $bv;
-        }
-
-        if ($normA === 0.0 || $normB === 0.0) {
-            throw new SimilarityException('Embedding vectors must not be zero-magnitude.');
-        }
-
-        return $dot / (sqrt($normA) * sqrt($normB));
     }
 }

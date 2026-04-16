@@ -197,3 +197,32 @@ it('rejects empty override model', function (): void {
 
     $similarity->cosine('a', 'b', model: '');
 })->throws(InvalidArgumentException::class);
+
+it('computes cosine between two pre-computed vectors via static helper', function (): void {
+    expect(Similarity::cosineFromVectors([1.0, 0.0, 0.0], [0.0, 1.0, 0.0]))
+        ->toEqualWithDelta(0.0, 0.0001)
+        ->and(Similarity::cosineFromVectors([1.0, 1.0], [1.0, 1.0]))
+        ->toEqualWithDelta(1.0, 0.0001);
+});
+
+it('rejects vectors of mismatched dimensions via static helper', function (): void {
+    Similarity::cosineFromVectors([1.0, 2.0], [1.0, 2.0, 3.0]);
+})->throws(SimilarityException::class);
+
+it('rejects empty vectors via static helper', function (): void {
+    Similarity::cosineFromVectors([], []);
+})->throws(SimilarityException::class);
+
+it('handles negative cosines correctly via static helper', function (): void {
+    expect(Similarity::cosineFromVectors([1.0, 0.0], [-1.0, 0.0]))
+        ->toEqualWithDelta(-1.0, 0.0001);
+});
+
+it('returns zero when a vector is all zeros via static helper', function (): void {
+    expect(Similarity::cosineFromVectors([0.0, 0.0, 0.0], [1.0, 2.0, 3.0]))
+        ->toBe(0.0)
+        ->and(Similarity::cosineFromVectors([1.0, 2.0, 3.0], [0.0, 0.0, 0.0]))
+        ->toBe(0.0)
+        ->and(Similarity::cosineFromVectors([0.0, 0.0], [0.0, 0.0]))
+        ->toBe(0.0);
+});

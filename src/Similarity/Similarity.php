@@ -63,20 +63,21 @@ final class Similarity
         ];
     }
 
-    private function computeCosine(EmbeddingsResponse $response): float
+    /**
+     * Compute cosine similarity between two pre-computed vectors.
+     *
+     * Zero-magnitude vectors return 0.0 (they have no direction, so they
+     * are treated as orthogonal to every other vector). This matches
+     * sklearn's cosine_similarity behavior and keeps clustering callers
+     * safe from degenerate embeddings.
+     *
+     * @param  list<float>  $a
+     * @param  list<float>  $b
+     *
+     * @throws SimilarityException if dimensions mismatch or vectors are empty.
+     */
+    public static function cosineFromVectors(array $a, array $b): float
     {
-        if (count($response->embeddings) < 2) {
-            throw new SimilarityException(
-                sprintf(
-                    'Embeddings response must contain at least 2 vectors, got %d.',
-                    count($response->embeddings),
-                )
-            );
-        }
-
-        $a = $response->embeddings[0];
-        $b = $response->embeddings[1];
-
         if (count($a) !== count($b)) {
             throw new SimilarityException(
                 sprintf(
@@ -95,18 +96,41 @@ final class Similarity
         $normA = 0.0;
         $normB = 0.0;
 
-        foreach ($a as $index => $value) {
-            $av = (float) $value;
-            $bv = (float) $b[$index];
+        foreach ($a as $index => $av) {
+            $bv = $b[$index];
             $dot += $av * $bv;
             $normA += $av * $av;
             $normB += $bv * $bv;
         }
 
         if ($normA === 0.0 || $normB === 0.0) {
-            throw new SimilarityException('Embedding vectors must not be zero-magnitude.');
+            return 0.0;
         }
 
         return $dot / (sqrt($normA) * sqrt($normB));
+    }
+
+    private function computeCosine(EmbeddingsResponse $response): float
+    {
+        if (count($response->embeddings) < 2) {
+            throw new SimilarityException(
+                sprintf(
+                    'Embeddings response must contain at least 2 vectors, got %d.',
+                    count($response->embeddings),
+                )
+            );
+        }
+
+        $a = [];
+        foreach ($response->embeddings[0] as $value) {
+            $a[] = (float) $value;
+        }
+
+        $b = [];
+        foreach ($response->embeddings[1] as $value) {
+            $b[] = (float) $value;
+        }
+
+        return self::cosineFromVectors($a, $b);
     }
 }
