@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Assertions;
 
+use Illuminate\JsonSchema\JsonSchemaTypeFactory;
 use InvalidArgumentException;
 use JsonException;
+use Laravel\Ai\Contracts\HasStructuredOutput;
+use Laravel\Ai\ObjectSchema;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Support\AssertionResult;
 use Opis\JsonSchema\Errors\ErrorFormatter;
@@ -51,6 +54,35 @@ final readonly class JsonSchemaAssertion implements Assertion
         }
 
         return new self($decoded);
+    }
+
+    /**
+     * Build an assertion from the structured-output schema declared by an Agent.
+     */
+    public static function fromAgent(string $agentClass): self
+    {
+        if (! class_exists($agentClass)) {
+            throw new InvalidArgumentException(
+                sprintf('Agent class [%s] does not exist.', $agentClass)
+            );
+        }
+
+        if (! is_a($agentClass, HasStructuredOutput::class, true)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Agent class [%s] does not implement [%s].',
+                    $agentClass,
+                    HasStructuredOutput::class,
+                )
+            );
+        }
+
+        /** @var HasStructuredOutput $agent */
+        $agent = app($agentClass);
+
+        $properties = $agent->schema(new JsonSchemaTypeFactory);
+
+        return self::fromArray((new ObjectSchema($properties))->toSchema());
     }
 
     public static function fromFile(string $path): self
