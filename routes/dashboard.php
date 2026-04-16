@@ -8,6 +8,7 @@ use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
 use Mosaiqo\Proofread\Http\Livewire\Overview;
 use Mosaiqo\Proofread\Http\Livewire\RunDetail;
 use Mosaiqo\Proofread\Http\Livewire\RunsList;
+use Mosaiqo\Proofread\Http\Livewire\ShadowPanel;
 use Mosaiqo\Proofread\Http\Middleware\DashboardEnabled;
 
 /** @var array<int, string> $middleware */
@@ -26,4 +27,5 @@ Route::middleware(array_merge([DashboardEnabled::class], $middleware))
         Route::get('/runs/{run}', RunDetail::class)->name('runs.show');
         Route::get('/compare', CompareRuns::class)->name('compare');
         Route::get('/datasets', DatasetsList::class)->name('datasets.index');
+        Route::get('/shadow', ShadowPanel::class)->name('shadow');
     });

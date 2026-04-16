@@ -1094,6 +1094,53 @@ table.table tbody tr:hover {
     fill: var(--accent);
 }
 
+.shadow-capture-row {
+    cursor: pointer;
+}
+
+.badge.shadow-status-pending {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.badge.shadow-status-passed {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.badge.shadow-status-failed {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.promote-panel {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.promote-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.promote-snippet {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    background: var(--bg-elevated);
+}
+
+.copy-button {
+    align-self: flex-start;
+}
+
 @media (max-width: 768px) {
     .proofread-main {
         padding: 16px;
