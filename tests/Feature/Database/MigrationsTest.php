@@ -234,6 +234,108 @@ it('rolls back shadow_captures cleanly', function (): void {
     expect(Schema::hasTable('shadow_captures'))->toBeTrue();
 });
 
+it('creates the shadow_evals table with expected columns', function (): void {
+    expect(Schema::hasTable('shadow_evals'))->toBeTrue();
+
+    $expected = [
+        'id', 'capture_id', 'agent_class', 'passed',
+        'total_assertions', 'passed_assertions', 'failed_assertions',
+        'assertion_results',
+        'judge_cost_usd', 'judge_tokens_in', 'judge_tokens_out',
+        'evaluation_duration_ms', 'evaluated_at',
+        'created_at', 'updated_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('shadow_evals', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates a foreign key from shadow_evals to shadow_captures with cascade', function (): void {
+    $captureId = (string) Str::ulid();
+    DB::table('shadow_captures')->insert([
+        'id' => $captureId,
+        'agent_class' => 'App\\Agents\\FK',
+        'prompt_hash' => str_repeat('f', 64),
+        'input_payload' => json_encode(['prompt' => 'hello']),
+        'output' => 'hi',
+        'tokens_in' => null,
+        'tokens_out' => null,
+        'cost_usd' => null,
+        'latency_ms' => null,
+        'model_used' => null,
+        'captured_at' => now(),
+        'sample_rate' => 1.0,
+        'is_anonymized' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $evalId = (string) Str::ulid();
+    DB::table('shadow_evals')->insert([
+        'id' => $evalId,
+        'capture_id' => $captureId,
+        'agent_class' => 'App\\Agents\\FK',
+        'passed' => true,
+        'total_assertions' => 1,
+        'passed_assertions' => 1,
+        'failed_assertions' => 0,
+        'assertion_results' => json_encode([['name' => 'contains', 'passed' => true]]),
+        'judge_cost_usd' => null,
+        'judge_tokens_in' => null,
+        'judge_tokens_out' => null,
+        'evaluation_duration_ms' => 12.5,
+        'evaluated_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('shadow_evals')->count())->toBe(1);
+
+    DB::table('shadow_captures')->where('id', $captureId)->delete();
+
+    expect(DB::table('shadow_evals')->count())->toBe(0);
+});
+
+it('creates the expected indexes on shadow_evals', function (): void {
+    $indexes = collect(DB::select("PRAGMA index_list('shadow_evals')"))
+        ->pluck('name')
+        ->all();
+
+    $hasCaptureIdIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'capture_id')
+    );
+    $hasAgentClassIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'agent_class') && ! str_contains($name, 'evaluated_at')
+    );
+    $hasAgentEvaluatedIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'agent_class') && str_contains($name, 'evaluated_at')
+    );
+    $hasPassedEvaluatedIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'passed') && str_contains($name, 'evaluated_at')
+    );
+
+    expect($hasCaptureIdIndex)->toBeTrue('missing capture_id index on shadow_evals')
+        ->and($hasAgentClassIndex)->toBeTrue('missing agent_class index on shadow_evals')
+        ->and($hasAgentEvaluatedIndex)->toBeTrue('missing agent_class+evaluated_at index on shadow_evals')
+        ->and($hasPassedEvaluatedIndex)->toBeTrue('missing passed+evaluated_at index on shadow_evals');
+});
+
+it('rolls back shadow_evals cleanly', function (): void {
+    expect(Schema::hasTable('shadow_evals'))->toBeTrue();
+
+    $base = __DIR__.'/../../../database/migrations';
+    $migration = require $base.'/2026_04_17_000002_create_shadow_evals_table.php';
+
+    $migration->down();
+
+    expect(Schema::hasTable('shadow_evals'))->toBeFalse();
+
+    $migration->up();
+
+    expect(Schema::hasTable('shadow_evals'))->toBeTrue();
+});
+
 it('provides down() migrations that drop all three tables', function (): void {
     expect(Schema::hasTable('eval_datasets'))->toBeTrue()
         ->and(Schema::hasTable('eval_runs'))->toBeTrue()

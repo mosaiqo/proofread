@@ -27,6 +27,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasMigration('create_eval_runs_table')
             ->hasMigration('create_eval_results_table')
             ->hasMigration('create_shadow_captures_table')
+            ->hasMigration('create_shadow_evals_table')
             ->hasCommand(RunEvalsCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
