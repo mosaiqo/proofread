@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Mosaiqo\Proofread\Assertions\Rubric;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Runner\EvalRunner;
 use Mosaiqo\Proofread\Support\Dataset;
 use Mosaiqo\Proofread\Support\EvalResult;
 use Mosaiqo\Proofread\Support\EvalRun;
+use Mosaiqo\Proofread\Support\JudgeResult;
 use Pest\Expectation;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\ExpectationFailedException;
@@ -22,6 +24,32 @@ expect()->extend('toPassAssertion', function (Assertion $assertion) {
             $assertion->name(),
             $result->reason,
         )
+    );
+
+    return $this;
+});
+
+expect()->extend('toPassRubric', function (string $criteria, array $options = []) {
+    /** @var Expectation<mixed> $this */
+    $rubric = Rubric::make($criteria);
+
+    $model = $options['model'] ?? null;
+    if (is_string($model) && $model !== '') {
+        $rubric = $rubric->using($model);
+    }
+
+    $minScore = $options['min_score'] ?? null;
+    if (is_int($minScore) || is_float($minScore)) {
+        $rubric = $rubric->minScore((float) $minScore);
+    }
+
+    $context = array_key_exists('input', $options) ? ['input' => $options['input']] : [];
+
+    $result = $rubric->run($this->value, $context);
+
+    Assert::assertTrue(
+        $result->passed,
+        proofread_format_rubric_failure($criteria, $result),
     );
 
     return $this;
@@ -112,6 +140,28 @@ function proofread_format_eval_failure_entry(EvalRun $run, EvalResult $failure, 
         $lines[] = $name instanceof Assertion
             ? sprintf('      %s: %s', $name->name(), $assertionResult->reason)
             : sprintf('      %s', $assertionResult->reason);
+    }
+
+    return implode("\n", $lines);
+}
+
+function proofread_format_rubric_failure(string $criteria, JudgeResult $result): string
+{
+    $truncatedCriteria = mb_strlen($criteria) > 80
+        ? mb_substr($criteria, 0, 77).'...'
+        : $criteria;
+
+    $scoreRepr = $result->score === null ? 'n/a' : (string) $result->score;
+
+    $lines = [
+        sprintf('Failed asserting that output passes rubric "%s".', $truncatedCriteria),
+        sprintf('  judge: %s', $result->judgeModel),
+        sprintf('  score: %s', $scoreRepr),
+        sprintf('  reason: %s', $result->reason),
+    ];
+
+    if ($result->retryCount > 0) {
+        $lines[] = sprintf('  retry_count: %d', $result->retryCount);
     }
 
     return implode("\n", $lines);

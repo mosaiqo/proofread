@@ -24,3 +24,11 @@ parameters:
             identifier: method.notFound
             message: '#Call to an undefined method Pest\\Expectation<[^>]+>::toPassEval\(\)#'
             path: tests/Feature/Examples/ExampleAgentTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectation<[^>]+>::toPassRubric\(\)#'
+            path: tests/Feature/Pest/ToPassRubricTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toPassRubric\(\)#'
+            path: tests/Feature/Pest/ToPassRubricTest.php
