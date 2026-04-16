@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread;
 
+use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Judge\Judge;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -14,7 +15,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('proofread')
-            ->hasConfigFile();
+            ->hasConfigFile()
+            ->hasCommand(RunEvalsCommand::class);
     }
 
     public function registeringPackage(): void
