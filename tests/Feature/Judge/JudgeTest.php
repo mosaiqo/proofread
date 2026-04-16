@@ -9,6 +9,7 @@ use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Judge\JudgeException;
 use Mosaiqo\Proofread\Judge\JudgeVerdict;
+use Mosaiqo\Proofread\Pricing\PricingTable;
 
 beforeEach(function (): void {
     config()->set('ai.default', 'openai');
@@ -168,13 +169,53 @@ it('includes token usage in metadata when the SDK reports it', function (): void
     expect($outcome['metadata']['judge_tokens_out'])->toBe(5);
 });
 
-it('leaves cost_usd as null', function (): void {
-    JudgeAgent::fake(['{"passed": true, "score": 1.0, "reason": "ok"}']);
+it('leaves judge_cost_usd null when the model is not in the pricing table', function (): void {
+    JudgeAgent::fake(function ($prompt, $attachments, $provider, $model) {
+        return new TextResponse(
+            '{"passed": true, "score": 1.0, "reason": "ok"}',
+            new Usage(promptTokens: 100, completionTokens: 50),
+            new Meta($provider->name(), $model),
+        );
+    });
 
-    $judge = new Judge('m');
+    $judge = new Judge('unknown-model-not-in-table');
 
     $outcome = $judge->judge('c', 'o');
 
+    expect($outcome['metadata']['judge_cost_usd'])->toBeNull();
+});
+
+it('populates judge_cost_usd when the model is in the pricing table', function (): void {
+    $pricing = PricingTable::fromArray([
+        'priced-judge-model' => ['input_per_1m' => 3.0, 'output_per_1m' => 15.0],
+    ]);
+    JudgeAgent::fake(function ($prompt, $attachments, $provider, $model) {
+        return new TextResponse(
+            '{"passed": true, "score": 1.0, "reason": "ok"}',
+            new Usage(promptTokens: 1_000, completionTokens: 500),
+            new Meta($provider->name(), $model),
+        );
+    });
+
+    $judge = new Judge('priced-judge-model', pricing: $pricing);
+
+    $outcome = $judge->judge('c', 'o');
+
+    expect($outcome['metadata']['judge_cost_usd'])->toBe(0.0105);
+});
+
+it('leaves judge_cost_usd null when tokens are unavailable', function (): void {
+    $pricing = PricingTable::fromArray([
+        'priced-judge-model' => ['input_per_1m' => 3.0, 'output_per_1m' => 15.0],
+    ]);
+    JudgeAgent::fake(['{"passed": true, "score": 1.0, "reason": "ok"}']);
+
+    $judge = new Judge('priced-judge-model', pricing: $pricing);
+
+    $outcome = $judge->judge('c', 'o');
+
+    // The default fake gateway produces a zero Usage. Without token data,
+    // we cannot derive a meaningful cost.
     expect($outcome['metadata']['judge_cost_usd'])->toBeNull();
 });
 

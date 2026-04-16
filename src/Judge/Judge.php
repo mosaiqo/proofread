@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Judge;
 
+use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\TextResponse;
+use Mosaiqo\Proofread\Pricing\PricingTable;
 use Throwable;
 
 final class Judge
@@ -14,6 +16,7 @@ final class Judge
     public function __construct(
         private readonly string $defaultModel,
         private readonly int $maxRetries = 1,
+        private readonly ?PricingTable $pricing = null,
     ) {
         if ($defaultModel === '') {
             throw new InvalidArgumentException('Judge default model must not be empty.');
@@ -63,7 +66,7 @@ final class Judge
                         'judge_model' => $effectiveModel,
                         'judge_tokens_in' => $tokensIn,
                         'judge_tokens_out' => $tokensOut,
-                        'judge_cost_usd' => null,
+                        'judge_cost_usd' => $this->deriveCost($effectiveModel, $tokensIn, $tokensOut),
                         'judge_raw_response' => $lastRaw,
                     ],
                     'retryCount' => $attempts,
@@ -141,6 +144,24 @@ final class Judge
         }
 
         return new JudgeVerdict($passed, $scoreFloat, $reason);
+    }
+
+    private function deriveCost(string $model, ?int $tokensIn, ?int $tokensOut): ?float
+    {
+        if ($tokensIn === null || $tokensOut === null) {
+            return null;
+        }
+
+        if ($model === '') {
+            return null;
+        }
+
+        return $this->pricingTable()->cost($model, $tokensIn, $tokensOut);
+    }
+
+    private function pricingTable(): PricingTable
+    {
+        return $this->pricing ?? Container::getInstance()->make(PricingTable::class);
     }
 
     /**

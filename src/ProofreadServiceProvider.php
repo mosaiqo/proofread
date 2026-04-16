@@ -64,6 +64,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             return new Judge(
                 defaultModel: is_string($defaultModel) ? $defaultModel : 'claude-haiku-4-5',
                 maxRetries: is_int($maxRetries) ? $maxRetries : 1,
+                pricing: $app->make(PricingTable::class),
             );
         });
 
