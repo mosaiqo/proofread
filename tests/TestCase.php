@@ -6,6 +6,7 @@ namespace Mosaiqo\Proofread\Tests;
 
 use Illuminate\Contracts\Config\Repository;
 use Laravel\Ai\AiServiceProvider;
+use Laravel\Mcp\Server\McpServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Mosaiqo\Proofread\ProofreadServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -17,6 +18,7 @@ abstract class TestCase extends Orchestra
         return [
             AiServiceProvider::class,
             LivewireServiceProvider::class,
+            McpServiceProvider::class,
             ProofreadServiceProvider::class,
         ];
     }

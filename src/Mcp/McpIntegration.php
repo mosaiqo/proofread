@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread\Mcp;
 use Illuminate\Contracts\Container\Container;
 use Laravel\Mcp\Server\Tool;
 use Mosaiqo\Proofread\Mcp\Tools\ListEvalSuitesTool;
+use Mosaiqo\Proofread\Mcp\Tools\RunEvalSuiteTool;
 
 /**
  * Conditional integration glue for laravel/mcp.
@@ -28,6 +29,7 @@ final class McpIntegration
 
         return [
             ListEvalSuitesTool::class,
+            RunEvalSuiteTool::class,
         ];
     }
 
