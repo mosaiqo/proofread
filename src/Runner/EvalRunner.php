@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Runner;
 
+use Closure;
 use InvalidArgumentException;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Support\AssertionResult;
@@ -14,19 +15,26 @@ use Throwable;
 
 final class EvalRunner
 {
+    private readonly SubjectResolver $resolver;
+
+    public function __construct(?SubjectResolver $resolver = null)
+    {
+        $this->resolver = $resolver ?? new SubjectResolver;
+    }
+
     /**
-     * @param  callable(mixed, array<string, mixed>): mixed  $subject
      * @param  array<int, mixed>  $assertions
      */
-    public function run(callable $subject, Dataset $dataset, array $assertions): EvalRun
+    public function run(mixed $subject, Dataset $dataset, array $assertions): EvalRun
     {
+        $resolved = $this->resolver->resolve($subject);
         $validated = $this->validateAssertions($assertions);
 
         $runStart = hrtime(true);
         $results = [];
 
         foreach ($dataset->cases as $index => $case) {
-            $results[] = $this->runCase($subject, $case, $index, $validated);
+            $results[] = $this->runCase($resolved, $case, $index, $validated);
         }
 
         $durationMs = $this->roundMs((hrtime(true) - $runStart) / 1_000_000);
@@ -59,11 +67,10 @@ final class EvalRunner
     }
 
     /**
-     * @param  callable(mixed, array<string, mixed>): mixed  $subject
      * @param  array<string, mixed>  $case
      * @param  list<Assertion>  $assertions
      */
-    private function runCase(callable $subject, array $case, int $index, array $assertions): EvalResult
+    private function runCase(Closure $subject, array $case, int $index, array $assertions): EvalResult
     {
         $caseStart = hrtime(true);
         $output = null;
