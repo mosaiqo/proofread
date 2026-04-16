@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -34,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property float|null $total_cost_usd
  * @property int|null $total_tokens_in
  * @property int|null $total_tokens_out
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  * @property EvalDataset|null $dataset
  * @property Collection<int, EvalResult> $results
  */
