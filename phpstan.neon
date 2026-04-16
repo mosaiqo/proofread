@@ -48,3 +48,7 @@ parameters:
             identifier: method.notFound
             message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toCostUnder\(\)#'
             path: tests/Feature/Pest/ToCostUnderTest.php
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$(snapshotDir|store|app)\.#'
+            path: tests/Feature/Assertions/GoldenSnapshotTest.php
