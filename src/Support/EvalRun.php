@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread\Support;
 use DOMDocument;
 use DOMElement;
 use InvalidArgumentException;
+use Mosaiqo\Proofread\Proofread;
 use Throwable;
 
 final readonly class EvalRun
@@ -119,6 +120,11 @@ final readonly class EvalRun
         }
 
         return $failures;
+    }
+
+    public function saveJUnitTo(string $path): void
+    {
+        Proofread::writeJUnit($this, $path);
     }
 
     public function toJUnitXml(): string
