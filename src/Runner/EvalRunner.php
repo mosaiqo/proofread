@@ -11,6 +11,7 @@ use Mosaiqo\Proofread\Support\AssertionResult;
 use Mosaiqo\Proofread\Support\Dataset;
 use Mosaiqo\Proofread\Support\EvalResult;
 use Mosaiqo\Proofread\Support\EvalRun;
+use Mosaiqo\Proofread\Support\JudgeResult;
 use Throwable;
 
 final class EvalRunner
@@ -109,12 +110,41 @@ final class EvalRunner
     private function runAssertion(Assertion $assertion, mixed $output, array $context): AssertionResult
     {
         try {
-            return $assertion->run($output, $context);
+            $result = $assertion->run($output, $context);
         } catch (Throwable $e) {
-            return AssertionResult::fail(
+            $result = AssertionResult::fail(
                 sprintf('Assertion %s threw: %s', $assertion->name(), $e->getMessage())
             );
         }
+
+        return $this->withAssertionName($result, $assertion->name());
+    }
+
+    private function withAssertionName(AssertionResult $result, string $name): AssertionResult
+    {
+        if (array_key_exists('assertion_name', $result->metadata)) {
+            return $result;
+        }
+
+        $metadata = $result->metadata + ['assertion_name' => $name];
+
+        if ($result instanceof JudgeResult) {
+            $factory = $result->passed
+                ? JudgeResult::pass(...)
+                : JudgeResult::fail(...);
+
+            return $factory(
+                $result->reason,
+                $result->score,
+                $metadata,
+                $result->judgeModel,
+                $result->retryCount,
+            );
+        }
+
+        return $result->passed
+            ? AssertionResult::pass($result->reason, $result->score, $metadata)
+            : AssertionResult::fail($result->reason, $result->score, $metadata);
     }
 
     private function roundMs(float $ms): float

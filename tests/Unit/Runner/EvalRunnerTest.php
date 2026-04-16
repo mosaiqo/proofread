@@ -321,6 +321,43 @@ it('passes latency_ms to assertions', function (): void {
     expect($seen[0])->toBeGreaterThan(0.0);
 });
 
+it('tags each assertion result with the assertion name in metadata', function (): void {
+    $runner = new EvalRunner;
+    $assertion = fakeAssertion('my_named_assertion', fn (): AssertionResult => AssertionResult::pass('ok'));
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $run = $runner->run(fn (): string => 'x', $dataset, [$assertion]);
+
+    expect($run->results[0]->assertionResults[0]->metadata)
+        ->toHaveKey('assertion_name', 'my_named_assertion');
+});
+
+it('tags exception-captured assertion results with the assertion name', function (): void {
+    $runner = new EvalRunner;
+    $exploding = explodingAssertion('boomer', 'kaboom');
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $run = $runner->run(fn (): string => 'x', $dataset, [$exploding]);
+
+    expect($run->results[0]->assertionResults[0]->metadata)
+        ->toHaveKey('assertion_name', 'boomer');
+});
+
+it('preserves pre-existing metadata when adding assertion_name', function (): void {
+    $runner = new EvalRunner;
+    $assertion = fakeAssertion(
+        'with_meta',
+        fn (): AssertionResult => AssertionResult::pass('ok', null, ['cost_usd' => 0.0001]),
+    );
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $run = $runner->run(fn (): string => 'x', $dataset, [$assertion]);
+
+    $metadata = $run->results[0]->assertionResults[0]->metadata;
+    expect($metadata)->toHaveKey('assertion_name', 'with_meta');
+    expect($metadata)->toHaveKey('cost_usd', 0.0001);
+});
+
 it('measures latency only around the subject invocation', function (): void {
     $runner = new EvalRunner;
     $seen = [];
