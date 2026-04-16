@@ -80,6 +80,21 @@ return [
             'redacted_placeholder' => '[REDACTED]',
         ],
         'queue' => env('PROOFREAD_SHADOW_QUEUE', 'default'),
+
+        'alerts' => [
+            'enabled' => env('PROOFREAD_SHADOW_ALERTS_ENABLED', false),
+            'pass_rate_threshold' => (float) env('PROOFREAD_SHADOW_ALERT_THRESHOLD', 0.85),
+            'window' => env('PROOFREAD_SHADOW_ALERT_WINDOW', '1h'),
+            'min_sample_size' => (int) env('PROOFREAD_SHADOW_ALERT_MIN_SAMPLES', 10),
+            'dedup_window' => env('PROOFREAD_SHADOW_ALERT_DEDUP', '1h'),
+            'channels' => ['mail'],
+            'mail' => [
+                'to' => env('PROOFREAD_ALERT_MAIL_TO'),
+            ],
+            'slack' => [
+                'webhook_url' => env('PROOFREAD_ALERT_SLACK_WEBHOOK'),
+            ],
+        ],
     ],
 
     'dashboard' => [

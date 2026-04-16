@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Mosaiqo\Proofread\Models\ShadowCapture;
 use Mosaiqo\Proofread\Models\ShadowEval;
+use Mosaiqo\Proofread\Shadow\DurationParser;
 use Mosaiqo\Proofread\Shadow\ShadowEvaluationSummary;
 use Mosaiqo\Proofread\Shadow\ShadowEvaluator;
 
@@ -95,36 +96,15 @@ final class ShadowEvaluateCommand extends Command
 
     private function parseSince(string $since): Carbon
     {
-        $expanded = $this->expandDurationShorthand($since);
-        $timestamp = strtotime('-'.$expanded);
-
-        if ($timestamp === false) {
+        try {
+            $seconds = DurationParser::toSeconds($since);
+        } catch (InvalidArgumentException) {
             throw new InvalidArgumentException(
                 sprintf('Unable to parse --since value "%s". Examples: 1h, 24h, 7d.', $since)
             );
         }
 
-        return Carbon::createFromTimestamp($timestamp);
-    }
-
-    private function expandDurationShorthand(string $since): string
-    {
-        $units = [
-            's' => 'seconds',
-            'm' => 'minutes',
-            'h' => 'hours',
-            'd' => 'days',
-            'w' => 'weeks',
-        ];
-
-        if (preg_match('/^(\d+)\s*([smhdw])$/i', trim($since), $matches) !== 1) {
-            return $since;
-        }
-
-        $amount = $matches[1];
-        $unit = strtolower($matches[2]);
-
-        return $amount.' '.$units[$unit];
+        return Carbon::now()->subSeconds($seconds);
     }
 
     /**

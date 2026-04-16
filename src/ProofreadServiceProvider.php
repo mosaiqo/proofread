@@ -14,6 +14,7 @@ use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\MtRandRandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\PiiSanitizer;
+use Mosaiqo\Proofread\Shadow\ShadowAlertService;
 use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
@@ -95,6 +96,16 @@ class ProofreadServiceProvider extends PackageServiceProvider
         );
 
         $this->app->singleton(ShadowAssertionsRegistry::class);
+
+        $this->app->singleton(ShadowAlertService::class, function ($app): ShadowAlertService {
+            /** @var array<string, mixed> $alertsConfig */
+            $alertsConfig = $app['config']->get('proofread.shadow.alerts', []);
+
+            return ShadowAlertService::fromConfig(
+                $app->make('cache.store'),
+                $alertsConfig,
+            );
+        });
 
         $this->app->singleton(PiiSanitizer::class, function ($app): PiiSanitizer {
             /** @var array<string, mixed> $sanitizeConfig */
