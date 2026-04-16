@@ -337,6 +337,329 @@ table.table tbody tr:hover {
     cursor: not-allowed;
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.breadcrumb a {
+    color: var(--text-muted);
+}
+
+.breadcrumb a:hover {
+    color: var(--text);
+}
+
+.breadcrumb-sep {
+    color: var(--text-dim);
+}
+
+.breadcrumb-current {
+    color: var(--text);
+}
+
+.run-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.run-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.run-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.run-header-meta .sep {
+    color: var(--text-dim);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.summary-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.summary-tile-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.summary-tile-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+.summary-tile-value.pass {
+    color: var(--success);
+}
+
+.summary-tile-value.fail {
+    color: var(--danger);
+}
+
+.cases-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 8px 0;
+    margin-bottom: 8px;
+}
+
+.inline-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.inline-toggle input[type="checkbox"] {
+    accent-color: var(--accent);
+}
+
+.action-cell {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 40;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 480px;
+    max-width: 90vw;
+    background: var(--bg-elevated);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-elevated);
+    z-index: 1;
+}
+
+.drawer-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.drawer-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.drawer-close:hover {
+    color: var(--text);
+}
+
+.drawer-body {
+    padding: 16px 20px 32px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.drawer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.drawer-section-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.drawer-link {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    align-self: flex-start;
+    font-family: inherit;
+}
+
+.drawer-link:hover {
+    border-color: var(--accent);
+}
+
+.code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.assertion-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.assertion-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.assertion-row:last-child {
+    border-bottom: none;
+}
+
+.assertion-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.assertion-name {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.assertion-reason {
+    font-size: 12px;
+}
+
+.assertion-meta summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.error-box {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.error-class {
+    font-weight: 600;
+    color: var(--danger);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-size: 12px;
+}
+
+.error-message {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.meta-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0;
+}
+
+.meta-list > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.meta-list dt {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.meta-list dd {
+    margin: 0;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 768px) {
     .proofread-main {
         padding: 16px;
@@ -373,5 +696,14 @@ table.table tbody tr:hover {
     table.table tbody td {
         border: none;
         padding: 2px 0;
+    }
+
+    .drawer {
+        width: 100vw;
+        max-width: 100vw;
+    }
+
+    .meta-list {
+        grid-template-columns: 1fr;
     }
 }

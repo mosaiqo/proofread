@@ -89,9 +89,13 @@
                 </thead>
                 <tbody>
                     @foreach ($runs as $run)
-                        {{-- TODO(feature/run-detail): link each row to /evals/runs/{ulid}. --}}
-                        <tr wire:key="run-{{ $run->id }}">
-                            <td>{{ $run->dataset_name }}</td>
+                        <tr
+                            wire:key="run-{{ $run->id }}"
+                            onclick="window.location='{{ route('proofread.runs.show', $run) }}'"
+                        >
+                            <td>
+                                <a href="{{ route('proofread.runs.show', $run) }}">{{ $run->dataset_name }}</a>
+                            </td>
                             <td>
                                 @if ($run->passed)
                                     <span class="badge badge-pass">Passed</span>
