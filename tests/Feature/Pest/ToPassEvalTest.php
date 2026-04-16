@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Mosaiqo\Proofread\Assertions\ContainsAssertion;
 use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Support\Dataset;
+use Mosaiqo\Proofread\Tests\Fixtures\Agents\EchoAgent;
 use PHPUnit\Framework\ExpectationFailedException;
 
 beforeEach(function (): void {
@@ -160,12 +161,33 @@ it('supports negation', function (): void {
     ]);
 });
 
-it('fails the expectation with a clear message when the subject is not callable', function (): void {
+it('works with an Agent FQCN subject', function (): void {
+    EchoAgent::fake(['contains-foo', 'contains-foo']);
+    $dataset = Dataset::make('agent-fqcn-eval', [
+        ['input' => 'one'],
+        ['input' => 'two'],
+    ]);
+
+    expect(EchoAgent::class)->toPassEval($dataset, [
+        ContainsAssertion::make('foo'),
+    ]);
+});
+
+it('works with an Agent instance subject', function (): void {
+    EchoAgent::fake(['contains-foo']);
+    $dataset = Dataset::make('agent-instance-eval', [['input' => 'hi']]);
+
+    expect(new EchoAgent)->toPassEval($dataset, [
+        ContainsAssertion::make('foo'),
+    ]);
+});
+
+it('fails clearly when given a non-callable non-Agent subject', function (): void {
     $dataset = Dataset::make('d', [['input' => 'x']]);
 
     $caught = null;
     try {
-        expect('not-a-callable')->toPassEval($dataset, []);
+        expect(42)->toPassEval($dataset, []);
     } catch (ExpectationFailedException $exception) {
         $caught = $exception;
     }
@@ -174,5 +196,22 @@ it('fails the expectation with a clear message when the subject is not callable'
         throw new RuntimeException('Expected ExpectationFailedException was not thrown.');
     }
 
-    expect($caught->getMessage())->toContain('callable');
+    expect($caught->getMessage())->toContain('Agent');
+});
+
+it('fails the expectation with a clear message when the subject is an unsupported string', function (): void {
+    $dataset = Dataset::make('d', [['input' => 'x']]);
+
+    $caught = null;
+    try {
+        expect('not-a-class-nor-callable')->toPassEval($dataset, []);
+    } catch (ExpectationFailedException $exception) {
+        $caught = $exception;
+    }
+
+    if (! $caught instanceof ExpectationFailedException) {
+        throw new RuntimeException('Expected ExpectationFailedException was not thrown.');
+    }
+
+    expect($caught->getMessage())->toContain('not-a-class-nor-callable');
 });

@@ -9,6 +9,7 @@ use Mosaiqo\Proofread\Support\EvalResult;
 use Mosaiqo\Proofread\Support\EvalRun;
 use Pest\Expectation;
 use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\ExpectationFailedException;
 
 expect()->extend('toPassAssertion', function (Assertion $assertion) {
     /** @var Expectation<mixed> $this */
@@ -30,18 +31,16 @@ expect()->extend('toPassEval', function (Dataset $dataset, array $assertions = [
     /** @var Expectation<mixed> $this */
     $subject = $this->value;
 
-    $subjectIsCallable = is_callable($subject);
-    Assert::assertTrue(
-        $subjectIsCallable,
-        sprintf(
-            'toPassEval expects a callable subject, got %s. Non-callable subjects are not supported yet.',
-            get_debug_type($subject),
-        )
-    );
-
-    /** @var callable(mixed, array<string, mixed>): mixed $subject */
     $runner = new EvalRunner;
-    $run = $runner->run($subject, $dataset, $assertions);
+
+    try {
+        $run = $runner->run($subject, $dataset, $assertions);
+    } catch (InvalidArgumentException $exception) {
+        throw new ExpectationFailedException(sprintf(
+            'toPassEval could not resolve the subject: %s',
+            $exception->getMessage(),
+        ));
+    }
 
     Assert::assertTrue(
         $run->passed(),
