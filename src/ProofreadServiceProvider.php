@@ -9,11 +9,13 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
+use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
+use Mosaiqo\Proofread\Generator\DatasetGenerator;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
@@ -47,6 +49,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(CompareEvalsCommand::class)
             ->hasCommand(ShadowEvaluateCommand::class)
             ->hasCommand(ShadowAlertCommand::class)
+            ->hasCommand(GenerateDatasetCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
     }
@@ -94,6 +97,21 @@ class ProofreadServiceProvider extends PackageServiceProvider
                 defaultModel: is_string($defaultModel) ? $defaultModel : 'claude-haiku-4-5',
                 maxRetries: is_int($maxRetries) ? $maxRetries : 1,
                 pricing: $app->make(PricingTable::class),
+            );
+        });
+
+        $this->app->singleton(DatasetGenerator::class, function ($app): DatasetGenerator {
+            /** @var array<string, mixed> $generatorConfig */
+            $generatorConfig = $app['config']->get('proofread.generator', []);
+
+            $defaultModel = $generatorConfig['default_model'] ?? 'claude-sonnet-4-6';
+            $maxRetries = $generatorConfig['max_retries'] ?? 1;
+
+            return new DatasetGenerator(
+                defaultModel: is_string($defaultModel) && $defaultModel !== ''
+                    ? $defaultModel
+                    : 'claude-sonnet-4-6',
+                maxRetries: is_int($maxRetries) ? $maxRetries : 1,
             );
         });
 

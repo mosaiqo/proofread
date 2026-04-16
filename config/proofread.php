@@ -16,6 +16,11 @@ return [
         'max_retries' => (int) env('PROOFREAD_JUDGE_MAX_RETRIES', 1),
     ],
 
+    'generator' => [
+        'default_model' => env('PROOFREAD_GENERATOR_MODEL', 'claude-sonnet-4-6'),
+        'max_retries' => (int) env('PROOFREAD_GENERATOR_RETRIES', 1),
+    ],
+
     'similarity' => [
         'default_model' => env('PROOFREAD_EMBEDDING_MODEL', 'text-embedding-3-small'),
     ],
