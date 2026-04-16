@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-17
+
+### Added
+
+- `CountAssertion` for validating array or Countable sizes, with `equals()`,
+  `atLeast()`, `atMost()`, and `between()` named constructors.
+
+### Fixed
+
+- `JsonSchemaAssertion` now preserves PHP lists during normalization,
+  allowing schemas with `type: array` (including nested empty arrays) to
+  validate correctly. Previously, all arrays — including empty lists —
+  were coerced to `stdClass`, causing false failures against list-typed
+  schemas.
+- `ProofreadServiceProvider` now discovers migrations automatically
+  instead of registering each by name. Shadow migrations
+  (`create_shadow_captures_table`, `create_shadow_evals_table`) were
+  silently missed by the previous name-based registration, leaving
+  shadow-eval tables uncreated in fresh installs.
+
+### Changed
+
+- `Rubric` class-level docblock documents the `JudgeAgent::fake(...)`
+  pattern for testing assertions that invoke an LLM judge.
+- `EvalSuite::subject()` docblock explains the supported subject shapes
+  (callable, Agent class-string FQCN, Agent instance) and the callable
+  signature `fn (mixed $input, array $case): mixed`, with a multi-input
+  unwrap example.
+
 ## [0.1.0] - 2026-04-16
 
 Initial public release. Proofread is the first eval package native to the
@@ -133,5 +162,6 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/mosaiqo/proofread/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mosaiqo/proofread/releases/tag/v0.1.0

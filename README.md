@@ -177,6 +177,7 @@ into assertion metadata.
 | `ContainsAssertion` | deterministic | `ContainsAssertion::make('positive')` |
 | `RegexAssertion` | deterministic | `RegexAssertion::make('/^\d+$/')` |
 | `LengthAssertion` | deterministic | `LengthAssertion::between(5, 200)` |
+| `CountAssertion`     | deterministic | `CountAssertion::between(1, 10)`                       |
 | `JsonSchemaAssertion` | deterministic | `JsonSchemaAssertion::fromAgent(MyAgent::class)` |
 | `TokenBudget` | operational | `TokenBudget::maxTotal(1000)` |
 | `CostLimit` | operational | `CostLimit::under(0.01)` |
