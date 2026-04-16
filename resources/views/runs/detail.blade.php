@@ -13,6 +13,26 @@
             @else
                 <span class="badge badge-fail">Failed</span>
             @endif
+
+            @if (! empty($compareOptions))
+                <div class="run-header-compare" x-data="{ open: false }">
+                    <button type="button" class="drawer-link" x-on:click="open = !open" aria-haspopup="true">
+                        Compare with&hellip;
+                    </button>
+                    <div class="compare-dropdown" x-show="open" x-on:click.away="open = false" x-cloak>
+                        <div class="compare-dropdown-title muted">Runs of {{ $run->dataset_name }}</div>
+                        <ul>
+                            @foreach ($compareOptions as $option)
+                                <li>
+                                    <a href="{{ route('proofread.compare', ['base' => $run->id, 'head' => $option['id']]) }}">
+                                        {{ $option['label'] }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
         </div>
         <div class="run-header-meta muted">
             <span>{{ number_format($run->duration_ms, 1) }} ms</span>

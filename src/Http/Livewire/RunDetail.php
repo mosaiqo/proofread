@@ -46,7 +46,34 @@ class RunDetail extends Component
             'cases' => $this->filteredCases(),
             'selectedCase' => $this->selectedCase(),
             'summary' => $this->buildSummary(),
+            'compareOptions' => $this->compareOptions(),
         ]);
+    }
+
+    /**
+     * @return list<array{id: string, label: string}>
+     */
+    private function compareOptions(): array
+    {
+        /** @var Collection<int, EvalRun> $others */
+        $others = EvalRun::query()
+            ->where('dataset_name', $this->run->dataset_name)
+            ->where('id', '!=', $this->run->id)
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        $out = [];
+        foreach ($others as $other) {
+            $createdAt = $other->created_at?->format('Y-m-d H:i') ?? 'unknown';
+            $short = substr($other->id, -8);
+            $out[] = [
+                'id' => $other->id,
+                'label' => sprintf('%s (%s, %s)', $short, $createdAt, $other->passed ? 'passed' : 'failed'),
+            ];
+        }
+
+        return $out;
     }
 
     /**

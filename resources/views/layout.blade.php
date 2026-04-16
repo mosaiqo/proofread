@@ -15,6 +15,7 @@
             <div class="proofread-nav-links">
                 <a href="{{ route('proofread.runs.index') }}" class="{{ request()->routeIs('proofread.runs.*') ? 'active' : '' }}">Runs</a>
                 <a href="{{ route('proofread.datasets.index') }}" class="{{ request()->routeIs('proofread.datasets.*') ? 'active' : '' }}">Datasets</a>
+                <a href="{{ route('proofread.compare') }}" class="{{ request()->routeIs('proofread.compare') ? 'active' : '' }}">Compare</a>
             </div>
         </div>
     </nav>
