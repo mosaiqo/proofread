@@ -10,6 +10,10 @@ return [
         'max_retries' => (int) env('PROOFREAD_JUDGE_MAX_RETRIES', 1),
     ],
 
+    'similarity' => [
+        'default_model' => env('PROOFREAD_EMBEDDING_MODEL', 'text-embedding-3-small'),
+    ],
+
     'dashboard' => [
         'path' => env('PROOFREAD_DASHBOARD_PATH', 'evals'),
         'middleware' => ['web'],

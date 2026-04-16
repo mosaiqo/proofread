@@ -6,6 +6,7 @@ namespace Mosaiqo\Proofread;
 
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Similarity\Similarity;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -31,6 +32,19 @@ class ProofreadServiceProvider extends PackageServiceProvider
             return new Judge(
                 defaultModel: is_string($defaultModel) ? $defaultModel : 'claude-haiku-4-5',
                 maxRetries: is_int($maxRetries) ? $maxRetries : 1,
+            );
+        });
+
+        $this->app->singleton(Similarity::class, function ($app): Similarity {
+            /** @var array<string, mixed> $similarityConfig */
+            $similarityConfig = $app['config']->get('proofread.similarity', []);
+
+            $defaultModel = $similarityConfig['default_model'] ?? 'text-embedding-3-small';
+
+            return new Similarity(
+                defaultModel: is_string($defaultModel) && $defaultModel !== ''
+                    ? $defaultModel
+                    : 'text-embedding-3-small',
             );
         });
     }
