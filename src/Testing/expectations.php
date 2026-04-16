@@ -56,6 +56,40 @@ expect()->extend('toPassRubric', function (string $criteria, array $options = []
     return $this;
 });
 
+expect()->extend('toCostUnder', function (float $maxUsd) {
+    /** @var Expectation<mixed> $this */
+    $subject = $this->value;
+
+    Assert::assertTrue(
+        $subject instanceof EvalRun,
+        sprintf(
+            'toCostUnder expects an %s subject, got %s',
+            EvalRun::class,
+            get_debug_type($subject),
+        ),
+    );
+
+    /** @var EvalRun $subject */
+    [$total, $hasAnyCost] = proofread_collect_run_cost($subject);
+
+    Assert::assertTrue(
+        $hasAnyCost,
+        'No cost tracking in this run — subject(s) may not report cost',
+    );
+
+    Assert::assertLessThanOrEqual(
+        $maxUsd,
+        $total,
+        sprintf(
+            'Total cost %s exceeds limit of %s',
+            proofread_format_usd($total),
+            proofread_format_usd($maxUsd),
+        ),
+    );
+
+    return $this;
+});
+
 expect()->extend('toMatchSchema', function (array|string $schema) {
     /** @var Expectation<mixed> $this */
     $assertion = proofread_build_schema_assertion($schema);
@@ -180,6 +214,43 @@ function proofread_format_rubric_failure(string $criteria, JudgeResult $result):
     }
 
     return implode("\n", $lines);
+}
+
+/**
+ * @return array{0: float, 1: bool}
+ */
+function proofread_collect_run_cost(EvalRun $run): array
+{
+    $total = 0.0;
+    $hasAnyCost = false;
+
+    foreach ($run->results as $result) {
+        foreach ($result->assertionResults as $assertion) {
+            if (! array_key_exists('cost_usd', $assertion->metadata)) {
+                continue;
+            }
+
+            $value = $assertion->metadata['cost_usd'];
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (! is_int($value) && ! is_float($value)) {
+                continue;
+            }
+
+            $hasAnyCost = true;
+            $total += (float) $value;
+        }
+    }
+
+    return [$total, $hasAnyCost];
+}
+
+function proofread_format_usd(float $value): string
+{
+    return '$'.number_format($value, 4, '.', '');
 }
 
 /**
