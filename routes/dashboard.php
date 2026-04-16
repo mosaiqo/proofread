@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Mosaiqo\Proofread\Http\Livewire\CompareRuns;
 use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
+use Mosaiqo\Proofread\Http\Livewire\Overview;
 use Mosaiqo\Proofread\Http\Livewire\RunDetail;
 use Mosaiqo\Proofread\Http\Livewire\RunsList;
 use Mosaiqo\Proofread\Http\Middleware\DashboardEnabled;
@@ -19,7 +20,8 @@ Route::middleware(array_merge([DashboardEnabled::class], $middleware))
     ->prefix($path)
     ->name('proofread.')
     ->group(function () use ($path): void {
-        Route::redirect('/', '/'.$path.'/runs');
+        Route::redirect('/', '/'.$path.'/overview');
+        Route::get('/overview', Overview::class)->name('overview');
         Route::get('/runs', RunsList::class)->name('runs.index');
         Route::get('/runs/{run}', RunDetail::class)->name('runs.show');
         Route::get('/compare', CompareRuns::class)->name('compare');

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Gate;
 
-it('redirects /evals to /evals/runs', function (): void {
+it('redirects /evals to /evals/overview', function (): void {
     $response = $this->get('/evals');
 
-    $response->assertRedirect('/evals/runs');
+    $response->assertRedirect('/evals/overview');
 });
 
 it('returns 200 on /evals/runs when gate passes', function (): void {

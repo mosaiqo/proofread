@@ -987,6 +987,113 @@ table.table tbody tr:hover {
     max-height: 260px;
 }
 
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 10px 0;
+}
+
+.chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.overview-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.overview-panel .table-wrapper {
+    margin-top: 4px;
+}
+
+.overview-empty {
+    padding: 18px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.failing-list,
+.regressions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.failing-row,
+.regressions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.failing-row:last-child,
+.regressions-row:last-child {
+    border-bottom: none;
+}
+
+.failing-row-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fail-rate {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--danger);
+}
+
+.trend-chart {
+    display: block;
+    width: 100%;
+}
+
+.trend-gridline {
+    stroke: var(--border);
+    stroke-width: 0.5;
+}
+
+.trend-axis-label {
+    fill: var(--text-muted);
+    font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+.trend-line {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.trend-point {
+    fill: var(--accent);
+}
+
 @media (max-width: 768px) {
     .proofread-main {
         padding: 16px;
@@ -998,6 +1105,10 @@ table.table tbody tr:hover {
     }
 
     .stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-grid {
         grid-template-columns: 1fr;
     }
 
