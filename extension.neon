@@ -1,0 +1,5 @@
+services:
+    -
+        class: Mosaiqo\Proofread\PHPStan\ProofreadExpectationsExtension
+        tags:
+            - phpstan.broker.methodsClassReflectionExtension
