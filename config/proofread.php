@@ -62,6 +62,26 @@ return [
         'update' => env('PROOFREAD_UPDATE_SNAPSHOTS', false),
     ],
 
+    'shadow' => [
+        'enabled' => env('PROOFREAD_SHADOW_ENABLED', false),
+        'sample_rate' => (float) env('PROOFREAD_SHADOW_SAMPLE_RATE', 0.1),
+        'agents' => [
+            // Per-agent overrides, e.g.:
+            // BackendDevAgent::class => ['sample_rate' => 0.05],
+        ],
+        'sanitize' => [
+            'pii_keys' => ['email', 'phone', 'ssn', 'credit_card', 'password', 'api_key', 'token'],
+            'redact_patterns' => [
+                '/\b(?:\d[ -]*?){13,19}\b/' => '[CARD]',
+                '/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/' => '[EMAIL]',
+            ],
+            'max_input_length' => 2000,
+            'max_output_length' => 5000,
+            'redacted_placeholder' => '[REDACTED]',
+        ],
+        'queue' => env('PROOFREAD_SHADOW_QUEUE', 'default'),
+    ],
+
     'dashboard' => [
         'enabled' => env('PROOFREAD_DASHBOARD_ENABLED', true),
         'path' => env('PROOFREAD_DASHBOARD_PATH', 'evals'),

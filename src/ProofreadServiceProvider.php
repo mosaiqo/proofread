@@ -10,6 +10,7 @@ use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Pricing\PricingTable;
+use Mosaiqo\Proofread\Shadow\PiiSanitizer;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Spatie\LaravelPackageTools\Package;
@@ -80,6 +81,13 @@ class ProofreadServiceProvider extends PackageServiceProvider
                     ? $defaultModel
                     : 'text-embedding-3-small',
             );
+        });
+
+        $this->app->singleton(PiiSanitizer::class, function ($app): PiiSanitizer {
+            /** @var array<string, mixed> $sanitizeConfig */
+            $sanitizeConfig = $app['config']->get('proofread.shadow.sanitize', []);
+
+            return PiiSanitizer::fromConfig($sanitizeConfig);
         });
 
         $this->app->singleton(SnapshotStore::class, function ($app): SnapshotStore {
