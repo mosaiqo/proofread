@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread;
 
+use Closure;
+use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Support\EvalRun;
 use RuntimeException;
 
@@ -25,6 +27,11 @@ class Proofread
         require_once __DIR__.'/Testing/expectations.php';
 
         self::$pestExpectationsRegistered = true;
+    }
+
+    public static function registerShadowAssertions(string $agentClass, Closure $resolver): void
+    {
+        app(ShadowAssertionsRegistry::class)->register($agentClass, $resolver);
     }
 
     public static function writeJUnit(EvalRun $run, string $path): void

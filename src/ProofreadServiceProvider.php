@@ -11,6 +11,7 @@ use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Shadow\PiiSanitizer;
+use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Spatie\LaravelPackageTools\Package;
@@ -83,6 +84,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
                     : 'text-embedding-3-small',
             );
         });
+
+        $this->app->singleton(ShadowAssertionsRegistry::class);
 
         $this->app->singleton(PiiSanitizer::class, function ($app): PiiSanitizer {
             /** @var array<string, mixed> $sanitizeConfig */
