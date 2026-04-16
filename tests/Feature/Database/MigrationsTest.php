@@ -180,6 +180,60 @@ it('creates the expected indexes on eval_runs and eval_results', function (): vo
     expect($hasRunCaseIndex)->toBeTrue('missing run_id+case_index index on eval_results');
 });
 
+it('creates the shadow_captures table with expected columns', function (): void {
+    expect(Schema::hasTable('shadow_captures'))->toBeTrue();
+
+    $expected = [
+        'id', 'agent_class', 'prompt_hash', 'input_payload', 'output',
+        'tokens_in', 'tokens_out', 'cost_usd', 'latency_ms', 'model_used',
+        'captured_at', 'sample_rate', 'is_anonymized',
+        'created_at', 'updated_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('shadow_captures', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates the expected indexes on shadow_captures', function (): void {
+    $indexes = collect(DB::select("PRAGMA index_list('shadow_captures')"))
+        ->pluck('name')
+        ->all();
+
+    $hasAgentClassIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'agent_class') && ! str_contains($name, 'captured_at')
+    );
+    $hasCapturedAtIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'captured_at') && ! str_contains($name, 'agent_class')
+    );
+    $hasAgentCapturedIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'agent_class') && str_contains($name, 'captured_at')
+    );
+    $hasPromptHashIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'prompt_hash')
+    );
+
+    expect($hasAgentClassIndex)->toBeTrue('missing agent_class index on shadow_captures')
+        ->and($hasCapturedAtIndex)->toBeTrue('missing captured_at index on shadow_captures')
+        ->and($hasAgentCapturedIndex)->toBeTrue('missing agent_class+captured_at index on shadow_captures')
+        ->and($hasPromptHashIndex)->toBeTrue('missing prompt_hash index on shadow_captures');
+});
+
+it('rolls back shadow_captures cleanly', function (): void {
+    expect(Schema::hasTable('shadow_captures'))->toBeTrue();
+
+    $base = __DIR__.'/../../../database/migrations';
+    $migration = require $base.'/2026_04_17_000001_create_shadow_captures_table.php';
+
+    $migration->down();
+
+    expect(Schema::hasTable('shadow_captures'))->toBeFalse();
+
+    $migration->up();
+
+    expect(Schema::hasTable('shadow_captures'))->toBeTrue();
+});
+
 it('provides down() migrations that drop all three tables', function (): void {
     expect(Schema::hasTable('eval_datasets'))->toBeTrue()
         ->and(Schema::hasTable('eval_runs'))->toBeTrue()
