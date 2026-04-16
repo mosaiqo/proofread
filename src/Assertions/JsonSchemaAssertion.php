@@ -27,7 +27,7 @@ final readonly class JsonSchemaAssertion implements Assertion
      */
     public static function fromArray(array $schema): self
     {
-        $object = self::toObject($schema);
+        $object = self::normalize($schema);
 
         if (! is_object($object)) {
             throw new InvalidArgumentException('JSON schema must be an object, not a list');
@@ -141,11 +141,11 @@ final readonly class JsonSchemaAssertion implements Assertion
                 );
             }
 
-            return is_array($decoded) ? $decoded : self::ensureObject($decoded);
+            return $decoded;
         }
 
         if (is_array($output)) {
-            return self::toObject($output);
+            return self::normalize($output);
         }
 
         if (is_object($output)) {
@@ -157,48 +157,22 @@ final readonly class JsonSchemaAssertion implements Assertion
         );
     }
 
-    /**
-     * @return object|array<int, mixed>
-     */
-    private static function ensureObject(mixed $value): object|array
+    private static function normalize(mixed $value): mixed
     {
-        if (is_object($value)) {
+        if (! is_array($value)) {
             return $value;
         }
 
-        if (is_array($value)) {
-            /** @var array<int, mixed> $value */
-            return $value;
-        }
-
-        $wrapper = new stdClass;
-        $wrapper->value = $value;
-
-        return $wrapper;
-    }
-
-    /**
-     * @param  array<array-key, mixed>  $value
-     * @return object|array<int, mixed>
-     */
-    private static function toObject(array $value): object|array
-    {
-        if ($value === []) {
-            return new stdClass;
-        }
-
-        $isList = array_is_list($value);
-
-        if ($isList) {
+        if (array_is_list($value)) {
             return array_map(
-                static fn (mixed $item): mixed => is_array($item) ? self::toObject($item) : $item,
+                static fn (mixed $item): mixed => self::normalize($item),
                 $value,
             );
         }
 
         $object = new stdClass;
-        foreach ($value as $key => $item) {
-            $object->{(string) $key} = is_array($item) ? self::toObject($item) : $item;
+        foreach ($value as $key => $inner) {
+            $object->{(string) $key} = self::normalize($inner);
         }
 
         return $object;

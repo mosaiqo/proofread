@@ -112,3 +112,88 @@ it('exposes its name as "json_schema"', function () use ($schema): void {
 it('implements the Assertion contract', function () use ($schema): void {
     expect(JsonSchemaAssertion::fromArray($schema))->toBeInstanceOf(Assertion::class);
 });
+
+it('validates a top-level array output against type: array schema', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'array',
+        'items' => ['type' => 'integer'],
+    ]);
+
+    $result = $assertion->run([1, 2, 3]);
+
+    expect($result->passed)->toBeTrue();
+    expect($result->reason)->toBe('Output conforms to schema');
+});
+
+it('validates an empty array output against type: array schema', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'array',
+    ]);
+
+    $result = $assertion->run([]);
+
+    expect($result->passed)->toBeTrue();
+});
+
+it('validates a list of objects output', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'array',
+        'items' => [
+            'type' => 'object',
+            'properties' => [
+                'task' => ['type' => 'string'],
+            ],
+        ],
+    ]);
+
+    $result = $assertion->run([
+        ['task' => 'a'],
+        ['task' => 'b'],
+    ]);
+
+    expect($result->passed)->toBeTrue();
+});
+
+it('validates nested empty arrays inside objects', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'array',
+        'items' => [
+            'type' => 'object',
+            'required' => ['task', 'warnings'],
+            'properties' => [
+                'task' => ['type' => 'string'],
+                'warnings' => ['type' => 'array'],
+            ],
+        ],
+    ]);
+
+    $result = $assertion->run([
+        ['task' => 'a', 'warnings' => []],
+    ]);
+
+    expect($result->passed)->toBeTrue();
+});
+
+it('still validates objects as objects', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'object',
+        'properties' => [
+            'name' => ['type' => 'string'],
+        ],
+    ]);
+
+    $result = $assertion->run(['name' => 'x']);
+
+    expect($result->passed)->toBeTrue();
+});
+
+it('rejects assoc array output when schema expects list', function (): void {
+    $assertion = JsonSchemaAssertion::fromArray([
+        'type' => 'array',
+    ]);
+
+    $result = $assertion->run(['a' => 1]);
+
+    expect($result->passed)->toBeFalse();
+    expect($result->reason)->toContain('array');
+});
