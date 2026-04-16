@@ -6,6 +6,7 @@ namespace Mosaiqo\Proofread\Mcp;
 
 use Illuminate\Contracts\Container\Container;
 use Laravel\Mcp\Server\Tool;
+use Mosaiqo\Proofread\Mcp\Tools\GetEvalRunDiffTool;
 use Mosaiqo\Proofread\Mcp\Tools\ListEvalSuitesTool;
 use Mosaiqo\Proofread\Mcp\Tools\RunEvalSuiteTool;
 
@@ -30,6 +31,7 @@ final class McpIntegration
         return [
             ListEvalSuitesTool::class,
             RunEvalSuiteTool::class,
+            GetEvalRunDiffTool::class,
         ];
     }
 
