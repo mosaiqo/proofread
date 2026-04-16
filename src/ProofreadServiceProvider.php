@@ -8,6 +8,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Livewire;
 use Mosaiqo\Proofread\Clustering\FailureClusterer;
 use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
@@ -18,6 +19,13 @@ use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
 use Mosaiqo\Proofread\Generator\DatasetGenerator;
+use Mosaiqo\Proofread\Http\Livewire\CompareRuns;
+use Mosaiqo\Proofread\Http\Livewire\CostsBreakdown;
+use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
+use Mosaiqo\Proofread\Http\Livewire\Overview;
+use Mosaiqo\Proofread\Http\Livewire\RunDetail;
+use Mosaiqo\Proofread\Http\Livewire\RunsList;
+use Mosaiqo\Proofread\Http\Livewire\ShadowPanel;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
@@ -74,6 +82,23 @@ class ProofreadServiceProvider extends PackageServiceProvider
         if ((bool) config('proofread.webhooks.enabled', false)) {
             Event::listen(EvalRunRegressed::class, NotifyWebhookOnRegression::class);
         }
+
+        $this->registerLivewireComponents();
+    }
+
+    private function registerLivewireComponents(): void
+    {
+        if (! class_exists(Livewire::class)) {
+            return;
+        }
+
+        Livewire::component('proofread::overview', Overview::class);
+        Livewire::component('proofread::runs-list', RunsList::class);
+        Livewire::component('proofread::run-detail', RunDetail::class);
+        Livewire::component('proofread::datasets-list', DatasetsList::class);
+        Livewire::component('proofread::compare-runs', CompareRuns::class);
+        Livewire::component('proofread::costs-breakdown', CostsBreakdown::class);
+        Livewire::component('proofread::shadow-panel', ShadowPanel::class);
     }
 
     public function registeringPackage(): void
