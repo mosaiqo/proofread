@@ -11,6 +11,7 @@ use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Mcp\McpIntegration;
 use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
 use Mosaiqo\Proofread\Shadow\MtRandRandomNumberProvider;
@@ -54,6 +55,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
 
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('proofread.gate', ProofreadGate::class);
+
+        McpIntegration::registerTools($this->app);
     }
 
     public function registeringPackage(): void

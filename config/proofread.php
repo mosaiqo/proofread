@@ -97,6 +97,22 @@ return [
         ],
     ],
 
+    'mcp' => [
+        /*
+        |--------------------------------------------------------------------------
+        | EvalSuite classes exposed via MCP tools.
+        |--------------------------------------------------------------------------
+        |
+        | Fully qualified class names of EvalSuite subclasses that should be
+        | discoverable through the `list_eval_suites` MCP tool. Only suites
+        | listed here are surfaced to MCP clients.
+        |
+        */
+        'suites' => [
+            // \App\Evals\SentimentSuite::class,
+        ],
+    ],
+
     'dashboard' => [
         'enabled' => env('PROOFREAD_DASHBOARD_ENABLED', true),
         'path' => env('PROOFREAD_DASHBOARD_PATH', 'evals'),
