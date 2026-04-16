@@ -168,4 +168,25 @@ return [
             // Placeholder for v1.5 custom branding.
         ],
     ],
+
+    'webhooks' => [
+        'enabled' => env('PROOFREAD_WEBHOOKS_ENABLED', false),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Regression webhook endpoints.
+        |--------------------------------------------------------------------------
+        |
+        | Each entry is keyed by an arbitrary name and shaped
+        | ['url' => string, 'format' => 'slack'|'discord'|'generic'].
+        |
+        | Example:
+        | 'slack' => ['url' => env('PROOFREAD_SLACK_WEBHOOK'), 'format' => 'slack'],
+        | 'discord' => ['url' => env('PROOFREAD_DISCORD_WEBHOOK'), 'format' => 'discord'],
+        | 'generic' => ['url' => env('PROOFREAD_WEBHOOK_URL'), 'format' => 'generic'],
+        */
+        'regressions' => [
+            //
+        ],
+    ],
 ];

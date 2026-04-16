@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread;
 
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
+use Mosaiqo\Proofread\Events\EvalRunPersisted;
+use Mosaiqo\Proofread\Events\EvalRunRegressed;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
+use Mosaiqo\Proofread\Listeners\NotifyWebhookOnRegression;
 use Mosaiqo\Proofread\Mcp\McpIntegration;
 use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
@@ -21,6 +27,7 @@ use Mosaiqo\Proofread\Shadow\ShadowAlertService;
 use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
+use Mosaiqo\Proofread\Webhooks\RegressionWebhookNotifier;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -59,6 +66,12 @@ class ProofreadServiceProvider extends PackageServiceProvider
         $router->aliasMiddleware('proofread.gate', ProofreadGate::class);
 
         McpIntegration::registerTools($this->app);
+
+        Event::listen(EvalRunPersisted::class, CheckForRegressionListener::class);
+
+        if ((bool) config('proofread.webhooks.enabled', false)) {
+            Event::listen(EvalRunRegressed::class, NotifyWebhookOnRegression::class);
+        }
     }
 
     public function registeringPackage(): void
@@ -119,6 +132,16 @@ class ProofreadServiceProvider extends PackageServiceProvider
             $sanitizeConfig = $app['config']->get('proofread.shadow.sanitize', []);
 
             return PiiSanitizer::fromConfig($sanitizeConfig);
+        });
+
+        $this->app->singleton(RegressionWebhookNotifier::class, function ($app): RegressionWebhookNotifier {
+            /** @var array<string, array{url: string, format: string}> $webhooks */
+            $webhooks = $app['config']->get('proofread.webhooks.regressions', []);
+
+            return new RegressionWebhookNotifier(
+                $app->make(HttpFactory::class),
+                $webhooks,
+            );
         });
 
         $this->app->singleton(SnapshotStore::class, function ($app): SnapshotStore {

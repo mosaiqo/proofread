@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mosaiqo\Proofread\Runner;
 
 use Illuminate\Support\Facades\DB;
+use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalResult as EvalResultModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
@@ -28,7 +29,7 @@ class EvalPersister
         ?string $subjectType = null,
         ?string $subjectClass = null,
     ): EvalRunModel {
-        return DB::transaction(function () use ($run, $suiteClass, $commitSha, $subjectType, $subjectClass): EvalRunModel {
+        $runModel = DB::transaction(function () use ($run, $suiteClass, $commitSha, $subjectType, $subjectClass): EvalRunModel {
             $dataset = $this->upsertDataset($run);
             $runModel = $this->insertRun($run, $dataset, $suiteClass, $commitSha, $subjectType, $subjectClass);
 
@@ -41,6 +42,10 @@ class EvalPersister
 
             return $runModel;
         });
+
+        event(new EvalRunPersisted($runModel));
+
+        return $runModel;
     }
 
     private function upsertDataset(EvalRun $run): EvalDatasetModel
