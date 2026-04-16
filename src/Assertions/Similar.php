@@ -82,7 +82,7 @@ final readonly class Similar implements Assertion
                     $this->formatScore($score),
                     $this->formatScore($this->minScore),
                 ),
-                $this->clampToUnitInterval($score),
+                $score,
                 $metadata,
             );
         }
@@ -93,7 +93,7 @@ final readonly class Similar implements Assertion
                 $this->formatScore($score),
                 $this->formatScore($this->minScore),
             ),
-            $this->clampToUnitInterval($score),
+            $score,
             $metadata,
         );
     }
@@ -111,23 +111,5 @@ final readonly class Similar implements Assertion
         }
 
         return rtrim(rtrim(number_format($rounded, 2, '.', ''), '0'), '.');
-    }
-
-    /**
-     * AssertionResult requires scores in [0.0, 1.0]. Cosine can be negative for
-     * opposed vectors; clamp to the contract so the result is constructible.
-     * The unclamped cosine is still faithfully reported in the reason string.
-     */
-    private function clampToUnitInterval(float $score): float
-    {
-        if ($score < 0.0) {
-            return 0.0;
-        }
-
-        if ($score > 1.0) {
-            return 1.0;
-        }
-
-        return $score;
     }
 }

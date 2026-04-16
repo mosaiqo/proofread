@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Support;
 
-use InvalidArgumentException;
-
 class AssertionResult
 {
     /**
      * @param  array<string, mixed>  $metadata
+     * @param  ?float  $score  Arbitrary numeric score. The consumer interprets
+     *                         the meaning based on the assertion. Common
+     *                         conventions:
+     *                         - [0, 1] for probabilities, pass rates, confidence.
+     *                         - [-1, 1] for cosine similarity.
+     *                         - Other ranges are allowed per assertion (magnitudes,
+     *                         z-scores, etc.). `null` means "no score produced".
      */
     protected function __construct(
         public readonly bool $passed,
         public readonly string $reason,
         public readonly ?float $score = null,
         public readonly array $metadata = [],
-    ) {
-        if ($score !== null && ($score < 0.0 || $score > 1.0)) {
-            throw new InvalidArgumentException(
-                "Score must be between 0.0 and 1.0, got {$score}."
-            );
-        }
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $metadata

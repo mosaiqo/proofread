@@ -36,19 +36,20 @@ it('creates a failed result with a score', function (): void {
     expect($result->score)->toBe(0.25);
 });
 
-it('rejects scores below 0', function (): void {
-    AssertionResult::pass('bad', -0.01);
-})->throws(InvalidArgumentException::class, 'Score must be between 0.0 and 1.0');
-
-it('rejects scores above 1', function (): void {
-    AssertionResult::fail('bad', 1.01);
-})->throws(InvalidArgumentException::class, 'Score must be between 0.0 and 1.0');
-
-it('accepts score 0 and score 1 as boundaries', function (): void {
+it('accepts any float as score', function (): void {
+    expect(AssertionResult::pass('neg', -5.0)->score)->toBe(-5.0);
+    expect(AssertionResult::pass('neg-one', -1.0)->score)->toBe(-1.0);
     expect(AssertionResult::pass('zero', 0.0)->score)->toBe(0.0);
+    expect(AssertionResult::pass('half', 0.5)->score)->toBe(0.5);
     expect(AssertionResult::pass('one', 1.0)->score)->toBe(1.0);
-    expect(AssertionResult::fail('zero', 0.0)->score)->toBe(0.0);
-    expect(AssertionResult::fail('one', 1.0)->score)->toBe(1.0);
+    expect(AssertionResult::fail('big', 100.5)->score)->toBe(100.5);
+    expect(AssertionResult::fail('neg', -0.01)->score)->toBe(-0.01);
+    expect(AssertionResult::fail('over', 1.01)->score)->toBe(1.01);
+});
+
+it('accepts null score', function (): void {
+    expect(AssertionResult::pass('no-score')->score)->toBeNull();
+    expect(AssertionResult::fail('no-score')->score)->toBeNull();
 });
 
 it('is immutable', function (): void {

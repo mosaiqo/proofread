@@ -177,6 +177,16 @@ it('sets the cosine as the AssertionResult score', function (): void {
     expect($result->score)->toEqualWithDelta(0.92, 0.0001);
 });
 
+it('returns the raw cosine as score including negative values', function (): void {
+    Embeddings::fake([
+        [[1.0, 0.0], [-1.0, 0.0]],
+    ]);
+
+    $result = Similar::to('reference')->minScore(-1.0)->run('candidate');
+
+    expect($result->score)->toBe(-1.0);
+});
+
 it('resolves Similarity from the container when config changes', function (): void {
     config()->set('proofread.similarity.default_model', 'override-from-config');
     app()->forgetInstance(Similarity::class);
