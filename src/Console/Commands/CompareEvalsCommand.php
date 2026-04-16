@@ -82,7 +82,7 @@ final class CompareEvalsCommand extends Command
 
         if ($format === 'json') {
             $this->line((string) json_encode(
-                $this->buildJsonPayload($delta),
+                $delta->toArray(),
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
             ));
 
@@ -336,49 +336,5 @@ final class CompareEvalsCommand extends Command
         }
 
         return 50;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function buildJsonPayload(EvalRunDelta $delta): array
-    {
-        return [
-            'base_run_id' => $delta->baseRunId,
-            'head_run_id' => $delta->headRunId,
-            'dataset_name' => $delta->datasetName,
-            'total_cases' => $delta->totalCases,
-            'regressions' => $delta->regressions,
-            'improvements' => $delta->improvements,
-            'stable_passes' => $delta->stablePasses,
-            'stable_failures' => $delta->stableFailures,
-            'cost_delta_usd' => $delta->costDeltaUsd,
-            'duration_delta_ms' => $delta->durationDeltaMs,
-            'has_regressions' => $delta->hasRegressions(),
-            'cases' => array_map(
-                fn (CaseDelta $case): array => $this->serializeCase($case),
-                $delta->cases,
-            ),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeCase(CaseDelta $case): array
-    {
-        return [
-            'case_index' => $case->caseIndex,
-            'case_name' => $case->caseName,
-            'status' => $case->status,
-            'base_passed' => $case->basePassed,
-            'head_passed' => $case->headPassed,
-            'base_cost_usd' => $case->baseCostUsd,
-            'head_cost_usd' => $case->headCostUsd,
-            'base_duration_ms' => $case->baseDurationMs,
-            'head_duration_ms' => $case->headDurationMs,
-            'new_failures' => $case->newFailures,
-            'fixed_failures' => $case->fixedFailures,
-        ];
     }
 }

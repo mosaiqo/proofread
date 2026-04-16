@@ -6,8 +6,6 @@ namespace Mosaiqo\Proofread\Webhooks;
 
 use Illuminate\Http\Client\Factory as HttpFactory;
 use InvalidArgumentException;
-use Mosaiqo\Proofread\Diff\CaseDelta;
-use Mosaiqo\Proofread\Diff\EvalRunDelta;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
 
 /**
@@ -110,59 +108,15 @@ final class RegressionWebhookNotifier
     }
 
     /**
+     * Generic payload mirrors the shape produced by the `get_eval_run_diff`
+     * MCP tool and the `evals:compare --format=json` CLI so consumers can
+     * share a single parser across transports.
+     *
      * @return array<string, mixed>
      */
     private function genericPayload(EvalRunRegressed $event): array
     {
-        return $this->serializeDelta($event->delta);
-    }
-
-    /**
-     * Mirrors the shape produced by the `get_eval_run_diff` MCP tool and the
-     * `evals:compare --format=json` CLI so consumers can share a single
-     * parser across transports.
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeDelta(EvalRunDelta $delta): array
-    {
-        return [
-            'base_run_id' => $delta->baseRunId,
-            'head_run_id' => $delta->headRunId,
-            'dataset_name' => $delta->datasetName,
-            'total_cases' => $delta->totalCases,
-            'regressions' => $delta->regressions,
-            'improvements' => $delta->improvements,
-            'stable_passes' => $delta->stablePasses,
-            'stable_failures' => $delta->stableFailures,
-            'cost_delta_usd' => $delta->costDeltaUsd,
-            'duration_delta_ms' => $delta->durationDeltaMs,
-            'has_regressions' => $delta->hasRegressions(),
-            'cases' => array_map(
-                fn (CaseDelta $case): array => $this->serializeCase($case),
-                $delta->cases,
-            ),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeCase(CaseDelta $case): array
-    {
-        return [
-            'case_index' => $case->caseIndex,
-            'case_name' => $case->caseName,
-            'status' => $case->status,
-            'base_passed' => $case->basePassed,
-            'head_passed' => $case->headPassed,
-            'base_cost_usd' => $case->baseCostUsd,
-            'head_cost_usd' => $case->headCostUsd,
-            'base_duration_ms' => $case->baseDurationMs,
-            'head_duration_ms' => $case->headDurationMs,
-            'new_failures' => $case->newFailures,
-            'fixed_failures' => $case->fixedFailures,
-        ];
+        return $event->delta->toArray();
     }
 
     private function formatCost(float $delta): string

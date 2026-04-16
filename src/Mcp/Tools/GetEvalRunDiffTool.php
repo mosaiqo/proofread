@@ -10,7 +10,6 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool;
-use Mosaiqo\Proofread\Diff\CaseDelta;
 use Mosaiqo\Proofread\Diff\EvalRunDelta;
 use Mosaiqo\Proofread\Diff\EvalRunDiff;
 use Mosaiqo\Proofread\Models\EvalRun;
@@ -89,27 +88,14 @@ final class GetEvalRunDiffTool extends Tool
      */
     private function buildPayload(EvalRunDelta $delta): array
     {
-        $serializedCases = array_map(
-            fn (CaseDelta $case): array => $this->serializeCase($case),
-            $delta->cases,
-        );
+        $payload = $delta->toArray();
+
+        /** @var list<array<string, mixed>> $serializedCases */
+        $serializedCases = $payload['cases'];
 
         [$visibleCases, $truncated, $omitted] = $this->truncateCases($serializedCases);
 
-        $payload = [
-            'base_run_id' => $delta->baseRunId,
-            'head_run_id' => $delta->headRunId,
-            'dataset_name' => $delta->datasetName,
-            'total_cases' => $delta->totalCases,
-            'regressions' => $delta->regressions,
-            'improvements' => $delta->improvements,
-            'stable_passes' => $delta->stablePasses,
-            'stable_failures' => $delta->stableFailures,
-            'cost_delta_usd' => $delta->costDeltaUsd,
-            'duration_delta_ms' => $delta->durationDeltaMs,
-            'has_regressions' => $delta->hasRegressions(),
-            'cases' => $visibleCases,
-        ];
+        $payload['cases'] = $visibleCases;
 
         if ($truncated) {
             $payload['cases_truncated'] = true;
@@ -117,26 +103,6 @@ final class GetEvalRunDiffTool extends Tool
         }
 
         return $payload;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function serializeCase(CaseDelta $case): array
-    {
-        return [
-            'case_index' => $case->caseIndex,
-            'case_name' => $case->caseName,
-            'status' => $case->status,
-            'base_passed' => $case->basePassed,
-            'head_passed' => $case->headPassed,
-            'base_cost_usd' => $case->baseCostUsd,
-            'head_cost_usd' => $case->headCostUsd,
-            'base_duration_ms' => $case->baseDurationMs,
-            'head_duration_ms' => $case->headDurationMs,
-            'new_failures' => $case->newFailures,
-            'fixed_failures' => $case->fixedFailures,
-        ];
     }
 
     /**
