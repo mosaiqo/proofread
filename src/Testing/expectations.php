@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Mosaiqo\Proofread\Assertions\GoldenSnapshot;
 use Mosaiqo\Proofread\Assertions\JsonSchemaAssertion;
 use Mosaiqo\Proofread\Assertions\Rubric;
 use Mosaiqo\Proofread\Contracts\Assertion;
@@ -11,6 +12,7 @@ use Mosaiqo\Proofread\Support\EvalResult;
 use Mosaiqo\Proofread\Support\EvalRun;
 use Mosaiqo\Proofread\Support\JudgeResult;
 use Pest\Expectation;
+use Pest\TestSuite;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\ExpectationFailedException;
 
@@ -99,6 +101,31 @@ expect()->extend('toMatchSchema', function (array|string $schema) {
     Assert::assertTrue(
         $result->passed,
         sprintf('Failed asserting that output matches schema: %s', $result->reason),
+    );
+
+    return $this;
+});
+
+expect()->extend('toMatchGoldenSnapshot', function (?string $key = null) {
+    /** @var Expectation<mixed> $this */
+    $resolvedKey = $key ?? proofread_derive_snapshot_key();
+
+    if ($resolvedKey === null) {
+        Assert::fail(
+            'toMatchGoldenSnapshot could not derive a snapshot key from the test context; pass an explicit key.',
+        );
+    }
+
+    $assertion = GoldenSnapshot::forKey($resolvedKey);
+    $result = $assertion->run($this->value);
+
+    Assert::assertTrue(
+        $result->passed,
+        sprintf(
+            'Failed asserting that output matches golden snapshot [%s]: %s',
+            $resolvedKey,
+            $result->reason,
+        ),
     );
 
     return $this;
@@ -268,6 +295,41 @@ function proofread_build_schema_assertion(array|string $schema): JsonSchemaAsser
     }
 
     return JsonSchemaAssertion::fromFile($schema);
+}
+
+function proofread_derive_snapshot_key(): ?string
+{
+    try {
+        $test = TestSuite::getInstance()->test;
+    } catch (Throwable) {
+        return null;
+    }
+
+    if ($test === null || ! method_exists($test, 'getPrintableTestCaseMethodName')) {
+        return null;
+    }
+
+    try {
+        $reflection = new ReflectionClass($test);
+        $file = $reflection->getFileName();
+        $description = $test->getPrintableTestCaseMethodName();
+    } catch (Throwable) {
+        return null;
+    }
+
+    if ($file === false || $description === '') {
+        return null;
+    }
+
+    $root = getcwd();
+    $relative = $file;
+    if (is_string($root) && str_starts_with($file, $root)) {
+        $relative = ltrim(substr($file, strlen($root)), '/\\');
+    }
+
+    $relative = preg_replace('/\.php$/', '', $relative) ?? $relative;
+
+    return $relative.'/'.$description;
 }
 
 function proofread_stringify_input(mixed $input): string

@@ -52,3 +52,15 @@ parameters:
             identifier: property.notFound
             message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$(snapshotDir|store|app)\.#'
             path: tests/Feature/Assertions/GoldenSnapshotTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectation<.+>::toMatchGoldenSnapshot\(\)#'
+            path: tests/Feature/Pest/ToMatchGoldenSnapshotTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toMatchGoldenSnapshot\(\)#'
+            path: tests/Feature/Pest/ToMatchGoldenSnapshotTest.php
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$(snapshotDir|store|app)\.#'
+            path: tests/Feature/Pest/ToMatchGoldenSnapshotTest.php
