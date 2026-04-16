@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Similarity\Similarity;
+use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -45,6 +46,25 @@ class ProofreadServiceProvider extends PackageServiceProvider
                 defaultModel: is_string($defaultModel) && $defaultModel !== ''
                     ? $defaultModel
                     : 'text-embedding-3-small',
+            );
+        });
+
+        $this->app->singleton(SnapshotStore::class, function ($app): SnapshotStore {
+            /** @var array<string, mixed> $snapshotsConfig */
+            $snapshotsConfig = $app['config']->get('proofread.snapshots', []);
+
+            $path = $snapshotsConfig['path'] ?? sys_get_temp_dir().'/proofread-snapshots';
+            $basePath = is_string($path) && $path !== ''
+                ? $path
+                : sys_get_temp_dir().'/proofread-snapshots';
+
+            $envOverride = env('PROOFREAD_UPDATE_SNAPSHOTS');
+            $configUpdate = $snapshotsConfig['update'] ?? false;
+            $updateMode = (bool) ($envOverride ?? $configUpdate);
+
+            return new SnapshotStore(
+                basePath: $basePath,
+                updateMode: $updateMode,
             );
         });
     }
