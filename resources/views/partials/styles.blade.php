@@ -1094,6 +1094,33 @@ table.table tbody tr:hover {
     fill: var(--accent);
 }
 
+.currency-value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.cost-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.cost-percentage-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.cost-percentage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+    border-radius: 999px;
+}
+
 .shadow-capture-row {
     cursor: pointer;
 }
