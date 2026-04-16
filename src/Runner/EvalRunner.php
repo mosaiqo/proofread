@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread\Runner;
 use Closure;
 use InvalidArgumentException;
 use Mosaiqo\Proofread\Contracts\Assertion;
+use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Support\AssertionResult;
 use Mosaiqo\Proofread\Support\Dataset;
 use Mosaiqo\Proofread\Support\EvalResult;
@@ -24,6 +25,12 @@ final class EvalRunner
     }
 
     /**
+     * Run the subject against every case in the dataset and evaluate assertions.
+     *
+     * When `$subject` is a callable, it is invoked as `fn (mixed $input, array $case): mixed`
+     * where `$input` is `$case['input']` pre-unwrapped and `$case` is the full case array.
+     * See {@see EvalSuite::subject()} for accepted subject shapes.
+     *
      * @param  array<int, mixed>  $assertions
      */
     public function run(mixed $subject, Dataset $dataset, array $assertions): EvalRun

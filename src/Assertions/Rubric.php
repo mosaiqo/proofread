@@ -8,9 +8,36 @@ use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Judge\JudgeException;
 use Mosaiqo\Proofread\Support\JudgeResult;
 
+/**
+ * LLM-as-judge assertion that scores output against natural-language criteria.
+ *
+ * ## Testing with a faked judge
+ *
+ * When testing code that uses this assertion, avoid real LLM calls by faking
+ * the judge agent. Proofread uses an internal {@see JudgeAgent}
+ * class that extends the Laravel AI SDK's Agent contract, so you can fake it
+ * with the SDK's fake helper:
+ *
+ * ```php
+ * use Mosaiqo\Proofread\Judge\JudgeAgent;
+ *
+ * beforeEach(function () {
+ *     JudgeAgent::fake(fn () => json_encode([
+ *         'passed' => true,
+ *         'score' => 0.95,
+ *         'reason' => 'Meets criteria.',
+ *     ]));
+ * });
+ * ```
+ *
+ * Make sure `config('ai.default')` points to any provider and that
+ * `config('proofread.judge.default_model')` is set — both are loaded by the
+ * default service provider and are typically already in place.
+ */
 final readonly class Rubric implements Assertion
 {
     private function __construct(
