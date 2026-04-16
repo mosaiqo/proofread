@@ -6,6 +6,7 @@ namespace Mosaiqo\Proofread\Tests;
 
 use Illuminate\Contracts\Config\Repository;
 use Laravel\Ai\AiServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Mosaiqo\Proofread\ProofreadServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -15,6 +16,7 @@ abstract class TestCase extends Orchestra
     {
         return [
             AiServiceProvider::class,
+            LivewireServiceProvider::class,
             ProofreadServiceProvider::class,
         ];
     }
@@ -24,6 +26,8 @@ abstract class TestCase extends Orchestra
         /** @var Repository $config */
         $config = $app['config'];
 
+        $app['env'] = 'local';
+        $config->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $config->set('database.default', 'testing');
         $config->set('database.connections.testing', [
             'driver' => 'sqlite',

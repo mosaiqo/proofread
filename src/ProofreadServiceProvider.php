@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread;
 
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Gate;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
+use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
@@ -21,7 +24,24 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasMigration('create_eval_datasets_table')
             ->hasMigration('create_eval_runs_table')
             ->hasMigration('create_eval_results_table')
-            ->hasCommand(RunEvalsCommand::class);
+            ->hasCommand(RunEvalsCommand::class)
+            ->hasRoute('dashboard')
+            ->hasViews('proofread');
+    }
+
+    public function packageBooted(): void
+    {
+        // Default gate: allow in local env only. Override this gate in your
+        // AuthServiceProvider to control access in staging/production:
+        //
+        //     Gate::define('viewEvals', fn ($user) => $user?->isAdmin());
+        if (! Gate::has('viewEvals')) {
+            $app = $this->app;
+            Gate::define('viewEvals', static fn ($user = null): bool => (bool) $app->environment('local'));
+        }
+
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('proofread.gate', ProofreadGate::class);
     }
 
     public function registeringPackage(): void

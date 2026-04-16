@@ -64,3 +64,7 @@ parameters:
             identifier: property.notFound
             message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$(snapshotDir|store|app)\.#'
             path: tests/Feature/Pest/ToMatchGoldenSnapshotTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\PendingCalls\\TestCall::(get|post|put|patch|delete|call)\(\)#'
+            path: tests/Feature/Dashboard

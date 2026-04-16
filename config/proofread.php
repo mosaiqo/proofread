@@ -20,7 +20,11 @@ return [
     ],
 
     'dashboard' => [
+        'enabled' => env('PROOFREAD_DASHBOARD_ENABLED', true),
         'path' => env('PROOFREAD_DASHBOARD_PATH', 'evals'),
-        'middleware' => ['web'],
+        'middleware' => ['web', 'proofread.gate'],
+        'theme' => [
+            // Placeholder for v1.5 custom branding.
+        ],
     ],
 ];
