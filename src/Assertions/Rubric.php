@@ -56,7 +56,7 @@ final readonly class Rubric implements Assertion
         try {
             $outcome = $judge->judge($this->criteria, $output, $input, $this->model);
         } catch (JudgeException $exception) {
-            $effectiveModel = $this->model ?? $this->resolveDefaultModel($judge);
+            $effectiveModel = $this->model ?? $judge->defaultModel();
 
             return JudgeResult::fail(
                 reason: sprintf('Judge failed: %s', $exception->getMessage()),
@@ -80,7 +80,7 @@ final readonly class Rubric implements Assertion
         /** @var string $effectiveModel */
         $effectiveModel = is_string($metadata['judge_model'] ?? null)
             ? $metadata['judge_model']
-            : ($this->model ?? $this->resolveDefaultModel($judge));
+            : ($this->model ?? $judge->defaultModel());
 
         if ($verdict->passed && $verdict->score >= $this->minScore) {
             return JudgeResult::pass(
@@ -118,19 +118,6 @@ final readonly class Rubric implements Assertion
     public function name(): string
     {
         return 'rubric';
-    }
-
-    private function resolveDefaultModel(Judge $judge): string
-    {
-        $reflection = new \ReflectionClass($judge);
-        if ($reflection->hasProperty('defaultModel')) {
-            $property = $reflection->getProperty('defaultModel');
-            $value = $property->getValue($judge);
-
-            return is_string($value) ? $value : 'unknown';
-        }
-
-        return 'unknown';
     }
 
     private function formatScore(float $score): string

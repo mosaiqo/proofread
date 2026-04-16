@@ -230,6 +230,12 @@ it('includes the raw response in metadata', function (): void {
     expect($outcome['metadata']['judge_raw_response'])->toBe($raw);
 });
 
+it('exposes the default model via a public getter', function (): void {
+    $judge = new Judge('some-default-model');
+
+    expect($judge->defaultModel())->toBe('some-default-model');
+});
+
 it('stringifies non-string outputs when injecting into the prompt', function (): void {
     $captured = null;
     JudgeAgent::fake(function ($prompt, $attachments, $provider, $model) use (&$captured): string {

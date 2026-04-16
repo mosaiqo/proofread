@@ -29,6 +29,11 @@ final class Judge
         }
     }
 
+    public function defaultModel(): string
+    {
+        return $this->defaultModel;
+    }
+
     /**
      * Invoke the LLM judge for a given criteria + output pair.
      *
