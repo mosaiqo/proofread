@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Mosaiqo\Proofread\Assertions\JsonSchemaAssertion;
 use Mosaiqo\Proofread\Assertions\Rubric;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Runner\EvalRunner;
@@ -50,6 +51,20 @@ expect()->extend('toPassRubric', function (string $criteria, array $options = []
     Assert::assertTrue(
         $result->passed,
         proofread_format_rubric_failure($criteria, $result),
+    );
+
+    return $this;
+});
+
+expect()->extend('toMatchSchema', function (array|string $schema) {
+    /** @var Expectation<mixed> $this */
+    $assertion = proofread_build_schema_assertion($schema);
+
+    $result = $assertion->run($this->value);
+
+    Assert::assertTrue(
+        $result->passed,
+        sprintf('Failed asserting that output matches schema: %s', $result->reason),
     );
 
     return $this;
@@ -165,6 +180,23 @@ function proofread_format_rubric_failure(string $criteria, JudgeResult $result):
     }
 
     return implode("\n", $lines);
+}
+
+/**
+ * @param  array<string, mixed>|string  $schema
+ */
+function proofread_build_schema_assertion(array|string $schema): JsonSchemaAssertion
+{
+    if (is_array($schema)) {
+        return JsonSchemaAssertion::fromArray($schema);
+    }
+
+    $trimmed = ltrim($schema);
+    if ($trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '[')) {
+        return JsonSchemaAssertion::fromJson($schema);
+    }
+
+    return JsonSchemaAssertion::fromFile($schema);
 }
 
 function proofread_stringify_input(mixed $input): string

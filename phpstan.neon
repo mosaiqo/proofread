@@ -32,3 +32,11 @@ parameters:
             identifier: method.notFound
             message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toPassRubric\(\)#'
             path: tests/Feature/Pest/ToPassRubricTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectation<.+>::toMatchSchema\(\)#'
+            path: tests/Feature/Pest/ToMatchSchemaTest.php
+        -
+            identifier: method.notFound
+            message: '#Call to an undefined method Pest\\Expectations\\OppositeExpectation::toMatchSchema\(\)#'
+            path: tests/Feature/Pest/ToMatchSchemaTest.php
