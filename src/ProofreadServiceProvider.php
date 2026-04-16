@@ -18,6 +18,9 @@ class ProofreadServiceProvider extends PackageServiceProvider
         $package
             ->name('proofread')
             ->hasConfigFile()
+            ->hasMigration('create_eval_datasets_table')
+            ->hasMigration('create_eval_runs_table')
+            ->hasMigration('create_eval_results_table')
             ->hasCommand(RunEvalsCommand::class);
     }
 

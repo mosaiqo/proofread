@@ -1,0 +1,208 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+it('creates the eval_datasets table with expected columns', function (): void {
+    expect(Schema::hasTable('eval_datasets'))->toBeTrue();
+
+    foreach (['id', 'name', 'case_count', 'checksum', 'created_at', 'updated_at'] as $column) {
+        expect(Schema::hasColumn('eval_datasets', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates the eval_runs table with expected columns', function (): void {
+    expect(Schema::hasTable('eval_runs'))->toBeTrue();
+
+    $expected = [
+        'id', 'dataset_id', 'dataset_name', 'suite_class', 'subject_type', 'subject_class',
+        'commit_sha', 'model',
+        'passed', 'pass_count', 'fail_count', 'error_count', 'total_count',
+        'duration_ms', 'total_cost_usd', 'total_tokens_in', 'total_tokens_out',
+        'created_at', 'updated_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('eval_runs', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates the eval_results table with expected columns', function (): void {
+    expect(Schema::hasTable('eval_results'))->toBeTrue();
+
+    $expected = [
+        'id', 'run_id', 'case_index', 'case_name', 'input', 'output', 'expected',
+        'passed', 'assertion_results', 'error_class', 'error_message', 'error_trace',
+        'duration_ms', 'latency_ms', 'tokens_in', 'tokens_out', 'cost_usd', 'model',
+        'created_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('eval_results', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates a foreign key from eval_runs to eval_datasets with cascade', function (): void {
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'fk-test',
+        'case_count' => 1,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'fk-test',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 1,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 1,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('eval_runs')->count())->toBe(1);
+
+    DB::table('eval_datasets')->where('id', $datasetId)->delete();
+
+    expect(DB::table('eval_runs')->count())->toBe(0);
+});
+
+it('creates a foreign key from eval_results to eval_runs with cascade', function (): void {
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'fk-test-2',
+        'case_count' => 1,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'fk-test-2',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 1,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 1,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $resultId = (string) Str::ulid();
+    DB::table('eval_results')->insert([
+        'id' => $resultId,
+        'run_id' => $runId,
+        'case_index' => 0,
+        'case_name' => null,
+        'input' => json_encode(['foo' => 'bar']),
+        'output' => null,
+        'expected' => null,
+        'passed' => true,
+        'assertion_results' => json_encode([]),
+        'error_class' => null,
+        'error_message' => null,
+        'error_trace' => null,
+        'duration_ms' => 1.0,
+        'latency_ms' => null,
+        'tokens_in' => null,
+        'tokens_out' => null,
+        'cost_usd' => null,
+        'model' => null,
+        'created_at' => now(),
+    ]);
+
+    expect(DB::table('eval_results')->count())->toBe(1);
+
+    DB::table('eval_runs')->where('id', $runId)->delete();
+
+    expect(DB::table('eval_results')->count())->toBe(0);
+});
+
+it('creates the expected indexes on eval_runs and eval_results', function (): void {
+    $runsIndexes = collect(DB::select("PRAGMA index_list('eval_runs')"))
+        ->pluck('name')
+        ->all();
+
+    $hasCreatedAtIndex = collect($runsIndexes)->contains(
+        fn (string $name): bool => str_contains($name, 'created_at')
+    );
+    $hasDatasetIdIndex = collect($runsIndexes)->contains(
+        fn (string $name): bool => str_contains($name, 'dataset_id')
+    );
+    $hasPassedCreatedIndex = collect($runsIndexes)->contains(
+        fn (string $name): bool => str_contains($name, 'passed') && str_contains($name, 'created_at')
+    );
+
+    expect($hasCreatedAtIndex)->toBeTrue('missing created_at index on eval_runs')
+        ->and($hasDatasetIdIndex)->toBeTrue('missing dataset_id index on eval_runs')
+        ->and($hasPassedCreatedIndex)->toBeTrue('missing passed+created_at index on eval_runs');
+
+    $resultsIndexes = collect(DB::select("PRAGMA index_list('eval_results')"))
+        ->pluck('name')
+        ->all();
+
+    $hasRunCaseIndex = collect($resultsIndexes)->contains(
+        fn (string $name): bool => str_contains($name, 'run_id') && str_contains($name, 'case_index')
+    );
+
+    expect($hasRunCaseIndex)->toBeTrue('missing run_id+case_index index on eval_results');
+});
+
+it('provides down() migrations that drop all three tables', function (): void {
+    expect(Schema::hasTable('eval_datasets'))->toBeTrue()
+        ->and(Schema::hasTable('eval_runs'))->toBeTrue()
+        ->and(Schema::hasTable('eval_results'))->toBeTrue();
+
+    $base = __DIR__.'/../../../database/migrations';
+    $results = require $base.'/create_eval_results_table.php';
+    $runs = require $base.'/create_eval_runs_table.php';
+    $datasets = require $base.'/create_eval_datasets_table.php';
+
+    $results->down();
+    $runs->down();
+    $datasets->down();
+
+    expect(Schema::hasTable('eval_datasets'))->toBeFalse()
+        ->and(Schema::hasTable('eval_runs'))->toBeFalse()
+        ->and(Schema::hasTable('eval_results'))->toBeFalse();
+
+    $datasets->up();
+    $runs->up();
+    $results->up();
+
+    expect(Schema::hasTable('eval_datasets'))->toBeTrue()
+        ->and(Schema::hasTable('eval_runs'))->toBeTrue()
+        ->and(Schema::hasTable('eval_results'))->toBeTrue();
+});
