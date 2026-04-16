@@ -43,6 +43,23 @@ abstract class EvalSuite
      */
     abstract public function assertions(): array;
 
+    /**
+     * Returns the assertions to run against a specific case.
+     *
+     * Override to read per-case metadata (e.g. $case['meta']['expected_count'])
+     * and compose assertions that vary per case. The default delegates to the
+     * shared assertions() list.
+     *
+     * @param  array<string, mixed>  $case
+     * @return array<int, Assertion>
+     */
+    public function assertionsFor(array $case): array
+    {
+        unset($case);
+
+        return $this->assertions();
+    }
+
     public function name(): string
     {
         return static::class;

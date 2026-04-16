@@ -134,3 +134,117 @@ it('exposes setUp and tearDown as public methods', function (): void {
     expect($reflection->getMethod('setUp')->isPublic())->toBeTrue();
     expect($reflection->getMethod('tearDown')->isPublic())->toBeTrue();
 });
+
+it('default assertionsFor delegates to assertions', function (): void {
+    $calls = 0;
+    $suite = new class($calls) extends EvalSuite
+    {
+        public function __construct(public int &$calls)
+        {
+            //
+        }
+
+        public function dataset(): Dataset
+        {
+            return Dataset::make('stub', [['input' => 'x']]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            $this->calls++;
+
+            return [ContainsAssertion::make('hello')];
+        }
+    };
+
+    $before = $calls;
+    $result = $suite->assertionsFor(['input' => 'x']);
+
+    expect($calls)->toBe($before + 1);
+    expect($result)->toHaveCount(1);
+    expect($result[0])->toBeInstanceOf(ContainsAssertion::class);
+});
+
+it('allows overriding assertionsFor to vary assertions per case', function (): void {
+    $suite = new class extends EvalSuite
+    {
+        public function dataset(): Dataset
+        {
+            return Dataset::make('per-case', [
+                ['input' => 'a', 'meta' => ['kind' => 'first']],
+                ['input' => 'b', 'meta' => ['kind' => 'second']],
+            ]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            return [];
+        }
+
+        public function assertionsFor(array $case): array
+        {
+            $kind = $case['meta']['kind'] ?? null;
+
+            return $kind === 'first'
+                ? [ContainsAssertion::make('a')]
+                : [ContainsAssertion::make('b')];
+        }
+    };
+
+    $first = $suite->assertionsFor(['input' => 'a', 'meta' => ['kind' => 'first']]);
+    $second = $suite->assertionsFor(['input' => 'b', 'meta' => ['kind' => 'second']]);
+
+    expect($first)->toHaveCount(1);
+    expect($second)->toHaveCount(1);
+    expect($first[0])->not->toBe($second[0]);
+});
+
+it('assertionsFor receives the case array', function (): void {
+    $received = null;
+    $suite = new class($received) extends EvalSuite
+    {
+        /**
+         * @param  array<string, mixed>|null  $received
+         */
+        public function __construct(public ?array &$received)
+        {
+            //
+        }
+
+        public function dataset(): Dataset
+        {
+            return Dataset::make('x', [['input' => 'x']]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            return [];
+        }
+
+        public function assertionsFor(array $case): array
+        {
+            $this->received = $case;
+
+            return [];
+        }
+    };
+
+    $suite->assertionsFor(['input' => 'y', 'meta' => ['k' => 'v']]);
+
+    expect($received)->toBe(['input' => 'y', 'meta' => ['k' => 'v']]);
+});

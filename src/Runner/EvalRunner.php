@@ -53,9 +53,10 @@ final class EvalRunner
     /**
      * Run an entire EvalSuite orchestrating its lifecycle.
      *
-     * Invokes $suite->setUp(), reads dataset/subject/assertions,
-     * runs the eval, and finally invokes $suite->tearDown(). The
-     * tearDown hook runs even if subject or assertions throw; it is
+     * Invokes $suite->setUp(), resolves the subject once, then iterates
+     * the dataset asking the suite for per-case assertions via
+     * {@see EvalSuite::assertionsFor()}. tearDown runs in a finally
+     * block so it triggers even if subject or assertions throw; it is
      * skipped when setUp itself throws, matching classic xUnit semantics.
      */
     public function runSuite(EvalSuite $suite): EvalRun
@@ -63,11 +64,20 @@ final class EvalRunner
         $suite->setUp();
 
         try {
-            return $this->run(
-                $suite->subject(),
-                $suite->dataset(),
-                $suite->assertions(),
-            );
+            $dataset = $suite->dataset();
+            $resolved = $this->resolver->resolve($suite->subject());
+
+            $runStart = hrtime(true);
+            $results = [];
+
+            foreach ($dataset->cases as $index => $case) {
+                $assertions = $this->validateAssertions($suite->assertionsFor($case));
+                $results[] = $this->runCase($resolved, $case, $index, $assertions);
+            }
+
+            $durationMs = $this->roundMs((hrtime(true) - $runStart) / 1_000_000);
+
+            return EvalRun::make($dataset, $results, $durationMs);
         } finally {
             $suite->tearDown();
         }
