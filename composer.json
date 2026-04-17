@@ -40,7 +40,7 @@
         "phpstan/phpstan": "^2.1"
     },
     "suggest": {
-        "laravel/mcp": "Expose Proofread eval suites as MCP tools for use from Claude Code and other MCP clients.",
+        "laravel/mcp": "Expose Proofread eval suites as MCP tools for use from MCP-compatible editors and assistants.",
         "laravel/boost": "Ship Proofread AI Guidelines and Agent Skill to Boost-powered editors.",
         "laravel/telescope": "Record persisted eval runs as Telescope entries for inline debugging."
     },

@@ -39,8 +39,8 @@ composer require mosaiqo/proofread
 
 Requires PHP 8.4 and Laravel 13.x.
 
-Optional MCP integration (expose eval tools to Claude Code and other MCP
-clients):
+Optional MCP integration (expose eval tools to MCP-compatible editors
+and assistants):
 
 ```bash
 composer require laravel/mcp
