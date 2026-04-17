@@ -15,6 +15,7 @@ use Mosaiqo\Proofread\Tests\Fixtures\Suites\FailingSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FilterableSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\PassingSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\RubricEnabledSuite;
+use Mosaiqo\Proofread\Tests\Fixtures\Suites\VaryingAssertionsSuite;
 
 function proofread_tmp_junit_path(string $suffix): string
 {
@@ -445,4 +446,21 @@ it('leaves the real judge wiring untouched when --fake-judge is not provided', f
     ]);
 
     expect(JudgeAgent::isFaked())->toBeFalse();
+});
+
+it('prints singular assertions count when all cases have the same count', function (): void {
+    Artisan::call('evals:run', ['suites' => [PassingSuite::class]]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('2 cases, 1 assertions per case')
+        ->and($output)->not->toContain('1-1 assertions per case');
+});
+
+it('prints assertions range when per-case counts differ', function (): void {
+    Artisan::call('evals:run', ['suites' => [VaryingAssertionsSuite::class]]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('2 cases, 2-4 assertions per case');
 });

@@ -95,11 +95,7 @@ final class RunEvalsCommand extends Command
                     continue;
                 }
 
-                $this->line(sprintf(
-                    '  %d cases, %d assertions per case',
-                    $dataset->count(),
-                    count($suite->assertions()),
-                ));
+                $this->line($this->assertionsHeader($suite, $dataset));
                 $this->line('');
 
                 try {
@@ -419,6 +415,27 @@ final class RunEvalsCommand extends Command
         }
 
         return ((int) round($ms)).'ms';
+    }
+
+    private function assertionsHeader(EvalSuite $suite, Dataset $dataset): string
+    {
+        $min = PHP_INT_MAX;
+        $max = 0;
+        foreach ($dataset->cases as $case) {
+            $count = count($suite->assertionsFor($case));
+            if ($count < $min) {
+                $min = $count;
+            }
+            if ($count > $max) {
+                $max = $count;
+            }
+        }
+
+        $label = $min === $max
+            ? sprintf('%d assertions per case', $min)
+            : sprintf('%d-%d assertions per case', $min, $max);
+
+        return sprintf('  %d cases, %s', $dataset->count(), $label);
     }
 
     private function junitPathFor(string $basePath, EvalSuite $suite, bool $multiple): string
