@@ -21,10 +21,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $dataset_id
  * @property string|null $dataset_version_id
+ * @property string|null $comparison_id
  * @property string $dataset_name
  * @property string|null $suite_class
  * @property string $subject_type
  * @property string|null $subject_class
+ * @property string|null $subject_label
  * @property string|null $commit_sha
  * @property string|null $model
  * @property bool $passed
@@ -40,6 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonInterface|null $updated_at
  * @property EvalDataset|null $dataset
  * @property EvalDatasetVersion|null $datasetVersion
+ * @property EvalComparison|null $comparison
  * @property Collection<int, EvalResult> $results
  */
 class EvalRun extends Model
@@ -54,10 +57,12 @@ class EvalRun extends Model
     protected $fillable = [
         'dataset_id',
         'dataset_version_id',
+        'comparison_id',
         'dataset_name',
         'suite_class',
         'subject_type',
         'subject_class',
+        'subject_label',
         'commit_sha',
         'model',
         'passed',
@@ -100,6 +105,14 @@ class EvalRun extends Model
     public function datasetVersion(): BelongsTo
     {
         return $this->belongsTo(EvalDatasetVersion::class, 'dataset_version_id');
+    }
+
+    /**
+     * @return BelongsTo<EvalComparison, $this>
+     */
+    public function comparison(): BelongsTo
+    {
+        return $this->belongsTo(EvalComparison::class, 'comparison_id');
     }
 
     /**

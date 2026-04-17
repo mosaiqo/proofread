@@ -439,6 +439,149 @@ it('cascades delete versions when dataset is deleted', function (): void {
     expect(DB::table('eval_dataset_versions')->count())->toBe(0);
 });
 
+it('creates the eval_comparisons table with expected columns', function (): void {
+    expect(Schema::hasTable('eval_comparisons'))->toBeTrue();
+
+    $expected = [
+        'id', 'name', 'suite_class', 'dataset_name', 'dataset_version_id',
+        'subject_labels', 'commit_sha',
+        'total_runs', 'passed_runs', 'failed_runs',
+        'total_cost_usd', 'duration_ms',
+        'created_at', 'updated_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('eval_comparisons', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates the expected indexes on eval_comparisons', function (): void {
+    $indexes = collect(DB::select("PRAGMA index_list('eval_comparisons')"))
+        ->pluck('name')
+        ->all();
+
+    $hasDatasetNameCreatedIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'dataset_name') && str_contains($name, 'created_at')
+    );
+    $hasSuiteClassCreatedIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'suite_class') && str_contains($name, 'created_at')
+    );
+    $hasCreatedAtIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'created_at')
+            && ! str_contains($name, 'dataset_name')
+            && ! str_contains($name, 'suite_class')
+    );
+
+    expect($hasDatasetNameCreatedIndex)->toBeTrue('missing (dataset_name, created_at) index on eval_comparisons')
+        ->and($hasSuiteClassCreatedIndex)->toBeTrue('missing (suite_class, created_at) index on eval_comparisons')
+        ->and($hasCreatedAtIndex)->toBeTrue('missing created_at index on eval_comparisons');
+});
+
+it('adds comparison_id and subject_label to eval_runs as nullable', function (): void {
+    expect(Schema::hasColumn('eval_runs', 'comparison_id'))->toBeTrue()
+        ->and(Schema::hasColumn('eval_runs', 'subject_label'))->toBeTrue();
+
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'comparison-nullable',
+        'case_count' => 0,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'comparison-nullable',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 0,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 0,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'dataset_version_id' => null,
+        'comparison_id' => null,
+        'subject_label' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('eval_runs')->where('id', $runId)->value('comparison_id'))->toBeNull()
+        ->and(DB::table('eval_runs')->where('id', $runId)->value('subject_label'))->toBeNull();
+});
+
+it('cascade-nulls eval_runs.comparison_id when comparison is deleted', function (): void {
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'comparison-setnull',
+        'case_count' => 0,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $comparisonId = (string) Str::ulid();
+    DB::table('eval_comparisons')->insert([
+        'id' => $comparisonId,
+        'name' => 'setnull-comparison',
+        'suite_class' => null,
+        'dataset_name' => 'comparison-setnull',
+        'dataset_version_id' => null,
+        'subject_labels' => json_encode(['a', 'b']),
+        'commit_sha' => null,
+        'total_runs' => 2,
+        'passed_runs' => 1,
+        'failed_runs' => 1,
+        'total_cost_usd' => null,
+        'duration_ms' => 100.0,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'comparison-setnull',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 0,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 0,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'dataset_version_id' => null,
+        'comparison_id' => $comparisonId,
+        'subject_label' => 'a',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('eval_comparisons')->where('id', $comparisonId)->delete();
+
+    expect(DB::table('eval_runs')->where('id', $runId)->count())->toBe(1)
+        ->and(DB::table('eval_runs')->where('id', $runId)->value('comparison_id'))->toBeNull();
+});
+
 it('sets dataset_version_id to null when version is deleted', function (): void {
     $datasetId = (string) Str::ulid();
     DB::table('eval_datasets')->insert([
@@ -502,7 +645,11 @@ it('provides down() migrations that drop all three tables', function (): void {
     $datasets = require $base.'/2026_04_01_000001_create_eval_datasets_table.php';
     $addVersionId = require $base.'/2026_04_18_000002_add_dataset_version_id_to_eval_runs.php';
     $versions = require $base.'/2026_04_18_000001_create_eval_dataset_versions_table.php';
+    $comparisons = require $base.'/2026_04_19_000001_create_eval_comparisons_table.php';
+    $addComparisonFields = require $base.'/2026_04_19_000002_add_comparison_fields_to_eval_runs.php';
 
+    $addComparisonFields->down();
+    $comparisons->down();
     $addVersionId->down();
     $versions->down();
     $results->down();
@@ -512,16 +659,20 @@ it('provides down() migrations that drop all three tables', function (): void {
     expect(Schema::hasTable('eval_datasets'))->toBeFalse()
         ->and(Schema::hasTable('eval_runs'))->toBeFalse()
         ->and(Schema::hasTable('eval_results'))->toBeFalse()
-        ->and(Schema::hasTable('eval_dataset_versions'))->toBeFalse();
+        ->and(Schema::hasTable('eval_dataset_versions'))->toBeFalse()
+        ->and(Schema::hasTable('eval_comparisons'))->toBeFalse();
 
     $datasets->up();
     $runs->up();
     $results->up();
     $versions->up();
     $addVersionId->up();
+    $comparisons->up();
+    $addComparisonFields->up();
 
     expect(Schema::hasTable('eval_datasets'))->toBeTrue()
         ->and(Schema::hasTable('eval_runs'))->toBeTrue()
         ->and(Schema::hasTable('eval_results'))->toBeTrue()
-        ->and(Schema::hasTable('eval_dataset_versions'))->toBeTrue();
+        ->and(Schema::hasTable('eval_dataset_versions'))->toBeTrue()
+        ->and(Schema::hasTable('eval_comparisons'))->toBeTrue();
 });

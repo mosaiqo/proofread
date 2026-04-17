@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Mosaiqo\Proofread\Models\EvalComparison;
 use Mosaiqo\Proofread\Models\EvalDataset;
 use Mosaiqo\Proofread\Models\EvalDatasetVersion;
 use Mosaiqo\Proofread\Models\EvalResult;
@@ -228,6 +229,38 @@ it('belongs to a dataset version', function (): void {
 
     expect($run->datasetVersion())->toBeInstanceOf(BelongsTo::class)
         ->and($run->datasetVersion?->id)->toBe($version->id);
+});
+
+it('belongs to a comparison when linked', function (): void {
+    $dataset = makeDataset('run-cmp-rel');
+
+    $comparison = new EvalComparison;
+    $comparison->fill([
+        'name' => 'linked',
+        'dataset_name' => 'run-cmp-rel',
+        'subject_labels' => ['x'],
+        'total_runs' => 1,
+        'passed_runs' => 1,
+        'failed_runs' => 0,
+        'duration_ms' => 10.0,
+    ]);
+    $comparison->save();
+
+    $run = makeRun($dataset, [
+        'comparison_id' => $comparison->id,
+        'subject_label' => 'x',
+    ]);
+
+    expect($run->comparison())->toBeInstanceOf(BelongsTo::class)
+        ->and($run->comparison?->id)->toBe($comparison->id);
+});
+
+it('exposes subject_label', function (): void {
+    $dataset = makeDataset('run-subj-label');
+    $run = makeRun($dataset, ['subject_label' => 'haiku']);
+    $run->refresh();
+
+    expect($run->subject_label)->toBe('haiku');
 });
 
 it('cascades deletes from dataset down to runs and results', function (): void {
