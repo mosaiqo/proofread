@@ -226,6 +226,125 @@ it('runSuite respects per-case assertions', function (): void {
         ->toBe('fail-only');
 });
 
+it('respects a filter closure passed to runSuite', function (): void {
+    $runner = new EvalRunner;
+    $shared = runSuiteAssertion(
+        'shared',
+        fn (): AssertionResult => AssertionResult::pass('shared-ok'),
+    );
+
+    $suite = new class($shared) extends EvalSuite
+    {
+        public function __construct(private readonly Assertion $shared) {}
+
+        public function dataset(): Dataset
+        {
+            return Dataset::make('multi', [
+                ['input' => 'alpha', 'meta' => ['name' => 'alpha']],
+                ['input' => 'beta', 'meta' => ['name' => 'beta']],
+                ['input' => 'gamma', 'meta' => ['name' => 'gamma']],
+            ]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            return [$this->shared];
+        }
+    };
+
+    $run = $runner->runSuite($suite, filter: fn (array $case): bool => ($case['meta']['name'] ?? '') === 'beta');
+
+    expect($run->total())->toBe(1);
+    expect($run->results[0]->case['meta']['name'] ?? null)->toBe('beta');
+});
+
+it('still invokes assertionsFor on filtered cases', function (): void {
+    $runner = new EvalRunner;
+
+    $suite = new class extends EvalSuite
+    {
+        /** @var list<string> */
+        public array $seenNames = [];
+
+        public function dataset(): Dataset
+        {
+            return Dataset::make('multi', [
+                ['input' => 'a', 'meta' => ['name' => 'one']],
+                ['input' => 'b', 'meta' => ['name' => 'two']],
+                ['input' => 'c', 'meta' => ['name' => 'three']],
+            ]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            return [];
+        }
+
+        public function assertionsFor(array $case): array
+        {
+            $name = $case['meta']['name'] ?? '';
+            if (is_string($name)) {
+                $this->seenNames[] = $name;
+            }
+
+            return [];
+        }
+    };
+
+    $runner->runSuite($suite, filter: fn (array $case): bool => ($case['meta']['name'] ?? '') !== 'two');
+
+    expect($suite->seenNames)->toBe(['one', 'three']);
+});
+
+it('runs zero cases when the filter matches nothing', function (): void {
+    $runner = new EvalRunner;
+
+    $suite = new class extends EvalSuite
+    {
+        public int $assertionsForCalls = 0;
+
+        public function dataset(): Dataset
+        {
+            return Dataset::make('multi', [
+                ['input' => 'a', 'meta' => ['name' => 'one']],
+                ['input' => 'b', 'meta' => ['name' => 'two']],
+            ]);
+        }
+
+        public function subject(): mixed
+        {
+            return static fn (string $input): string => $input;
+        }
+
+        public function assertions(): array
+        {
+            return [];
+        }
+
+        public function assertionsFor(array $case): array
+        {
+            $this->assertionsForCalls++;
+
+            return [];
+        }
+    };
+
+    $run = $runner->runSuite($suite, filter: static fn (): bool => false);
+
+    expect($run->total())->toBe(0);
+    expect($suite->assertionsForCalls)->toBe(0);
+});
+
 it('runSuite falls back to shared assertions when assertionsFor is not overridden', function (): void {
     $runner = new EvalRunner;
     $shared = runSuiteAssertion(

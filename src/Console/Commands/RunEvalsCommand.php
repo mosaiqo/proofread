@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Console\Commands;
 
+use Closure;
 use Illuminate\Console\Command;
 use Mosaiqo\Proofread\Console\Support\JudgeFaker;
 use Mosaiqo\Proofread\Jobs\RunEvalSuiteJob;
@@ -79,48 +80,35 @@ final class RunEvalsCommand extends Command
         $anyFailure = false;
         $executed = 0;
 
+        $filterClosure = $this->buildFilterClosure($filter);
+
         foreach ($suites as $suite) {
             $this->line('Running '.$suite->name());
 
-            $suite->setUp();
-
             try {
-                $dataset = $this->applyFilter($suite->dataset(), $filter);
+                $run = $runner->runSuite($suite, concurrency: $concurrency, filter: $filterClosure);
+            } catch (Throwable $e) {
+                $this->error('  Suite runner failed: '.$e->getMessage());
+                $anyFailure = true;
+                $executed++;
 
-                if ($dataset === null) {
-                    $this->line('  No cases matching filter');
-                    $executed++;
-
-                    continue;
+                if ($failFast) {
+                    $this->line('Stopping due to --fail-fast');
+                    break;
                 }
 
-                if ($dataset->isEmpty()) {
-                    $this->line('  No cases to run');
-                    $executed++;
-
-                    continue;
-                }
-
-                $this->line($this->assertionsHeader($suite, $dataset));
-                $this->line('');
-
-                try {
-                    $run = $runner->run($suite->subject(), $dataset, $suite->assertions(), $concurrency);
-                } catch (Throwable $e) {
-                    $this->error('  Suite runner failed: '.$e->getMessage());
-                    $anyFailure = true;
-                    $executed++;
-
-                    if ($failFast) {
-                        $this->line('Stopping due to --fail-fast');
-                        break;
-                    }
-
-                    continue;
-                }
-            } finally {
-                $suite->tearDown();
+                continue;
             }
+
+            if ($run->total() === 0) {
+                $this->line($filter !== null ? '  No cases matching filter' : '  No cases to run');
+                $executed++;
+
+                continue;
+            }
+
+            $this->line($this->assertionsHeader($suite, $run->dataset));
+            $this->line('');
 
             $this->printRun($run);
 
@@ -232,49 +220,36 @@ final class RunEvalsCommand extends Command
         return $instance;
     }
 
-    private function applyFilter(Dataset $dataset, ?string $filter): ?Dataset
+    /**
+     * @return ?Closure(array<string, mixed>): bool
+     */
+    private function buildFilterClosure(?string $filter): ?Closure
     {
         if ($filter === null) {
-            return $dataset;
-        }
-
-        $needle = mb_strtolower($filter);
-        $filtered = [];
-        foreach ($dataset->cases as $case) {
-            $candidate = $this->filterCandidate($case);
-            if (str_contains(mb_strtolower($candidate), $needle)) {
-                $filtered[] = $case;
-            }
-        }
-
-        if ($filtered === []) {
             return null;
         }
 
-        return Dataset::make($dataset->name, $filtered);
-    }
+        $needle = mb_strtolower($filter);
 
-    /**
-     * @param  array<string, mixed>  $case
-     */
-    private function filterCandidate(array $case): string
-    {
-        $meta = $case['meta'] ?? null;
-        if (is_array($meta)) {
-            $name = $meta['name'] ?? null;
-            if (is_string($name) && $name !== '') {
-                return $name;
+        return function (array $case) use ($needle): bool {
+            $meta = $case['meta'] ?? null;
+            if (is_array($meta)) {
+                $name = $meta['name'] ?? null;
+                if (is_string($name) && $name !== '') {
+                    return str_contains(mb_strtolower($name), $needle);
+                }
             }
-        }
 
-        $input = $case['input'] ?? null;
-        if (is_string($input)) {
-            return $input;
-        }
+            $input = $case['input'] ?? null;
+            if (is_string($input)) {
+                return str_contains(mb_strtolower($input), $needle);
+            }
 
-        $encoded = json_encode($input);
+            $encoded = json_encode($input);
+            $haystack = $encoded === false ? get_debug_type($input) : $encoded;
 
-        return $encoded === false ? get_debug_type($input) : $encoded;
+            return str_contains(mb_strtolower($haystack), $needle);
+        };
     }
 
     private function printRun(EvalRun $run): void

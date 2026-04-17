@@ -9,6 +9,7 @@ use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
+use Mosaiqo\Proofread\Tests\Fixtures\Suites\AssertionsForBugSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\AssertionsForSpySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\EmptySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
@@ -466,10 +467,37 @@ it('prints a base count with "per-case may vary" when assertionsFor is overridde
     expect($output)->toContain('2 cases, 2 base assertions (per-case may vary)');
 });
 
-it('does not invoke assertionsFor from the CLI header', function (): void {
+it('invokes assertionsFor exactly once per case from the CLI', function (): void {
     AssertionsForSpySuite::reset();
 
     Artisan::call('evals:run', ['suites' => [AssertionsForSpySuite::class]]);
 
-    expect(AssertionsForSpySuite::$callCount)->toBe(0);
+    expect(AssertionsForSpySuite::$callCount)->toBe(2);
+});
+
+it('invokes assertionsFor when running a suite via CLI', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [AssertionsForBugSuite::class],
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('[FAIL]')
+        ->and($output)->toContain('count');
+});
+
+it('skips assertionsFor when the filter matches no cases via CLI', function (): void {
+    AssertionsForSpySuite::reset();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [AssertionsForSpySuite::class],
+        '--filter' => 'no-match-substring-zzz',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('No cases matching filter')
+        ->and(AssertionsForSpySuite::$callCount)->toBe(0);
 });

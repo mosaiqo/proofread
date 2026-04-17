@@ -126,8 +126,12 @@ final class EvalRunner
      *                            for I/O-bound subjects (LLM/HTTP calls). For deterministic
      *                            subjects, the forking/serialization overhead makes sequential
      *                            faster; keep at 1. Values <1 are clamped to 1.
+     * @param  ?Closure(array<string, mixed>): bool  $filter  Optional per-case predicate.
+     *                                                        Cases where the closure returns
+     *                                                        false are skipped before subject
+     *                                                        resolution or assertion composition.
      */
-    public function runSuite(EvalSuite $suite, int $concurrency = 1): EvalRun
+    public function runSuite(EvalSuite $suite, int $concurrency = 1, ?Closure $filter = null): EvalRun
     {
         $concurrency = max(1, $concurrency);
 
@@ -135,6 +139,12 @@ final class EvalRunner
 
         try {
             $dataset = $suite->dataset();
+
+            if ($filter !== null) {
+                $filtered = array_values(array_filter($dataset->cases, $filter));
+                $dataset = Dataset::make($dataset->name, $filtered);
+            }
+
             $resolved = $this->resolver->resolve($suite->subject());
 
             $runStart = hrtime(true);
