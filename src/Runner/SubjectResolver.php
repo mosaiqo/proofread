@@ -9,6 +9,8 @@ use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Responses\AgentResponse;
+use Mosaiqo\Proofread\Cli\CliInvocation;
+use Mosaiqo\Proofread\Cli\CliSubject;
 use Mosaiqo\Proofread\Pricing\PricingTable;
 
 final class SubjectResolver
@@ -25,6 +27,10 @@ final class SubjectResolver
 
         if ($subject instanceof Agent) {
             return $this->wrapAgent($subject);
+        }
+
+        if ($subject instanceof CliSubject) {
+            return $this->wrapCliSubject($subject);
         }
 
         if (is_string($subject)) {
@@ -78,6 +84,32 @@ final class SubjectResolver
     {
         return function (mixed $input, array $case) use ($callable): SubjectInvocation {
             return SubjectInvocation::make($callable($input, $case));
+        };
+    }
+
+    private function wrapCliSubject(CliSubject $subject): Closure
+    {
+        return function (mixed $input, array $case) use ($subject): SubjectInvocation {
+            unset($case);
+
+            $prompt = is_string($input) ? $input : (string) json_encode($input, JSON_UNESCAPED_UNICODE);
+
+            /** @var CliInvocation $invocation */
+            $invocation = $subject($prompt);
+
+            return SubjectInvocation::make(
+                $invocation->output,
+                [
+                    'latency_ms' => $invocation->durationMs,
+                    'tokens_in' => $invocation->metadata['tokens_in'] ?? null,
+                    'tokens_out' => $invocation->metadata['tokens_out'] ?? null,
+                    'tokens_total' => $invocation->metadata['tokens_total'] ?? null,
+                    'cost_usd' => $invocation->metadata['cost_usd'] ?? null,
+                    'model' => $invocation->metadata['model'] ?? null,
+                    'provider' => 'cli',
+                    'raw' => $invocation,
+                ],
+            );
         };
     }
 
