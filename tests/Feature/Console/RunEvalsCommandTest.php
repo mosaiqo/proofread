@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Mosaiqo\Proofread\Jobs\RunEvalSuiteJob;
+use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
@@ -13,6 +14,7 @@ use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FailingSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FilterableSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\PassingSuite;
+use Mosaiqo\Proofread\Tests\Fixtures\Suites\RubricEnabledSuite;
 
 function proofread_tmp_junit_path(string $suffix): string
 {
@@ -317,4 +319,130 @@ it('applies --commit-sha to the dispatched job', function (): void {
         RunEvalSuiteJob::class,
         fn (RunEvalSuiteJob $job): bool => $job->commitSha === 'deadbeef',
     );
+});
+
+function proofread_configure_judge(): void
+{
+    config()->set('ai.default', 'openai');
+    config()->set('proofread.judge.default_model', 'default-judge');
+    config()->set('proofread.judge.max_retries', 0);
+}
+
+it('fakes the judge with pass when --fake-judge=pass is provided', function (): void {
+    proofread_configure_judge();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => 'pass',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('2/2 passed');
+});
+
+it('fakes the judge with fail when --fake-judge=fail is provided', function (): void {
+    proofread_configure_judge();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => 'fail',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('Auto-failed by --fake-judge');
+});
+
+it('loads judge responses from a JSON file when --fake-judge points to a path', function (): void {
+    proofread_configure_judge();
+
+    $dir = sys_get_temp_dir().'/proofread-'.bin2hex(random_bytes(4));
+    mkdir($dir, 0755, true);
+    $path = $dir.'/responses.json';
+    file_put_contents($path, json_encode([
+        ['passed' => true, 'score' => 1.0, 'reason' => 'first-ok'],
+        ['passed' => false, 'score' => 0.1, 'reason' => 'second-bad'],
+    ]));
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => $path,
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('second-bad')
+        ->and($output)->toContain('1/2 passed');
+});
+
+it('exits 2 when --fake-judge SPEC is invalid', function (): void {
+    proofread_configure_judge();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => 'banana',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--fake-judge');
+});
+
+it('exits 2 when --fake-judge file does not exist', function (): void {
+    proofread_configure_judge();
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => '/nonexistent/path/to/missing-responses.json',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--fake-judge');
+});
+
+it('exits 2 when --fake-judge file contains invalid JSON', function (): void {
+    proofread_configure_judge();
+
+    $dir = sys_get_temp_dir().'/proofread-'.bin2hex(random_bytes(4));
+    mkdir($dir, 0755, true);
+    $path = $dir.'/bad.json';
+    file_put_contents($path, 'not valid json {');
+
+    $exit = Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => $path,
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--fake-judge');
+});
+
+it('prints a warning when --fake-judge is active', function (): void {
+    proofread_configure_judge();
+
+    Artisan::call('evals:run', [
+        'suites' => [RubricEnabledSuite::class],
+        '--fake-judge' => 'pass',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('--fake-judge');
+});
+
+it('leaves the real judge wiring untouched when --fake-judge is not provided', function (): void {
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+    ]);
+
+    expect(JudgeAgent::isFaked())->toBeFalse();
 });
