@@ -61,6 +61,7 @@ use Mosaiqo\Proofread\Shadow\PiiSanitizer;
 use Mosaiqo\Proofread\Shadow\ShadowAlertService;
 use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
+use Mosaiqo\Proofread\Simulation\CostSimulator;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Mosaiqo\Proofread\Telescope\EvalRunWatcher;
 use Mosaiqo\Proofread\Webhooks\RegressionWebhookNotifier;
@@ -215,6 +216,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
         $this->app->singleton(FailureClusterer::class, fn ($app): FailureClusterer => new FailureClusterer(
             $app->make(Similarity::class),
         ));
+
+        $this->app->singleton(CostSimulator::class);
 
         $this->app->singleton(PromptLinter::class, fn ($app): PromptLinter => new PromptLinter([
             $app->make(LengthRule::class),
