@@ -9,6 +9,7 @@ use Laravel\Mcp\Server\Tool;
 use Mosaiqo\Proofread\Mcp\Tools\GetEvalRunDiffTool;
 use Mosaiqo\Proofread\Mcp\Tools\ListEvalSuitesTool;
 use Mosaiqo\Proofread\Mcp\Tools\RunEvalSuiteTool;
+use Mosaiqo\Proofread\Mcp\Tools\RunProviderComparisonTool;
 
 /**
  * Conditional integration glue for laravel/mcp.
@@ -32,6 +33,7 @@ final class McpIntegration
             ListEvalSuitesTool::class,
             RunEvalSuiteTool::class,
             GetEvalRunDiffTool::class,
+            RunProviderComparisonTool::class,
         ];
     }
 
