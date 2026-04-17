@@ -11,7 +11,7 @@ use RuntimeException;
 
 class Proofread
 {
-    public const VERSION = '0.3.0-dev';
+    public const VERSION = '0.3.0';
 
     private static bool $pestExpectationsRegistered = false;
 

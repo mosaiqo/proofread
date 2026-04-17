@@ -223,14 +223,34 @@ expectations — no stub files to maintain.
 
 | Command | Purpose |
 |---|---|
-| `evals:run {suites*}` | Run one or more `EvalSuite` classes. Supports `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, and `--fake-judge` (pass, fail, or JSON path). |
+| `evals:run {suites*}` | Run one or more `EvalSuite` classes. Flags: `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, `--fake-judge`, `--concurrency`. |
 | `evals:compare {base} {head}` | Structured diff between two persisted runs |
+| `evals:dataset:diff {dataset}` | Compare two versions of a dataset. Accepts `--base`, `--head`, `--format`. |
+| `evals:export {run}` | Export a persisted run as self-contained Markdown or HTML. Accepts `--format`, `--output`. |
 | `evals:cluster` | Cluster failures by embedding similarity |
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
 | `dataset:generate` | Generate synthetic cases from a schema via an LLM |
 
 Each command supports `--help` for the full flag list.
+
+## Running cases in parallel
+
+`EvalRunner::runSuite($suite, concurrency: 5)` executes up to 5 cases
+in parallel via Laravel's process-based concurrency driver. The
+`evals:run --concurrency=N` flag exposes the same capability from the
+CLI.
+
+Concurrency is beneficial for I/O-bound subjects (LLM and HTTP calls)
+where parallel wait dominates. For deterministic in-memory subjects
+the per-task overhead of child-process spawning and closure
+serialization makes sequential execution faster — leave `concurrency`
+at its default of `1` in that case.
+
+Subjects must be serializable. Agent class-string FQCNs and static
+closures serialize cleanly. Ad-hoc closures that capture test-local
+state by reference (`use (&$x)`) cannot cross the process boundary
+and should only be used with `concurrency: 1`.
 
 ## Shadow evals
 
@@ -307,6 +327,14 @@ public function boot(): void
     Gate::define('viewEvals', fn ($user) => $user?->isAdmin() === true);
 }
 ```
+
+## Dataset versioning
+
+Every persisted run is linked to an `EvalDatasetVersion` snapshot
+capturing the exact `cases` that were evaluated. When a dataset's
+checksum changes between runs, Proofread automatically records a
+new version without losing the old one. Use `evals:dataset:diff` to
+see what changed between any two versions.
 
 ## Pricing table
 

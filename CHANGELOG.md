@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-17
+
+### Added
+
+- `EvalDatasetVersion` model and schema capturing per-checksum snapshots
+  of a dataset's cases. Every persisted `EvalRun` links to the version
+  it was evaluated against, enabling accurate historical analysis when
+  datasets evolve.
+- `evals:dataset:diff {dataset}` Artisan command that compares two
+  versions of a dataset side by side. Resolves versions by short
+  checksum prefix, run ULID, or the keywords `latest` / `previous`.
+  Reports cases added, removed, modified, or unchanged in either
+  `table` or `json` format.
+- `evals:export {run}` Artisan command that exports a persisted run
+  as a self-contained Markdown or HTML document. Suitable for PR
+  descriptions, CI artifacts, or sharing with stakeholders without
+  dashboard access.
+- `RunResolver` helper that resolves a run identifier (ULID, short
+  commit SHA, or `latest` keyword) to an `EvalRun` model. Used by the
+  new export command and available for external reuse.
+- `Proofread::writeFile(string $path, string $contents): void` —
+  generic atomic file writer (temp file + rename). `writeJUnit()` now
+  delegates to it.
+- `Proofread::VERSION` class constant for programmatic version checks
+  and version headers in generated exports.
+- `ConcurrencyDriver` contract and two implementations:
+  `LaravelConcurrencyDriver` (production, wraps Laravel's
+  `Illuminate\Support\Facades\Concurrency` process driver) and
+  `SyncConcurrencyDriver` (test-friendly, runs tasks inline).
+- `EvalRunner::runSuite($suite, concurrency: N)` and
+  `EvalRunner::run(..., concurrency: N)` — optional parallelism for
+  I/O-bound suites. Default `concurrency: 1` preserves existing
+  sequential semantics. Cases are chunked into batches of size
+  `concurrency` and each batch runs concurrently via the driver.
+- `evals:run --concurrency=N` CLI flag to enable parallel case
+  execution from the command line.
+
+### Changed
+
+- `evals:run` pre-run header now reports per-case assertion counts as
+  a range when they vary across cases (e.g. `3-5 assertions per case`)
+  instead of quoting the fixed `assertions()` count. Suites whose
+  per-case count is constant still see the singular form
+  (`3 assertions per case`).
+- Legacy `create_eval_*_table.php` migrations renamed with
+  `2026_04_01_000001..000003` date prefixes so they sort consistently
+  alongside new migrations. Pre-v1 consumers who previously relied on
+  `discoversMigrations` auto-loading should republish their
+  migrations after upgrading.
+- `EvalPersister::persist()` now creates or reuses an
+  `EvalDatasetVersion` row on every persist, writing the full
+  `cases` snapshot for new versions. External behavior is otherwise
+  unchanged; existing `EvalRun` rows before v0.3 remain valid with
+  `dataset_version_id` null.
+
 ## [0.2.0] - 2026-04-17
 
 ### Added
@@ -197,7 +252,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/mosaiqo/proofread/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mosaiqo/proofread/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mosaiqo/proofread/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mosaiqo/proofread/releases/tag/v0.1.0
