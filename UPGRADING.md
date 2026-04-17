@@ -5,6 +5,18 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.6.0 from 0.5.x
+
+No breaking changes. All additions. Optional adoption:
+
+- To use the new scaffolding commands, no configuration is needed —
+  they appear in `php artisan list` after upgrading.
+- To override the generated stubs, publish them with
+  `php artisan vendor:publish --tag=proofread-stubs`.
+- To add the CI workflow, publish it with
+  `php artisan vendor:publish --tag=proofread-workflows` and
+  customize the suite FQCN in the resulting file.
+
 ## Upgrading to 0.5.1 from 0.5.0
 
 ### `evals:run` now honors `assertionsFor` overrides

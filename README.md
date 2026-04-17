@@ -190,8 +190,12 @@ into assertion metadata.
 | `LatencyLimit` | operational | `LatencyLimit::under(3000)` |
 | `Rubric` | semantic (LLM-as-judge) | `Rubric::make('polite and concise')` |
 | `Similar` | semantic (embeddings) | `Similar::to('reference text')->minScore(0.8)` |
+| `HallucinationAssertion` | semantic (LLM-as-judge) | `HallucinationAssertion::against($groundTruth)` |
+| `LanguageAssertion` | semantic (LLM-as-judge) | `LanguageAssertion::matches('en')` |
 | `Trajectory` | trajectory | `Trajectory::callsTool('search')` |
 | `GoldenSnapshot` | snapshot | `GoldenSnapshot::fromContext()` |
+| `StructuredOutputAssertion` | structured | `StructuredOutputAssertion::conformsTo(MyAgent::class)` |
+| `PiiLeakageAssertion` | safety | `PiiLeakageAssertion::make()` |
 
 All assertions live under `Mosaiqo\Proofread\Assertions\`. Each one returns an
 `AssertionResult` with a `passed` bool, a human-readable `reason`, an optional
@@ -243,6 +247,9 @@ expectations — no stub files to maintain.
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
 | `dataset:generate` | Generate synthetic cases from a schema via an LLM |
+| `proofread:make-suite {name}` | Scaffold a new `EvalSuite`. Flag: `--multi`. |
+| `proofread:make-assertion {name}` | Scaffold a new `Assertion` class. |
+| `proofread:make-dataset {name}` | Scaffold a dataset PHP file. Flag: `--path`. |
 
 Each command supports `--help` for the full flag list.
 

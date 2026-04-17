@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-17
+
+### Added
+
+- `proofread:make-suite {name}` Artisan command scaffolds a new
+  `EvalSuite` class under `app/Evals/`. Accepts `--multi` to
+  generate a `MultiSubjectEvalSuite` instead.
+- `proofread:make-assertion {name}` scaffolds a new `Assertion`
+  class under `app/Evals/Assertions/`.
+- `proofread:make-dataset {name}` scaffolds a dataset PHP file
+  under `database/evals/` (or a custom `--path`).
+- Stubs for all three generators can be overridden per-project via
+  `vendor:publish --tag=proofread-stubs`.
+- `StructuredOutputAssertion::conformsTo($agentClass)` validates
+  that an LLM output is valid JSON and conforms to the schema
+  declared by an Agent implementing `HasStructuredOutput`. Exposes
+  the parsed data in `AssertionResult::metadata['parsed_data']` and
+  the violation path (when invalid) in `metadata['violation_path']`.
+- `PiiLeakageAssertion::make()` detects PII patterns (emails, credit
+  card numbers, custom regex) in string outputs using the existing
+  `PiiSanitizer`. Deterministic, no LLM calls. Accepts
+  `::withPatterns($patterns)` to override the default regex set.
+- `HallucinationAssertion::against($groundTruth)` uses the LLM judge
+  to verify that the output contains only claims supported by the
+  provided ground truth. `->using($model)` and `->minScore($t)`
+  mirror the `Rubric` builder.
+- `LanguageAssertion::matches($languageCode)` uses the LLM judge to
+  verify the output is primarily written in the expected language.
+  Accepts ISO 639-1 codes (`en`, `es`) or common names (`English`).
+- GitHub Actions workflow template, publishable via
+  `vendor:publish --tag=proofread-workflows`. Runs suites on PRs,
+  uploads JUnit XML, renders per-case results in the PR via
+  `mikepenz/action-junit-report`.
+
 ## [0.5.1] - 2026-04-17
 
 ### Fixed
@@ -408,7 +442,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/mosaiqo/proofread/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/mosaiqo/proofread/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mosaiqo/proofread/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/mosaiqo/proofread/compare/v0.4.0...v0.4.1
