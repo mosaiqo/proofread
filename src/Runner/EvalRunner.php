@@ -152,6 +152,99 @@ final class EvalRunner
     }
 
     /**
+     * Run a suite against an explicit subject tagged with a label.
+     *
+     * Used by {@see ComparisonRunner} to evaluate
+     * the same dataset against multiple providers. The supplied subject
+     * overrides whatever {@see EvalSuite::subject()} would return, and each
+     * case context is enriched with `subject_label` so suites can branch on
+     * it in {@see EvalSuite::assertionsFor()}.
+     *
+     * Does NOT invoke setUp/tearDown — the caller orchestrates those once
+     * across the whole comparison.
+     *
+     * @internal
+     */
+    public function runSuiteForSubject(
+        EvalSuite $suite,
+        Dataset $dataset,
+        string $subjectLabel,
+        mixed $subject,
+        int $concurrency = 1,
+    ): EvalRun {
+        $concurrency = max(1, $concurrency);
+        $resolved = $this->resolver->resolve($subject);
+
+        $runStart = hrtime(true);
+
+        $results = $concurrency === 1
+            ? $this->runCasesSequentiallyWithLabel($dataset, $resolved, $suite, $subjectLabel)
+            : $this->runCasesConcurrentlyWithLabel($dataset, $resolved, $suite, $subjectLabel, $concurrency);
+
+        $durationMs = $this->roundMs((hrtime(true) - $runStart) / 1_000_000);
+
+        return EvalRun::make($dataset, $results, $durationMs);
+    }
+
+    /**
+     * @return list<EvalResult>
+     */
+    private function runCasesSequentiallyWithLabel(
+        Dataset $dataset,
+        Closure $resolved,
+        EvalSuite $suite,
+        string $subjectLabel,
+    ): array {
+        $results = [];
+        foreach ($dataset->cases as $index => $case) {
+            $labeledCase = $case + ['subject_label' => $subjectLabel];
+            $assertions = $this->validateAssertions($suite->assertionsFor($labeledCase));
+            $results[] = $this->runCase($resolved, $labeledCase, $index, $assertions);
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param  int<1, max>  $concurrency
+     * @return list<EvalResult>
+     */
+    private function runCasesConcurrentlyWithLabel(
+        Dataset $dataset,
+        Closure $resolved,
+        EvalSuite $suite,
+        string $subjectLabel,
+        int $concurrency,
+    ): array {
+        $indexed = [];
+        foreach ($dataset->cases as $index => $case) {
+            $indexed[] = ['index' => $index, 'case' => $case + ['subject_label' => $subjectLabel]];
+        }
+
+        $chunks = array_chunk($indexed, $concurrency);
+
+        $results = [];
+        foreach ($chunks as $chunk) {
+            $tasks = [];
+            foreach ($chunk as $entry) {
+                $case = $entry['case'];
+                $index = $entry['index'];
+                $assertions = $this->validateAssertions($suite->assertionsFor($case));
+                $tasks[] = fn (): EvalResult => $this->runCase($resolved, $case, $index, $assertions);
+            }
+
+            /** @var array<int, EvalResult> $chunkResults */
+            $chunkResults = $this->concurrencyDriver->run($tasks);
+
+            foreach ($chunkResults as $chunkResult) {
+                $results[] = $chunkResult;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
      * @return list<EvalResult>
      */
     private function runCasesSequentially(Dataset $dataset, Closure $resolved, EvalSuite $suite): array

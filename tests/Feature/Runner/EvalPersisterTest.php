@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Mosaiqo\Proofread\Models\EvalComparison;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalDatasetVersion as EvalDatasetVersionModel;
 use Mosaiqo\Proofread\Models\EvalResult as EvalResultModel;
@@ -370,4 +371,38 @@ it('updates first_seen_at to the first time a version appeared', function (): vo
 
     $version = EvalDatasetVersionModel::query()->firstOrFail();
     expect($version->first_seen_at->toIso8601String())->toBe($firstSeenAt->toIso8601String());
+});
+
+it('stores comparison_id and subject_label when provided', function (): void {
+    $comparison = EvalComparison::query()->create([
+        'name' => 'cmp',
+        'dataset_name' => 'persist-test',
+        'subject_labels' => ['haiku'],
+        'total_runs' => 1,
+        'passed_runs' => 0,
+        'failed_runs' => 0,
+        'duration_ms' => 10.0,
+    ]);
+
+    $run = buildRun([['input' => 'x']], [persisterPassingResult()]);
+
+    (new EvalPersister)->persist(
+        $run,
+        comparisonId: $comparison->id,
+        subjectLabel: 'haiku',
+    );
+
+    $model = EvalRunModel::query()->firstOrFail();
+    expect($model->comparison_id)->toBe($comparison->id)
+        ->and($model->subject_label)->toBe('haiku');
+});
+
+it('leaves comparison fields null when not provided', function (): void {
+    $run = buildRun([['input' => 'x']], [persisterPassingResult()]);
+
+    (new EvalPersister)->persist($run);
+
+    $model = EvalRunModel::query()->firstOrFail();
+    expect($model->comparison_id)->toBeNull()
+        ->and($model->subject_label)->toBeNull();
 });

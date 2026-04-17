@@ -34,6 +34,8 @@ use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
 use Mosaiqo\Proofread\Listeners\NotifyWebhookOnRegression;
 use Mosaiqo\Proofread\Mcp\McpIntegration;
 use Mosaiqo\Proofread\Pricing\PricingTable;
+use Mosaiqo\Proofread\Runner\ComparisonPersister;
+use Mosaiqo\Proofread\Runner\ComparisonRunner;
 use Mosaiqo\Proofread\Runner\Concurrency\ConcurrencyDriver;
 use Mosaiqo\Proofread\Runner\Concurrency\LaravelConcurrencyDriver;
 use Mosaiqo\Proofread\Shadow\Contracts\RandomNumberProvider;
@@ -110,6 +112,9 @@ class ProofreadServiceProvider extends PackageServiceProvider
     public function registeringPackage(): void
     {
         $this->app->bind(ConcurrencyDriver::class, LaravelConcurrencyDriver::class);
+
+        $this->app->singleton(ComparisonRunner::class);
+        $this->app->singleton(ComparisonPersister::class);
 
         $this->app->singleton(PricingTable::class, function ($app): PricingTable {
             /** @var array<string, array<string, mixed>> $models */

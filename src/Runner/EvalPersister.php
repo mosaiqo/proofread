@@ -29,11 +29,23 @@ class EvalPersister
         ?string $commitSha = null,
         ?string $subjectType = null,
         ?string $subjectClass = null,
+        ?string $comparisonId = null,
+        ?string $subjectLabel = null,
     ): EvalRunModel {
-        $runModel = DB::transaction(function () use ($run, $suiteClass, $commitSha, $subjectType, $subjectClass): EvalRunModel {
+        $runModel = DB::transaction(function () use ($run, $suiteClass, $commitSha, $subjectType, $subjectClass, $comparisonId, $subjectLabel): EvalRunModel {
             $dataset = $this->upsertDataset($run);
             $version = $this->upsertVersion($run, $dataset);
-            $runModel = $this->insertRun($run, $dataset, $version, $suiteClass, $commitSha, $subjectType, $subjectClass);
+            $runModel = $this->insertRun(
+                $run,
+                $dataset,
+                $version,
+                $suiteClass,
+                $commitSha,
+                $subjectType,
+                $subjectClass,
+                $comparisonId,
+                $subjectLabel,
+            );
 
             foreach ($run->results as $index => $result) {
                 $attrs = $this->buildResultAttributes($runModel->id, $index, $result);
@@ -110,6 +122,8 @@ class EvalPersister
         ?string $commitSha,
         ?string $subjectType,
         ?string $subjectClass,
+        ?string $comparisonId = null,
+        ?string $subjectLabel = null,
     ): EvalRunModel {
         $aggregates = $this->aggregateRunMetrics($run);
 
@@ -117,10 +131,12 @@ class EvalPersister
         $model->fill([
             'dataset_id' => $dataset->id,
             'dataset_version_id' => $version->id,
+            'comparison_id' => $comparisonId,
             'dataset_name' => $dataset->name,
             'suite_class' => $suiteClass,
             'subject_type' => $subjectType ?? 'unknown',
             'subject_class' => $subjectClass,
+            'subject_label' => $subjectLabel,
             'commit_sha' => $commitSha,
             'model' => $aggregates['model'],
             'passed' => $run->passed(),
