@@ -3,6 +3,19 @@
 declare(strict_types=1);
 
 use Mosaiqo\Proofread\Support\AssertionResult;
+use Mosaiqo\Proofread\Support\JudgeResult;
+
+/**
+ * Rogue fixture class that attempts to extend AssertionResult outside
+ * the allowed list. Constructing an instance must throw.
+ */
+final class RogueAssertionResult extends AssertionResult
+{
+    public static function forge(): self
+    {
+        return new self(true, 'rogue');
+    }
+}
 
 it('creates a passed result with reason and no score', function (): void {
     $result = AssertionResult::pass('All good');
@@ -88,4 +101,22 @@ it('preserves metadata shape unchanged', function (): void {
     $result = AssertionResult::pass('shape', null, $nested);
 
     expect($result->metadata)->toBe($nested);
+});
+
+it('allows JudgeResult as a subclass', function (): void {
+    $result = JudgeResult::pass(
+        reason: 'excellent',
+        score: 0.95,
+        metadata: [],
+        judgeModel: 'claude-haiku-4-5',
+        retryCount: 0,
+    );
+
+    expect($result)->toBeInstanceOf(JudgeResult::class);
+    expect($result)->toBeInstanceOf(AssertionResult::class);
+    expect($result->passed)->toBeTrue();
+});
+
+it('rejects unknown subclasses', function (): void {
+    expect(fn (): AssertionResult => RogueAssertionResult::forge())->toThrow(LogicException::class);
 });
