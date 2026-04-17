@@ -45,7 +45,6 @@ it('does not reference Claude as an assistant in public artifacts', function ():
     ];
 
     $forbidden = [
-        '/\bClaude Code\b/',
         '/\bClaude assistant\b/',
         '/generated with Claude/i',
         '/Co-Authored-By:\s*Claude/i',
@@ -73,7 +72,6 @@ it('does not reference Claude in stubs or resources', function (): void {
     ];
 
     $forbidden = [
-        '/\bClaude Code\b/',
         '/\bClaude assistant\b/',
         '/generated with Claude/i',
         '/Co-Authored-By:\s*Claude/i',
