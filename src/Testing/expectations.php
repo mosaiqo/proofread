@@ -7,6 +7,7 @@ use Mosaiqo\Proofread\Assertions\JsonSchemaAssertion;
 use Mosaiqo\Proofread\Assertions\Rubric;
 use Mosaiqo\Proofread\Contracts\Assertion;
 use Mosaiqo\Proofread\Runner\EvalRunner;
+use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Support\Dataset;
 use Mosaiqo\Proofread\Support\EvalResult;
 use Mosaiqo\Proofread\Support\EvalRun;
@@ -131,6 +132,38 @@ expect()->extend('toMatchGoldenSnapshot', function (?string $key = null) {
     return $this;
 });
 
+expect()->extend('toPassSuite', function () {
+    /** @var Expectation<mixed> $this */
+    $subject = $this->value;
+
+    if (! $subject instanceof EvalSuite) {
+        throw new ExpectationFailedException(sprintf(
+            'toPassSuite expects an EvalSuite instance, got %s',
+            get_debug_type($subject),
+        ));
+    }
+
+    /** @var EvalRunner $runner */
+    $runner = app(EvalRunner::class);
+
+    try {
+        $run = $runner->runSuite($subject);
+    } catch (InvalidArgumentException $exception) {
+        throw new ExpectationFailedException(sprintf(
+            'toPassSuite could not run suite "%s": %s',
+            $subject->name(),
+            $exception->getMessage(),
+        ));
+    }
+
+    Assert::assertTrue(
+        $run->passed(),
+        $run->passed() ? '' : proofread_format_suite_failure($subject, $run),
+    );
+
+    return $this;
+});
+
 expect()->extend('toPassEval', function (Dataset $dataset, array $assertions = []) {
     /** @var Expectation<mixed> $this */
     $subject = $this->value;
@@ -219,6 +252,89 @@ function proofread_format_eval_failure_entry(EvalRun $run, EvalResult $failure, 
     }
 
     return implode("\n", $lines);
+}
+
+function proofread_format_suite_failure(EvalSuite $suite, EvalRun $run): string
+{
+    $failures = $run->failures();
+    $total = $run->total();
+    $failedCount = count($failures);
+
+    $header = sprintf(
+        'Expected suite "%s" to pass, but %d of %d cases failed:',
+        $suite->name(),
+        $failedCount,
+        $total,
+    );
+
+    $detailed = array_slice($failures, 0, 3);
+    $lines = [$header];
+
+    foreach ($detailed as $failure) {
+        $lines[] = proofread_format_suite_failure_entry($run, $failure);
+    }
+
+    $extra = $failedCount - count($detailed);
+    if ($extra > 0) {
+        $lines[] = sprintf('  ... and %d more failures', $extra);
+    }
+
+    return implode("\n", $lines);
+}
+
+function proofread_format_suite_failure_entry(EvalRun $run, EvalResult $failure): string
+{
+    $index = array_search($failure, $run->results, true);
+    $indexLabel = $index === false ? '?' : (string) $index;
+
+    $meta = $failure->case['meta'] ?? null;
+    $caseName = null;
+    if (is_array($meta)) {
+        $name = $meta['name'] ?? null;
+        if (is_string($name) && $name !== '') {
+            $caseName = $name;
+        }
+    }
+
+    $label = $caseName !== null
+        ? sprintf('  [%s] %s', $indexLabel, $caseName)
+        : sprintf('  [%s]', $indexLabel);
+
+    $lines = [$label];
+
+    if ($failure->hasError()) {
+        $error = $failure->error;
+        $lines[] = sprintf(
+            '      error: %s: %s',
+            $error !== null ? $error::class : 'Error',
+            proofread_truncate_reason($error?->getMessage() ?? ''),
+        );
+    }
+
+    foreach ($failure->assertionResults as $assertionResult) {
+        if ($assertionResult->passed) {
+            continue;
+        }
+
+        $name = $assertionResult->metadata['assertion_name'] ?? null;
+        $reason = proofread_truncate_reason($assertionResult->reason);
+
+        $lines[] = is_string($name) && $name !== ''
+            ? sprintf('      %s: %s', $name, $reason)
+            : sprintf('      %s', $reason);
+    }
+
+    return implode("\n", $lines);
+}
+
+function proofread_truncate_reason(string $reason): string
+{
+    $max = 80;
+    if (mb_strlen($reason) > $max) {
+        return mb_substr($reason, 0, $max - 3).'...';
+    }
+
+    return $reason;
 }
 
 function proofread_format_rubric_failure(string $criteria, JudgeResult $result): string

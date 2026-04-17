@@ -89,6 +89,9 @@ final class ProofreadExpectationsExtension implements MethodsClassReflectionExte
                     ),
                 ],
             ],
+            'toPassSuite' => [
+                'parameters' => [],
+            ],
             'toPassRubric' => [
                 'parameters' => [
                     new ProofreadExpectationParameter(
