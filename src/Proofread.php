@@ -11,11 +11,13 @@ use RuntimeException;
 
 class Proofread
 {
+    public const VERSION = '0.3.0-dev';
+
     private static bool $pestExpectationsRegistered = false;
 
     public function version(): string
     {
-        return '0.1.0-dev';
+        return self::VERSION;
     }
 
     public static function registerPestExpectations(): void
@@ -36,6 +38,11 @@ class Proofread
 
     public static function writeJUnit(EvalRun $run, string $path): void
     {
+        self::writeFile($path, $run->toJUnitXml());
+    }
+
+    public static function writeFile(string $path, string $contents): void
+    {
         $directory = dirname($path);
 
         if (! is_dir($directory)) {
@@ -44,17 +51,16 @@ class Proofread
 
         if (! is_writable($directory)) {
             throw new RuntimeException(
-                sprintf('JUnit output directory "%s" is not writable.', $directory)
+                sprintf('Output directory "%s" is not writable.', $directory)
             );
         }
 
-        $xml = $run->toJUnitXml();
         $tmpPath = $path.'.'.getmypid().'.tmp';
 
-        $bytes = self::silently(static fn (): int|false => file_put_contents($tmpPath, $xml));
+        $bytes = self::silently(static fn (): int|false => file_put_contents($tmpPath, $contents));
         if ($bytes === false) {
             throw new RuntimeException(
-                sprintf('Unable to write JUnit XML to temporary file "%s".', $tmpPath)
+                sprintf('Unable to write output to temporary file "%s".', $tmpPath)
             );
         }
 
@@ -62,7 +68,7 @@ class Proofread
         if (! $renamed) {
             self::silently(static fn (): bool => unlink($tmpPath));
             throw new RuntimeException(
-                sprintf('Unable to move JUnit XML to "%s".', $path)
+                sprintf('Unable to move output file to "%s".', $path)
             );
         }
     }
@@ -72,7 +78,7 @@ class Proofread
         $created = self::silently(static fn (): bool => mkdir($directory, 0755, true));
         if (! $created && ! is_dir($directory)) {
             throw new RuntimeException(
-                sprintf('Unable to create JUnit output directory "%s".', $directory)
+                sprintf('Unable to create output directory "%s".', $directory)
             );
         }
     }
