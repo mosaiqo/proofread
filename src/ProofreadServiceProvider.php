@@ -8,6 +8,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Laravel\Telescope\Telescope;
 use Livewire\Livewire;
 use Mosaiqo\Proofread\Clustering\FailureClusterer;
 use Mosaiqo\Proofread\Console\Commands\BenchmarkEvalsCommand;
@@ -54,6 +55,7 @@ use Mosaiqo\Proofread\Shadow\ShadowAlertService;
 use Mosaiqo\Proofread\Shadow\ShadowAssertionsRegistry;
 use Mosaiqo\Proofread\Similarity\Similarity;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
+use Mosaiqo\Proofread\Telescope\EvalRunWatcher;
 use Mosaiqo\Proofread\Webhooks\RegressionWebhookNotifier;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -102,6 +104,10 @@ class ProofreadServiceProvider extends PackageServiceProvider
         McpIntegration::registerTools($this->app);
 
         Event::listen(EvalRunPersisted::class, CheckForRegressionListener::class);
+
+        if (class_exists(Telescope::class)) {
+            Event::listen(EvalRunPersisted::class, EvalRunWatcher::class);
+        }
 
         if ((bool) config('proofread.webhooks.enabled', false)) {
             Event::listen(EvalRunRegressed::class, NotifyWebhookOnRegression::class);

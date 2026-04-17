@@ -519,6 +519,19 @@ for this step. Activate it by implementing your own baseline
 strategy (artifact, shared DB, or branch comparison) to resolve
 the two run IDs.
 
+## Laravel Telescope integration
+
+If your project has `laravel/telescope` installed, Proofread
+automatically records persisted eval runs as Telescope entries.
+They appear under Events tagged with `proofread_eval` alongside
+your queries, jobs, and requests. Filter by the `proofread_eval`
+tag (or by `dataset:...`, `suite:...`, `commit:...`) to inspect
+recent runs without leaving your debugging workflow.
+
+Registration is conditional — Proofread checks for Telescope at
+boot time and wires up the listener only when it is available.
+No configuration required.
+
 ## Laravel Boost integration
 
 If your project uses `laravel/boost`, publish Proofread's AI
