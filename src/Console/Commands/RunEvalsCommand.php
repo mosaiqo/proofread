@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Mosaiqo\Proofread\Console\Commands;
 
 use Illuminate\Console\Command;
+use Mosaiqo\Proofread\Console\Support\JudgeFaker;
 use Mosaiqo\Proofread\Jobs\RunEvalSuiteJob;
-use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Runner\EvalPersister;
 use Mosaiqo\Proofread\Runner\EvalRunner;
@@ -59,7 +59,7 @@ final class RunEvalsCommand extends Command
             return 2;
         }
 
-        if ($fakeJudgeSpec !== null && ! $this->applyFakeJudge($fakeJudgeSpec)) {
+        if ($fakeJudgeSpec !== null && ! JudgeFaker::apply($this, $fakeJudgeSpec)) {
             return 2;
         }
 
@@ -206,102 +206,6 @@ final class RunEvalsCommand extends Command
         }
 
         return max(1, (int) $raw);
-    }
-
-    private function applyFakeJudge(string $spec): bool
-    {
-        if ($spec === 'pass') {
-            JudgeAgent::fake(static fn (): string => (string) json_encode([
-                'passed' => true,
-                'score' => 1.0,
-                'reason' => 'Auto-passed by --fake-judge',
-            ]));
-            $this->line(sprintf(
-                'Using --fake-judge=%s — all Rubric assertions will auto-pass.',
-                $spec,
-            ));
-
-            return true;
-        }
-
-        if ($spec === 'fail') {
-            JudgeAgent::fake(static fn (): string => (string) json_encode([
-                'passed' => false,
-                'score' => 0.1,
-                'reason' => 'Auto-failed by --fake-judge',
-            ]));
-            $this->line(sprintf(
-                'Using --fake-judge=%s — all Rubric assertions will auto-fail.',
-                $spec,
-            ));
-
-            return true;
-        }
-
-        if (! file_exists($spec)) {
-            $this->error(sprintf(
-                "--fake-judge spec '%s' is not 'pass', 'fail', or an existing file path",
-                $spec,
-            ));
-
-            return false;
-        }
-
-        $contents = file_get_contents($spec);
-        if ($contents === false) {
-            $this->error(sprintf('--fake-judge file "%s" could not be read', $spec));
-
-            return false;
-        }
-
-        /** @var mixed $decoded */
-        $decoded = json_decode($contents, true);
-        if (! is_array($decoded)) {
-            $this->error(sprintf('--fake-judge file "%s" does not contain a JSON array', $spec));
-
-            return false;
-        }
-
-        /** @var list<string> $responses */
-        $responses = [];
-        foreach ($decoded as $index => $entry) {
-            $encoded = json_encode($entry);
-            if ($encoded === false) {
-                $this->error(sprintf(
-                    '--fake-judge file "%s" entry at index %s could not be encoded',
-                    $spec,
-                    (string) $index,
-                ));
-
-                return false;
-            }
-            $responses[] = $encoded;
-        }
-
-        $cursor = 0;
-        $count = count($responses);
-        JudgeAgent::fake(static function () use ($responses, &$cursor, $count, $spec): string {
-            if ($cursor >= $count) {
-                throw new \RuntimeException(sprintf(
-                    '--fake-judge file "%s" ran out of responses after %d invocation(s)',
-                    $spec,
-                    $count,
-                ));
-            }
-
-            $response = $responses[$cursor];
-            $cursor++;
-
-            return $response;
-        });
-
-        $this->line(sprintf(
-            'Using --fake-judge=%s — %d scripted response(s) loaded.',
-            $spec,
-            $count,
-        ));
-
-        return true;
     }
 
     private function resolveSuite(string $name): ?EvalSuite

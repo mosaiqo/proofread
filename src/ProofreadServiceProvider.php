@@ -16,6 +16,7 @@ use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportRunCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
+use Mosaiqo\Proofread\Console\Commands\RunProviderComparisonCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
@@ -58,6 +59,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->discoversMigrations()
             ->hasCommand(RunEvalsCommand::class)
+            ->hasCommand(RunProviderComparisonCommand::class)
             ->hasCommand(CompareEvalsCommand::class)
             ->hasCommand(ShadowEvaluateCommand::class)
             ->hasCommand(ShadowAlertCommand::class)
