@@ -27,6 +27,7 @@ use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\RunProviderComparisonCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
+use Mosaiqo\Proofread\Console\Commands\SimulateCostCommand;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
 use Mosaiqo\Proofread\Generator\DatasetGenerator;
@@ -84,6 +85,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ShadowAlertCommand::class)
             ->hasCommand(GenerateDatasetCommand::class)
             ->hasCommand(ClusterFailuresCommand::class)
+            ->hasCommand(SimulateCostCommand::class)
             ->hasCommand(DatasetDiffCommand::class)
             ->hasCommand(ExportRunCommand::class)
             ->hasCommand(ImportDatasetCommand::class)
