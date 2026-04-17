@@ -519,6 +519,21 @@ for this step. Activate it by implementing your own baseline
 strategy (artifact, shared DB, or branch comparison) to resolve
 the two run IDs.
 
+## Laravel Boost integration
+
+If your project uses `laravel/boost`, publish Proofread's AI
+guidelines so Boost-powered editors can generate idiomatic
+suites, assertions, and tests:
+
+```bash
+php artisan vendor:publish --tag=proofread-boost-guidelines
+```
+
+The guidelines land at `.ai/guidelines/proofread.md`. They cover
+suite structure, assertion selection, testing patterns, and CLI
+workflow. If your Boost setup expects a different path, move the
+file after publishing.
+
 ## Configuration
 
 Publish the config file:
