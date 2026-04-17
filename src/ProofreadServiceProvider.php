@@ -19,6 +19,7 @@ use Mosaiqo\Proofread\Console\Commands\ExportDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportRunCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\ImportDatasetCommand;
+use Mosaiqo\Proofread\Console\Commands\LintCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeAssertionCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeSuiteCommand;
@@ -86,6 +87,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ExportRunCommand::class)
             ->hasCommand(ImportDatasetCommand::class)
             ->hasCommand(ExportDatasetCommand::class)
+            ->hasCommand(LintCommand::class)
             ->hasCommand(ProofreadMakeSuiteCommand::class)
             ->hasCommand(ProofreadMakeAssertionCommand::class)
             ->hasCommand(ProofreadMakeDatasetCommand::class)
