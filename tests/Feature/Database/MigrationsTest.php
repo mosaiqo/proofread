@@ -336,29 +336,192 @@ it('rolls back shadow_evals cleanly', function (): void {
     expect(Schema::hasTable('shadow_evals'))->toBeTrue();
 });
 
+it('creates the eval_dataset_versions table with expected columns', function (): void {
+    expect(Schema::hasTable('eval_dataset_versions'))->toBeTrue();
+
+    $expected = [
+        'id', 'eval_dataset_id', 'checksum', 'cases', 'case_count',
+        'first_seen_at', 'created_at', 'updated_at',
+    ];
+
+    foreach ($expected as $column) {
+        expect(Schema::hasColumn('eval_dataset_versions', $column))->toBeTrue("missing column {$column}");
+    }
+});
+
+it('creates the expected indexes on eval_dataset_versions', function (): void {
+    $indexes = collect(DB::select("PRAGMA index_list('eval_dataset_versions')"))
+        ->pluck('name')
+        ->all();
+
+    $hasDatasetIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'eval_dataset_id') && ! str_contains($name, 'checksum')
+    );
+    $hasDatasetChecksumUnique = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'eval_dataset_id') && str_contains($name, 'checksum')
+    );
+    $hasChecksumIndex = collect($indexes)->contains(
+        fn (string $name): bool => str_contains($name, 'checksum') && ! str_contains($name, 'eval_dataset_id')
+    );
+
+    expect($hasDatasetIndex)->toBeTrue('missing eval_dataset_id index on eval_dataset_versions')
+        ->and($hasDatasetChecksumUnique)->toBeTrue('missing (eval_dataset_id, checksum) index on eval_dataset_versions')
+        ->and($hasChecksumIndex)->toBeTrue('missing checksum index on eval_dataset_versions');
+});
+
+it('adds dataset_version_id to eval_runs as nullable FK', function (): void {
+    expect(Schema::hasColumn('eval_runs', 'dataset_version_id'))->toBeTrue();
+
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'ver-fk-nullable',
+        'case_count' => 0,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'ver-fk-nullable',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 0,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 0,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'dataset_version_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('eval_runs')->where('id', $runId)->value('dataset_version_id'))->toBeNull();
+});
+
+it('cascades delete versions when dataset is deleted', function (): void {
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'ver-cascade',
+        'case_count' => 0,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $versionId = (string) Str::ulid();
+    DB::table('eval_dataset_versions')->insert([
+        'id' => $versionId,
+        'eval_dataset_id' => $datasetId,
+        'checksum' => str_repeat('a', 64),
+        'cases' => json_encode([]),
+        'case_count' => 0,
+        'first_seen_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('eval_dataset_versions')->count())->toBe(1);
+
+    DB::table('eval_datasets')->where('id', $datasetId)->delete();
+
+    expect(DB::table('eval_dataset_versions')->count())->toBe(0);
+});
+
+it('sets dataset_version_id to null when version is deleted', function (): void {
+    $datasetId = (string) Str::ulid();
+    DB::table('eval_datasets')->insert([
+        'id' => $datasetId,
+        'name' => 'ver-setnull',
+        'case_count' => 0,
+        'checksum' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $versionId = (string) Str::ulid();
+    DB::table('eval_dataset_versions')->insert([
+        'id' => $versionId,
+        'eval_dataset_id' => $datasetId,
+        'checksum' => str_repeat('b', 64),
+        'cases' => json_encode([]),
+        'case_count' => 0,
+        'first_seen_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $runId = (string) Str::ulid();
+    DB::table('eval_runs')->insert([
+        'id' => $runId,
+        'dataset_id' => $datasetId,
+        'dataset_name' => 'ver-setnull',
+        'suite_class' => null,
+        'subject_type' => 'callable',
+        'subject_class' => null,
+        'commit_sha' => null,
+        'model' => null,
+        'passed' => true,
+        'pass_count' => 0,
+        'fail_count' => 0,
+        'error_count' => 0,
+        'total_count' => 0,
+        'duration_ms' => 1.0,
+        'total_cost_usd' => null,
+        'total_tokens_in' => null,
+        'total_tokens_out' => null,
+        'dataset_version_id' => $versionId,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::table('eval_dataset_versions')->where('id', $versionId)->delete();
+
+    expect(DB::table('eval_runs')->where('id', $runId)->value('dataset_version_id'))->toBeNull();
+});
+
 it('provides down() migrations that drop all three tables', function (): void {
     expect(Schema::hasTable('eval_datasets'))->toBeTrue()
         ->and(Schema::hasTable('eval_runs'))->toBeTrue()
         ->and(Schema::hasTable('eval_results'))->toBeTrue();
 
     $base = __DIR__.'/../../../database/migrations';
-    $results = require $base.'/create_eval_results_table.php';
-    $runs = require $base.'/create_eval_runs_table.php';
-    $datasets = require $base.'/create_eval_datasets_table.php';
+    $results = require $base.'/2026_04_01_000003_create_eval_results_table.php';
+    $runs = require $base.'/2026_04_01_000002_create_eval_runs_table.php';
+    $datasets = require $base.'/2026_04_01_000001_create_eval_datasets_table.php';
+    $addVersionId = require $base.'/2026_04_18_000002_add_dataset_version_id_to_eval_runs.php';
+    $versions = require $base.'/2026_04_18_000001_create_eval_dataset_versions_table.php';
 
+    $addVersionId->down();
+    $versions->down();
     $results->down();
     $runs->down();
     $datasets->down();
 
     expect(Schema::hasTable('eval_datasets'))->toBeFalse()
         ->and(Schema::hasTable('eval_runs'))->toBeFalse()
-        ->and(Schema::hasTable('eval_results'))->toBeFalse();
+        ->and(Schema::hasTable('eval_results'))->toBeFalse()
+        ->and(Schema::hasTable('eval_dataset_versions'))->toBeFalse();
 
     $datasets->up();
     $runs->up();
     $results->up();
+    $versions->up();
+    $addVersionId->up();
 
     expect(Schema::hasTable('eval_datasets'))->toBeTrue()
         ->and(Schema::hasTable('eval_runs'))->toBeTrue()
-        ->and(Schema::hasTable('eval_results'))->toBeTrue();
+        ->and(Schema::hasTable('eval_results'))->toBeTrue()
+        ->and(Schema::hasTable('eval_dataset_versions'))->toBeTrue();
 });

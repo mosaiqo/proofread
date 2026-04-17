@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property string $id
  * @property string $dataset_id
+ * @property string|null $dataset_version_id
  * @property string $dataset_name
  * @property string|null $suite_class
  * @property string $subject_type
@@ -38,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
  * @property EvalDataset|null $dataset
+ * @property EvalDatasetVersion|null $datasetVersion
  * @property Collection<int, EvalResult> $results
  */
 class EvalRun extends Model
@@ -51,6 +53,7 @@ class EvalRun extends Model
      */
     protected $fillable = [
         'dataset_id',
+        'dataset_version_id',
         'dataset_name',
         'suite_class',
         'subject_type',
@@ -89,6 +92,14 @@ class EvalRun extends Model
     public function dataset(): BelongsTo
     {
         return $this->belongsTo(EvalDataset::class, 'dataset_id');
+    }
+
+    /**
+     * @return BelongsTo<EvalDatasetVersion, $this>
+     */
+    public function datasetVersion(): BelongsTo
+    {
+        return $this->belongsTo(EvalDatasetVersion::class, 'dataset_version_id');
     }
 
     /**

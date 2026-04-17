@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Mosaiqo\Proofread\Models\EvalDataset;
+use Mosaiqo\Proofread\Models\EvalDatasetVersion;
 use Mosaiqo\Proofread\Models\EvalResult;
 use Mosaiqo\Proofread\Models\EvalRun;
 
@@ -208,6 +209,25 @@ it('returns 1.0 pass_rate when total is zero', function (): void {
     ]);
 
     expect($run->passRate())->toBe(1.0);
+});
+
+it('belongs to a dataset version', function (): void {
+    $dataset = makeDataset('run-version-rel');
+
+    $version = new EvalDatasetVersion;
+    $version->fill([
+        'eval_dataset_id' => $dataset->id,
+        'checksum' => str_repeat('9', 64),
+        'cases' => [['input' => 'x']],
+        'case_count' => 1,
+        'first_seen_at' => now(),
+    ]);
+    $version->save();
+
+    $run = makeRun($dataset, ['dataset_version_id' => $version->id]);
+
+    expect($run->datasetVersion())->toBeInstanceOf(BelongsTo::class)
+        ->and($run->datasetVersion?->id)->toBe($version->id);
 });
 
 it('cascades deletes from dataset down to runs and results', function (): void {

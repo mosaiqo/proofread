@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Mosaiqo\Proofread\Models\EvalDataset;
+use Mosaiqo\Proofread\Models\EvalDatasetVersion;
 use Mosaiqo\Proofread\Models\EvalRun;
 
 /**
@@ -107,4 +109,64 @@ it('casts case_count as integer', function (): void {
     $dataset->refresh();
 
     expect($dataset->case_count)->toBeInt()->toBe(7);
+});
+
+it('has many versions', function (): void {
+    $dataset = newDataset([
+        'name' => 'with-versions',
+        'case_count' => 1,
+    ]);
+
+    $v1 = new EvalDatasetVersion;
+    $v1->fill([
+        'eval_dataset_id' => $dataset->id,
+        'checksum' => str_repeat('1', 64),
+        'cases' => [['input' => 'a']],
+        'case_count' => 1,
+        'first_seen_at' => now()->subMinute(),
+    ]);
+    $v1->save();
+
+    $v2 = new EvalDatasetVersion;
+    $v2->fill([
+        'eval_dataset_id' => $dataset->id,
+        'checksum' => str_repeat('2', 64),
+        'cases' => [['input' => 'a'], ['input' => 'b']],
+        'case_count' => 2,
+        'first_seen_at' => now(),
+    ]);
+    $v2->save();
+
+    expect($dataset->versions())->toBeInstanceOf(HasMany::class)
+        ->and($dataset->versions()->count())->toBe(2);
+});
+
+it('resolves the latest version', function (): void {
+    $dataset = newDataset([
+        'name' => 'latest-version',
+        'case_count' => 1,
+    ]);
+
+    $older = new EvalDatasetVersion;
+    $older->fill([
+        'eval_dataset_id' => $dataset->id,
+        'checksum' => str_repeat('7', 64),
+        'cases' => [['input' => 'old']],
+        'case_count' => 1,
+        'first_seen_at' => now()->subHour(),
+    ]);
+    $older->save();
+
+    $newer = new EvalDatasetVersion;
+    $newer->fill([
+        'eval_dataset_id' => $dataset->id,
+        'checksum' => str_repeat('8', 64),
+        'cases' => [['input' => 'new']],
+        'case_count' => 1,
+        'first_seen_at' => now(),
+    ]);
+    $newer->save();
+
+    expect($dataset->latestVersion())->toBeInstanceOf(HasOne::class)
+        ->and($dataset->latestVersion?->id)->toBe($newer->id);
 });
