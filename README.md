@@ -240,7 +240,7 @@ expectations — no stub files to maintain.
 |---|---|
 | `evals:run {suites*}` | Run one or more `EvalSuite` classes. Flags: `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, `--fake-judge`, `--concurrency`, `--gate-pass-rate`, `--gate-cost-max`. |
 | `evals:benchmark {suite}` | Run a suite N times and report pass-rate variance, duration percentiles, cost, and per-case flakiness. Flags: `--iterations`, `--concurrency`, `--fake-judge`, `--flakiness-threshold`, `--format`. |
-| `evals:compare {base} {head}` | Structured diff between two persisted runs |
+| `evals:compare {base} {head}` | Structured diff between two persisted runs. Flags: `--format=table\|json\|markdown`, `--only-regressions`, `--max-cases`, `--output`. |
 | `evals:dataset:diff {dataset}` | Compare two versions of a dataset. Accepts `--base`, `--head`, `--format`. |
 | `evals:providers {suite}` | Run a `MultiSubjectEvalSuite` and render a matrix of cases × subjects. Flags: `--persist`, `--commit-sha`, `--concurrency`, `--provider-concurrency`, `--fake-judge`, `--format`. |
 | `evals:export {id}` | Export a persisted run or comparison as self-contained Markdown or HTML. `id` accepts a ULID, a commit SHA prefix, or `latest` (resolves to the most recent run). Use `--type=comparison` to target comparisons. Flags: `--format`, `--output`, `--type=run\|comparison`. |
@@ -499,6 +499,25 @@ Required repository secrets if your suites use LLM-backed assertions
 
 For deterministic CI runs without real LLM calls, add
 `--fake-judge=pass` to the `evals:run` command in the workflow.
+
+### PR comments
+
+`evals:compare --format=markdown` renders the diff as a
+PR-friendly Markdown document. Regressions lead, improvements
+follow, stable cases collapse into a `<details>` block for
+readability. Pair it with an `--output` path and post the result
+via `peter-evans/create-or-update-comment` or similar:
+
+```bash
+php artisan evals:compare "$BASE_RUN_ID" "$HEAD_RUN_ID" \
+    --format=markdown \
+    --output=storage/evals/pr-comment.md
+```
+
+The published workflow template includes commented scaffolding
+for this step. Activate it by implementing your own baseline
+strategy (artifact, shared DB, or branch comparison) to resolve
+the two run IDs.
 
 ## Configuration
 

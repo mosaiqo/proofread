@@ -31,9 +31,10 @@ final class CompareEvalsCommand extends Command
     protected $signature = 'evals:compare
         {base : Base run reference (ULID, commit SHA, or "latest")}
         {head : Head run reference (ULID, commit SHA, or "latest")}
-        {--format=table : Output format: table or json}
+        {--format=table : Output format: table, json, or markdown}
         {--only-regressions : Only show regression cases in the table output}
-        {--max-cases=50 : Maximum number of cases to render in the table output}';
+        {--max-cases=50 : Maximum number of cases to render in the table output}
+        {--output= : Write the formatted diff to this file path instead of stdout}';
 
     /**
      * @var string
@@ -81,10 +82,18 @@ final class CompareEvalsCommand extends Command
         }
 
         if ($format === 'json') {
-            $this->line((string) json_encode(
-                $delta->toArray(),
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-            ));
+            $this->emit(
+                (string) json_encode(
+                    $delta->toArray(),
+                    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+                ),
+            );
+
+            return $delta->hasRegressions() ? 1 : 0;
+        }
+
+        if ($format === 'markdown') {
+            $this->emit($this->renderMarkdown($base, $head, $delta));
 
             return $delta->hasRegressions() ? 1 : 0;
         }
@@ -92,6 +101,22 @@ final class CompareEvalsCommand extends Command
         $this->renderTable($base, $head, $delta);
 
         return $delta->hasRegressions() ? 1 : 0;
+    }
+
+    private function emit(string $content): void
+    {
+        $output = $this->option('output');
+        if (is_string($output) && $output !== '') {
+            $directory = dirname($output);
+            if (! is_dir($directory)) {
+                @mkdir($directory, 0755, true);
+            }
+            file_put_contents($output, $content);
+
+            return;
+        }
+
+        $this->line($content);
     }
 
     private function resolveRun(string $ref, string $label): ?EvalRun
@@ -156,8 +181,11 @@ final class CompareEvalsCommand extends Command
         $format = $this->option('format');
         $format = is_string($format) ? $format : 'table';
 
-        if ($format !== 'table' && $format !== 'json') {
-            $this->error(sprintf('Unsupported --format value "%s". Use "table" or "json".', $format));
+        if ($format !== 'table' && $format !== 'json' && $format !== 'markdown') {
+            $this->error(sprintf(
+                'Unsupported --format value "%s". Use "table", "json", or "markdown".',
+                $format,
+            ));
 
             return null;
         }
@@ -322,6 +350,193 @@ final class CompareEvalsCommand extends Command
             'head_only' => 'NEW',
             default => $case->status,
         };
+    }
+
+    private function renderMarkdown(EvalRun $base, EvalRun $head, EvalRunDelta $delta): string
+    {
+        $lines = [];
+        $lines[] = '## Proofread eval diff';
+        $lines[] = '';
+        $lines[] = sprintf('**Dataset:** `%s`', $delta->datasetName);
+        $lines[] = sprintf('**Base:** %s', $this->markdownRunHeader($base));
+        $lines[] = sprintf('**Head:** %s', $this->markdownRunHeader($head));
+        $lines[] = '';
+        $lines[] = '### Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Base | Head | Delta |';
+        $lines[] = '|---|---|---|---|';
+        $lines[] = sprintf(
+            '| Pass rate | %s | %s | %s |',
+            $this->formatPassRate($base),
+            $this->formatPassRate($head),
+            $this->markdownPassRateDelta($base, $head),
+        );
+        $lines[] = sprintf(
+            '| Cost | %s | %s | %s |',
+            $this->formatCostValue($base->total_cost_usd),
+            $this->formatCostValue($head->total_cost_usd),
+            $this->markdownBold($this->formatCostDelta($delta->costDeltaUsd)),
+        );
+        $lines[] = sprintf(
+            '| Duration | %s | %s | %s |',
+            $this->formatDurationValue($base->duration_ms),
+            $this->formatDurationValue($head->duration_ms),
+            $this->markdownBold($this->formatDurationDelta($delta->durationDeltaMs)),
+        );
+
+        $regressions = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'regression',
+        ));
+        if ($regressions !== []) {
+            $lines[] = '';
+            $lines[] = sprintf('### Regressions (%d)', count($regressions));
+            $lines[] = '';
+            foreach ($regressions as $case) {
+                $lines = array_merge($lines, $this->markdownCaseBullet($case, 'PASS -> FAIL'));
+            }
+        }
+
+        $improvements = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'improvement',
+        ));
+        if ($improvements !== []) {
+            $lines[] = '';
+            $lines[] = sprintf('### Improvements (%d)', count($improvements));
+            $lines[] = '';
+            foreach ($improvements as $case) {
+                $lines = array_merge($lines, $this->markdownCaseBullet($case, 'FAIL -> PASS'));
+            }
+        }
+
+        $newOnly = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'head_only',
+        ));
+        if ($newOnly !== []) {
+            $lines[] = '';
+            $lines[] = sprintf('### New cases (%d)', count($newOnly));
+            $lines[] = '';
+            foreach ($newOnly as $case) {
+                $lines = array_merge($lines, $this->markdownCaseBullet($case, 'NEW'));
+            }
+        }
+
+        $goneOnly = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'base_only',
+        ));
+        if ($goneOnly !== []) {
+            $lines[] = '';
+            $lines[] = sprintf('### Removed cases (%d)', count($goneOnly));
+            $lines[] = '';
+            foreach ($goneOnly as $case) {
+                $lines = array_merge($lines, $this->markdownCaseBullet($case, 'GONE'));
+            }
+        }
+
+        $stableFails = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'stable_fail',
+        ));
+        if ($stableFails !== []) {
+            $lines[] = '';
+            $lines[] = sprintf('### Stable failures (%d)', count($stableFails));
+            $lines[] = '';
+            foreach ($stableFails as $case) {
+                $lines = array_merge($lines, $this->markdownCaseBullet($case, 'FAIL -> FAIL'));
+            }
+        }
+
+        $stablePasses = array_values(array_filter(
+            $delta->cases,
+            static fn (CaseDelta $case): bool => $case->status === 'stable_pass',
+        ));
+        if ($stablePasses !== []) {
+            $lines[] = '';
+            $lines[] = '<details>';
+            $lines[] = sprintf('<summary>Stable cases (%d)</summary>', count($stablePasses));
+            $lines[] = '';
+            foreach ($stablePasses as $case) {
+                $lines[] = sprintf('- `case_%d` %s', $case->caseIndex, $this->caseLabel($case));
+            }
+            $lines[] = '';
+            $lines[] = '</details>';
+        }
+
+        $lines[] = '';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function markdownCaseBullet(CaseDelta $case, string $transition): array
+    {
+        $lines = [];
+        $lines[] = sprintf(
+            '- `case_%d` **%s** - %s',
+            $case->caseIndex,
+            $this->caseLabel($case),
+            $transition,
+        );
+
+        foreach ($case->newFailures as $failure) {
+            $lines[] = sprintf('  - new failure: `%s`', $failure);
+        }
+
+        foreach ($case->fixedFailures as $failure) {
+            $lines[] = sprintf('  - fixed: `%s`', $failure);
+        }
+
+        return $lines;
+    }
+
+    private function markdownRunHeader(EvalRun $run): string
+    {
+        $createdAt = $run->created_at?->format('Y-m-d H:i:s') ?? 'unknown';
+        $model = $run->model ?? 'unknown';
+        $state = $run->passed ? 'passed' : 'failed';
+
+        return sprintf('`%s` (%s, model %s, %s)', $run->id, $createdAt, $model, $state);
+    }
+
+    private function markdownPassRateDelta(EvalRun $base, EvalRun $head): string
+    {
+        $delta = ($head->passRate() - $base->passRate()) * 100;
+        $sign = $delta >= 0 ? '+' : '-';
+
+        return $this->markdownBold(sprintf('%s%s%%', $sign, number_format(abs($delta), 1, '.', '')));
+    }
+
+    private function formatPassRate(EvalRun $run): string
+    {
+        return number_format($run->passRate() * 100, 1, '.', '').'%';
+    }
+
+    private function formatCostValue(?float $cost): string
+    {
+        if ($cost === null) {
+            return 'n/a';
+        }
+
+        return '$'.number_format($cost, 4, '.', '');
+    }
+
+    private function formatDurationValue(?float $durationMs): string
+    {
+        if ($durationMs === null) {
+            return 'n/a';
+        }
+
+        return number_format($durationMs, 1, '.', '').'ms';
+    }
+
+    private function markdownBold(string $text): string
+    {
+        return '**'.$text.'**';
     }
 
     private function resolveMaxCases(): int

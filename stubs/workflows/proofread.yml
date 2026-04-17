@@ -81,3 +81,26 @@ jobs:
           report_paths: storage/evals/junit.xml
           check_name: Proofread Suites
           detailed_summary: true
+
+      # Optional: generate and post a PR comment with an eval diff.
+      # Requires two persisted runs - implement your baseline strategy
+      # (e.g. fetch the latest run from main's previous workflow run as
+      # an artifact, or commit runs to a shared database accessible from
+      # both workflows). Then uncomment and adapt the two steps below.
+      #
+      # - name: Generate PR comment
+      #   if: github.event_name == 'pull_request'
+      #   run: |
+      #     php artisan evals:compare "$BASE_RUN_ID" "$HEAD_RUN_ID" \
+      #       --format=markdown \
+      #       --output=storage/evals/pr-comment.md
+      #   continue-on-error: true
+      #
+      # - name: Post PR comment
+      #   if: github.event_name == 'pull_request' && hashFiles('storage/evals/pr-comment.md') != ''
+      #   uses: peter-evans/create-or-update-comment@v4
+      #   with:
+      #     issue-number: ${{ github.event.pull_request.number }}
+      #     body-path: storage/evals/pr-comment.md
+      #     edit-mode: replace
+      #   continue-on-error: true

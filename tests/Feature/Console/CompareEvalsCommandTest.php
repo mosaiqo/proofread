@@ -420,3 +420,176 @@ it('prints a negative sign for negative cost and duration deltas', function (): 
     expect($output)->toContain('-$')
         ->and($output)->toMatch('/-\d+(\.\d+)?ms/');
 });
+
+it('outputs a markdown-formatted diff with --format=markdown', function (): void {
+    $base = seedCompareRun('ds-cli-md', [
+        ['case_index' => 0, 'case_name' => 'alpha', 'passed' => true, 'cost_usd' => 0.01, 'duration_ms' => 10.0],
+        ['case_index' => 1, 'case_name' => 'beta', 'passed' => true, 'cost_usd' => 0.02, 'duration_ms' => 20.0],
+        ['case_index' => 2, 'case_name' => 'gamma', 'passed' => false, 'cost_usd' => 0.01, 'duration_ms' => 10.0],
+    ]);
+    $head = seedCompareRun('ds-cli-md', [
+        ['case_index' => 0, 'case_name' => 'alpha', 'passed' => true, 'cost_usd' => 0.01, 'duration_ms' => 10.0],
+        ['case_index' => 1, 'case_name' => 'beta', 'passed' => false, 'cost_usd' => 0.02, 'duration_ms' => 20.0],
+        ['case_index' => 2, 'case_name' => 'gamma', 'passed' => true, 'cost_usd' => 0.01, 'duration_ms' => 10.0],
+    ]);
+
+    Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'markdown',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('## Proofread eval diff')
+        ->and($output)->toContain('**Dataset:**')
+        ->and($output)->toContain('ds-cli-md')
+        ->and($output)->toContain('**Base:**')
+        ->and($output)->toContain('**Head:**')
+        ->and($output)->toContain($base->id)
+        ->and($output)->toContain($head->id)
+        ->and($output)->toContain('### Summary')
+        ->and($output)->toContain('| Metric | Base | Head | Delta |')
+        ->and($output)->toContain('Pass rate')
+        ->and($output)->toContain('Cost')
+        ->and($output)->toContain('Duration')
+        ->and($output)->toContain('### Regressions (1)')
+        ->and($output)->toContain('beta')
+        ->and($output)->toContain('PASS -> FAIL')
+        ->and($output)->toContain('### Improvements (1)')
+        ->and($output)->toContain('gamma');
+});
+
+it('highlights regression deltas in markdown format', function (): void {
+    $base = seedCompareRun('ds-cli-md-deltas', [
+        ['case_index' => 0, 'passed' => true, 'cost_usd' => 0.01, 'duration_ms' => 10.0],
+    ]);
+    $head = seedCompareRun('ds-cli-md-deltas', [
+        ['case_index' => 0, 'passed' => true, 'cost_usd' => 0.05, 'duration_ms' => 80.0],
+    ]);
+
+    Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'markdown',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toMatch('/\+\$0\.04/')
+        ->and($output)->toMatch('/\+70(\.0)?ms/');
+});
+
+it('prints a negative cost sign for markdown format', function (): void {
+    $base = seedCompareRun('ds-cli-md-neg', [
+        ['case_index' => 0, 'passed' => true, 'cost_usd' => 0.05, 'duration_ms' => 100.0],
+    ]);
+    $head = seedCompareRun('ds-cli-md-neg', [
+        ['case_index' => 0, 'passed' => true, 'cost_usd' => 0.01, 'duration_ms' => 20.0],
+    ]);
+
+    Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'markdown',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toMatch('/-\$0\.04/')
+        ->and($output)->toMatch('/-80(\.0)?ms/');
+});
+
+it('collapses stable cases when there are many in markdown format', function (): void {
+    $baseCases = [];
+    $headCases = [];
+    for ($i = 0; $i < 10; $i++) {
+        $baseCases[] = ['case_index' => $i, 'case_name' => 'case-'.$i, 'passed' => true];
+        $headCases[] = ['case_index' => $i, 'case_name' => 'case-'.$i, 'passed' => true];
+    }
+
+    $base = seedCompareRun('ds-cli-md-stable', $baseCases);
+    $head = seedCompareRun('ds-cli-md-stable', $headCases);
+
+    Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'markdown',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('<details>')
+        ->and($output)->toContain('<summary>Stable cases (10)</summary>')
+        ->and($output)->toContain('</details>');
+});
+
+it('omits empty sections in markdown format', function (): void {
+    $base = seedCompareRun('ds-cli-md-empty', [
+        ['case_index' => 0, 'passed' => true],
+    ]);
+    $head = seedCompareRun('ds-cli-md-empty', [
+        ['case_index' => 0, 'passed' => true],
+    ]);
+
+    Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'markdown',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->not->toContain('### Regressions')
+        ->and($output)->not->toContain('### Improvements');
+});
+
+it('writes markdown to --output path', function (): void {
+    $base = seedCompareRun('ds-cli-md-output', [
+        ['case_index' => 0, 'passed' => true],
+    ]);
+    $head = seedCompareRun('ds-cli-md-output', [
+        ['case_index' => 0, 'passed' => false],
+    ]);
+
+    $target = sys_get_temp_dir().'/proofread-md-'.uniqid().'.md';
+
+    try {
+        $exit = Artisan::call('evals:compare', [
+            'base' => $base->id,
+            'head' => $head->id,
+            '--format' => 'markdown',
+            '--output' => $target,
+        ]);
+
+        expect($exit)->toBe(1);
+        expect(is_file($target))->toBeTrue();
+
+        $written = (string) file_get_contents($target);
+
+        expect($written)->toContain('## Proofread eval diff')
+            ->and($written)->toContain('ds-cli-md-output')
+            ->and($written)->toContain('### Regressions');
+    } finally {
+        if (is_file($target)) {
+            unlink($target);
+        }
+    }
+});
+
+it('rejects an unknown --format value', function (): void {
+    $base = seedCompareRun('ds-cli-md-bad', [
+        ['case_index' => 0, 'passed' => true],
+    ]);
+    $head = seedCompareRun('ds-cli-md-bad', [
+        ['case_index' => 0, 'passed' => true],
+    ]);
+
+    $exit = Artisan::call('evals:compare', [
+        'base' => $base->id,
+        'head' => $head->id,
+        '--format' => 'xml',
+    ]);
+
+    expect($exit)->toBe(2);
+});
