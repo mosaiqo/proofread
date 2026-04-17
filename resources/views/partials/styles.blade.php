@@ -1125,6 +1125,40 @@ table.table tbody tr:hover {
     cursor: pointer;
 }
 
+.comparison-row {
+    cursor: pointer;
+}
+
+.comparison-row:hover {
+    background: var(--surface-hover);
+}
+
+.subject-pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.subject-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    letter-spacing: 0.01em;
+}
+
+.subject-pill-more {
+    color: var(--text-muted);
+    background: transparent;
+    border-style: dashed;
+}
+
 .badge.shadow-status-pending {
     background: var(--bg-elevated);
     color: var(--text-muted);

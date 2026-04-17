@@ -18,6 +18,7 @@
                 <a href="{{ route('proofread.datasets.index') }}" class="{{ request()->routeIs('proofread.datasets.*') ? 'active' : '' }}">Datasets</a>
                 <a href="{{ route('proofread.costs') }}" class="{{ request()->routeIs('proofread.costs') ? 'active' : '' }}">Costs</a>
                 <a href="{{ route('proofread.compare') }}" class="{{ request()->routeIs('proofread.compare') ? 'active' : '' }}">Compare</a>
+                <a href="{{ route('proofread.comparisons.index') }}" class="{{ request()->routeIs('proofread.comparisons.*') ? 'active' : '' }}">Comparisons</a>
                 <a href="{{ route('proofread.shadow') }}" class="{{ request()->routeIs('proofread.shadow') ? 'active' : '' }}">Shadow</a>
             </div>
         </div>

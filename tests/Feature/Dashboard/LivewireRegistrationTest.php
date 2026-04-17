@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Mechanisms\ComponentRegistry;
 use Mosaiqo\Proofread\Http\Livewire\CompareRuns;
+use Mosaiqo\Proofread\Http\Livewire\ComparisonsList;
 use Mosaiqo\Proofread\Http\Livewire\CostsBreakdown;
 use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
 use Mosaiqo\Proofread\Http\Livewire\Overview;
@@ -22,6 +23,7 @@ dataset('livewire_components', [
     'run-detail' => ['proofread::run-detail', RunDetail::class],
     'datasets-list' => ['proofread::datasets-list', DatasetsList::class],
     'compare-runs' => ['proofread::compare-runs', CompareRuns::class],
+    'comparisons-list' => ['proofread::comparisons-list', ComparisonsList::class],
     'costs-breakdown' => ['proofread::costs-breakdown', CostsBreakdown::class],
     'shadow-panel' => ['proofread::shadow-panel', ShadowPanel::class],
 ]);

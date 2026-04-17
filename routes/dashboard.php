@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Mosaiqo\Proofread\Http\Livewire\CompareRuns;
+use Mosaiqo\Proofread\Http\Livewire\ComparisonsList;
 use Mosaiqo\Proofread\Http\Livewire\CostsBreakdown;
 use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
 use Mosaiqo\Proofread\Http\Livewire\Overview;
@@ -27,6 +28,7 @@ Route::middleware(array_merge([DashboardEnabled::class], $middleware))
         Route::get('/runs', RunsList::class)->name('runs.index');
         Route::get('/runs/{run}', RunDetail::class)->name('runs.show');
         Route::get('/compare', CompareRuns::class)->name('compare');
+        Route::get('/comparisons', ComparisonsList::class)->name('comparisons.index');
         Route::get('/datasets', DatasetsList::class)->name('datasets.index');
         Route::get('/costs', CostsBreakdown::class)->name('costs');
         Route::get('/shadow', ShadowPanel::class)->name('shadow');

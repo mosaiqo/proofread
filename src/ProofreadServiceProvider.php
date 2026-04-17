@@ -23,6 +23,7 @@ use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
 use Mosaiqo\Proofread\Generator\DatasetGenerator;
 use Mosaiqo\Proofread\Http\Livewire\CompareRuns;
+use Mosaiqo\Proofread\Http\Livewire\ComparisonsList;
 use Mosaiqo\Proofread\Http\Livewire\CostsBreakdown;
 use Mosaiqo\Proofread\Http\Livewire\DatasetsList;
 use Mosaiqo\Proofread\Http\Livewire\Overview;
@@ -107,6 +108,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
         Livewire::component('proofread::run-detail', RunDetail::class);
         Livewire::component('proofread::datasets-list', DatasetsList::class);
         Livewire::component('proofread::compare-runs', CompareRuns::class);
+        Livewire::component('proofread::comparisons-list', ComparisonsList::class);
         Livewire::component('proofread::costs-breakdown', CostsBreakdown::class);
         Livewire::component('proofread::shadow-panel', ShadowPanel::class);
     }
