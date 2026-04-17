@@ -64,6 +64,63 @@ final class Similarity
     }
 
     /**
+     * Compute embeddings for a batch of strings in a single provider call.
+     *
+     * Returned vectors are positionally aligned with the input array: the
+     * i-th vector corresponds to the i-th string. Fails loudly if the
+     * provider returns a mismatched number of vectors so callers do not
+     * silently mis-align embeddings with sources.
+     *
+     * @param  list<string>  $texts
+     * @return list<list<float>>
+     *
+     * @throws SimilarityException if the provider fails or returns an unexpected shape.
+     */
+    public function embed(array $texts, ?string $model = null): array
+    {
+        if ($model !== null && $model === '') {
+            throw new InvalidArgumentException('Similarity model override must not be empty.');
+        }
+
+        if ($texts === []) {
+            return [];
+        }
+
+        $effectiveModel = $model ?? $this->defaultModel;
+
+        try {
+            $response = Embeddings::for($texts)->generate(model: $effectiveModel);
+        } catch (InvalidArgumentException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new SimilarityException(
+                sprintf('Embeddings provider failed: %s', $exception->getMessage()),
+                0,
+                $exception,
+            );
+        }
+
+        if (count($response->embeddings) !== count($texts)) {
+            throw new SimilarityException(sprintf(
+                'Embeddings response size mismatch: expected %d vectors, got %d.',
+                count($texts),
+                count($response->embeddings),
+            ));
+        }
+
+        $normalized = [];
+        foreach ($response->embeddings as $vector) {
+            $floatVector = [];
+            foreach ($vector as $value) {
+                $floatVector[] = (float) $value;
+            }
+            $normalized[] = $floatVector;
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Compute cosine similarity between two pre-computed vectors.
      *
      * Zero-magnitude vectors return 0.0 (they have no direction, so they

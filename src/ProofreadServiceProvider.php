@@ -28,6 +28,7 @@ use Mosaiqo\Proofread\Console\Commands\RunProviderComparisonCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowEvaluateCommand;
 use Mosaiqo\Proofread\Console\Commands\SimulateCostCommand;
+use Mosaiqo\Proofread\Coverage\CoverageAnalyzer;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Events\EvalRunRegressed;
 use Mosaiqo\Proofread\Generator\DatasetGenerator;
@@ -220,6 +221,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
         ));
 
         $this->app->singleton(CostSimulator::class);
+
+        $this->app->singleton(CoverageAnalyzer::class);
 
         $this->app->singleton(PromptLinter::class, fn ($app): PromptLinter => new PromptLinter([
             $app->make(LengthRule::class),
