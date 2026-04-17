@@ -31,7 +31,9 @@ final class RunEvalsCommand extends Command
         {--queue : Dispatch each suite to the queue instead of running inline}
         {--commit-sha= : Commit SHA attached to the persisted run (only used with --queue)}
         {--concurrency=1 : Run up to N cases in parallel. Default 1 (sequential). Only beneficial for I/O-bound subjects.}
-        {--fake-judge= : Fake the judge agent for Rubric assertions: "pass", "fail", or a JSON file path}';
+        {--fake-judge= : Fake the judge agent for Rubric assertions: "pass", "fail", or a JSON file path}
+        {--gate-pass-rate= : Fail the command (exit 1) if the overall pass rate is below this ratio (0.0 - 1.0)}
+        {--gate-cost-max= : Fail the command (exit 1) if the total observed cost in USD exceeds this value}';
 
     /**
      * @var string
@@ -60,6 +62,16 @@ final class RunEvalsCommand extends Command
             return 2;
         }
 
+        $gatePassRate = $this->parseGatePassRate($this->option('gate-pass-rate'));
+        if ($gatePassRate === false) {
+            return 2;
+        }
+
+        $gateCostMax = $this->parseGateCostMax($this->option('gate-cost-max'));
+        if ($gateCostMax === false) {
+            return 2;
+        }
+
         if ($fakeJudgeSpec !== null && ! JudgeFaker::apply($this, $fakeJudgeSpec)) {
             return 2;
         }
@@ -79,6 +91,9 @@ final class RunEvalsCommand extends Command
 
         $anyFailure = false;
         $executed = 0;
+        $totalPassed = 0;
+        $totalCases = 0;
+        $totalCost = null;
 
         $filterClosure = $this->buildFilterClosure($filter);
 
@@ -112,6 +127,13 @@ final class RunEvalsCommand extends Command
 
             $this->printRun($run);
 
+            $totalPassed += $run->passedCount();
+            $totalCases += $run->total();
+            $runCost = $this->computeRunCost($run);
+            if ($runCost !== null) {
+                $totalCost = ($totalCost ?? 0.0) + $runCost;
+            }
+
             if ($junitPath !== null) {
                 $targetPath = $this->junitPathFor($junitPath, $suite, $multipleSuites);
                 Proofread::writeJUnit($run, $targetPath);
@@ -138,7 +160,9 @@ final class RunEvalsCommand extends Command
             }
         }
 
-        $exit = $anyFailure ? 1 : 0;
+        $gateFailed = $this->renderGates($gatePassRate, $gateCostMax, $totalPassed, $totalCases, $totalCost);
+
+        $exit = ($anyFailure || $gateFailed) ? 1 : 0;
         $failedSuites = $anyFailure ? 1 : 0;
         $this->line(sprintf(
             'Overall: %d suite(s) executed, %s, exit %d',
@@ -148,6 +172,140 @@ final class RunEvalsCommand extends Command
         ));
 
         return $exit;
+    }
+
+    private function parseGatePassRate(mixed $raw): float|false|null
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (! is_string($raw) && ! is_numeric($raw)) {
+            $this->error('--gate-pass-rate must be a number between 0.0 and 1.0');
+
+            return false;
+        }
+
+        if (is_string($raw) && ! is_numeric($raw)) {
+            $this->error(sprintf("--gate-pass-rate must be a number between 0.0 and 1.0, got '%s'", $raw));
+
+            return false;
+        }
+
+        $value = (float) $raw;
+        if ($value < 0.0 || $value > 1.0) {
+            $this->error(sprintf('--gate-pass-rate must be between 0.0 and 1.0, got %s', (string) $raw));
+
+            return false;
+        }
+
+        return $value;
+    }
+
+    private function parseGateCostMax(mixed $raw): float|false|null
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        if (! is_string($raw) && ! is_numeric($raw)) {
+            $this->error('--gate-cost-max must be a non-negative number');
+
+            return false;
+        }
+
+        if (is_string($raw) && ! is_numeric($raw)) {
+            $this->error(sprintf("--gate-cost-max must be a non-negative number, got '%s'", $raw));
+
+            return false;
+        }
+
+        $value = (float) $raw;
+        if ($value < 0.0) {
+            $this->error(sprintf('--gate-cost-max must be >= 0, got %s', (string) $raw));
+
+            return false;
+        }
+
+        return $value;
+    }
+
+    private function computeRunCost(EvalRun $run): ?float
+    {
+        $total = null;
+        foreach ($run->results as $result) {
+            foreach ($result->assertionResults as $assertion) {
+                if (! array_key_exists('cost_usd', $assertion->metadata)) {
+                    continue;
+                }
+                $value = $assertion->metadata['cost_usd'];
+                if (is_int($value) || is_float($value)) {
+                    $total = ($total ?? 0.0) + (float) $value;
+                }
+            }
+        }
+
+        return $total;
+    }
+
+    private function renderGates(
+        ?float $gatePassRate,
+        ?float $gateCostMax,
+        int $totalPassed,
+        int $totalCases,
+        ?float $totalCost,
+    ): bool {
+        if ($gatePassRate === null && $gateCostMax === null) {
+            return false;
+        }
+
+        $this->line('Gates:');
+        $anyFail = false;
+
+        if ($gatePassRate !== null) {
+            $observed = $totalCases === 0 ? 1.0 : $totalPassed / $totalCases;
+            $passed = $observed >= $gatePassRate;
+            $status = $passed ? 'OK' : 'FAIL';
+            $this->line(sprintf(
+                '  Pass rate gate: %s required, %s observed %s %s',
+                $this->formatRate($gatePassRate),
+                $this->formatRate($observed),
+                $passed ? '—' : '<',
+                $status,
+            ));
+            if (! $passed) {
+                $anyFail = true;
+            }
+        }
+
+        if ($gateCostMax !== null) {
+            $observedCost = $totalCost ?? 0.0;
+            $passed = $observedCost <= $gateCostMax;
+            $status = $passed ? 'OK' : 'FAIL';
+            $this->line(sprintf(
+                '  Cost gate: %s max, %s total — %s',
+                $this->formatUsd($gateCostMax),
+                $this->formatUsd($observedCost),
+                $status,
+            ));
+            if (! $passed) {
+                $anyFail = true;
+            }
+        }
+
+        $this->line('');
+
+        return $anyFail;
+    }
+
+    private function formatRate(float $rate): string
+    {
+        return number_format($rate * 100, 1, '.', '').'%';
+    }
+
+    private function formatUsd(float $value): string
+    {
+        return '$'.number_format($value, 4, '.', '');
     }
 
     /**

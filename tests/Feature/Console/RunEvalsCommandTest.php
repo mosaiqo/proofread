@@ -11,6 +11,7 @@ use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\AssertionsForBugSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\AssertionsForSpySuite;
+use Mosaiqo\Proofread\Tests\Fixtures\Suites\CostReportingSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\EmptySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FailingSuite;
@@ -500,4 +501,138 @@ it('skips assertionsFor when the filter matches no cases via CLI', function (): 
     expect($exit)->toBe(0)
         ->and($output)->toContain('No cases matching filter')
         ->and(AssertionsForSpySuite::$callCount)->toBe(0);
+});
+
+it('passes when gate-pass-rate is met', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--gate-pass-rate' => '0.8',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('Pass rate gate')
+        ->and($output)->toContain('OK');
+});
+
+it('fails when gate-pass-rate is not met', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [FailingSuite::class],
+        '--gate-pass-rate' => '0.8',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('Pass rate gate')
+        ->and($output)->toContain('FAIL');
+});
+
+it('passes when gate-cost-max is respected', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [CostReportingSuite::class],
+        '--gate-cost-max' => '0.05',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('Cost gate')
+        ->and($output)->toContain('OK');
+});
+
+it('fails when gate-cost-max is exceeded', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [CostReportingSuite::class],
+        '--gate-cost-max' => '0.005',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('Cost gate')
+        ->and($output)->toContain('FAIL');
+});
+
+it('rejects gate-pass-rate above 1', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--gate-pass-rate' => '1.5',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--gate-pass-rate');
+});
+
+it('rejects gate-pass-rate below 0', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--gate-pass-rate' => '-0.1',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--gate-pass-rate');
+});
+
+it('rejects gate-cost-max below 0', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--gate-cost-max' => '-0.01',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('--gate-cost-max');
+});
+
+it('reports both gates when both present', function (): void {
+    Artisan::call('evals:run', [
+        'suites' => [CostReportingSuite::class],
+        '--gate-pass-rate' => '0.5',
+        '--gate-cost-max' => '0.05',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('Pass rate gate')
+        ->and($output)->toContain('Cost gate');
+});
+
+it('prints gate pass/fail status in output', function (): void {
+    Artisan::call('evals:run', [
+        'suites' => [PassingSuite::class],
+        '--gate-pass-rate' => '0.8',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('Gates:');
+});
+
+it('fires gate fail even when cases pass', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => [CostReportingSuite::class],
+        '--gate-cost-max' => '0.001',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(1)
+        ->and($output)->toContain('2/2 passed')
+        ->and($output)->toContain('FAIL');
+});
+
+it('preserves exit 2 over gate fails', function (): void {
+    $exit = Artisan::call('evals:run', [
+        'suites' => ['Nonexistent\\Suite\\Class'],
+        '--gate-pass-rate' => '0.95',
+    ]);
+
+    expect($exit)->toBe(2);
 });
