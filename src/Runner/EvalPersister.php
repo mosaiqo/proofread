@@ -7,6 +7,7 @@ namespace Mosaiqo\Proofread\Runner;
 use Illuminate\Support\Facades\DB;
 use Mosaiqo\Proofread\Events\EvalRunPersisted;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
+use Mosaiqo\Proofread\Models\EvalDatasetVersion as EvalDatasetVersionModel;
 use Mosaiqo\Proofread\Models\EvalResult as EvalResultModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Support\AssertionResult;
@@ -31,7 +32,8 @@ class EvalPersister
     ): EvalRunModel {
         $runModel = DB::transaction(function () use ($run, $suiteClass, $commitSha, $subjectType, $subjectClass): EvalRunModel {
             $dataset = $this->upsertDataset($run);
-            $runModel = $this->insertRun($run, $dataset, $suiteClass, $commitSha, $subjectType, $subjectClass);
+            $version = $this->upsertVersion($run, $dataset);
+            $runModel = $this->insertRun($run, $dataset, $version, $suiteClass, $commitSha, $subjectType, $subjectClass);
 
             foreach ($run->results as $index => $result) {
                 $attrs = $this->buildResultAttributes($runModel->id, $index, $result);
@@ -74,9 +76,36 @@ class EvalPersister
         return $dataset;
     }
 
+    private function upsertVersion(EvalRun $run, EvalDatasetModel $dataset): EvalDatasetVersionModel
+    {
+        $checksum = $this->checksumFor($run);
+
+        $existing = EvalDatasetVersionModel::query()
+            ->where('eval_dataset_id', $dataset->id)
+            ->where('checksum', $checksum)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $version = new EvalDatasetVersionModel;
+        $version->fill([
+            'eval_dataset_id' => $dataset->id,
+            'checksum' => $checksum,
+            'cases' => $run->dataset->cases,
+            'case_count' => $run->dataset->count(),
+            'first_seen_at' => now(),
+        ]);
+        $version->save();
+
+        return $version;
+    }
+
     private function insertRun(
         EvalRun $run,
         EvalDatasetModel $dataset,
+        EvalDatasetVersionModel $version,
         ?string $suiteClass,
         ?string $commitSha,
         ?string $subjectType,
@@ -87,6 +116,7 @@ class EvalPersister
         $model = new EvalRunModel;
         $model->fill([
             'dataset_id' => $dataset->id,
+            'dataset_version_id' => $version->id,
             'dataset_name' => $dataset->name,
             'suite_class' => $suiteClass,
             'subject_type' => $subjectType ?? 'unknown',

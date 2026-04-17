@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
+use Mosaiqo\Proofread\Models\EvalDatasetVersion as EvalDatasetVersionModel;
 use Mosaiqo\Proofread\Models\EvalResult as EvalResultModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Runner\EvalPersister;
@@ -289,4 +290,84 @@ it('returns the persisted run model', function (): void {
     expect($model)->toBeInstanceOf(EvalRunModel::class)
         ->and($model->id)->toBeString()
         ->and(strlen($model->id))->toBe(26);
+});
+
+it('creates a dataset version on first persist', function (): void {
+    $run = buildRun([['input' => 'hi']], [persisterPassingResult()]);
+
+    (new EvalPersister)->persist($run);
+
+    expect(EvalDatasetVersionModel::query()->count())->toBe(1);
+    $version = EvalDatasetVersionModel::query()->firstOrFail();
+    $dataset = EvalDatasetModel::query()->firstOrFail();
+    expect($version->eval_dataset_id)->toBe($dataset->id)
+        ->and($version->checksum)->toBe($dataset->checksum)
+        ->and($version->case_count)->toBe(1);
+});
+
+it('reuses an existing version when the dataset has not changed', function (): void {
+    $persister = new EvalPersister;
+    $run = buildRun([['input' => 'hi']], [persisterPassingResult()]);
+
+    $persister->persist($run);
+    $persister->persist($run);
+
+    expect(EvalDatasetVersionModel::query()->count())->toBe(1)
+        ->and(EvalRunModel::query()->count())->toBe(2);
+
+    $version = EvalDatasetVersionModel::query()->firstOrFail();
+    expect($version->runs()->count())->toBe(2);
+});
+
+it('creates a new version when the dataset cases change', function (): void {
+    $persister = new EvalPersister;
+
+    $first = buildRun([['input' => 'hi']], [persisterPassingResult()]);
+    $persister->persist($first);
+
+    $second = buildRun(
+        [['input' => 'hi'], ['input' => 'bye']],
+        [persisterPassingResult(), persisterPassingResult('bye', 'later')],
+    );
+    $persister->persist($second);
+
+    expect(EvalDatasetVersionModel::query()->count())->toBe(2);
+});
+
+it('links the run to the dataset version', function (): void {
+    $run = buildRun([['input' => 'hi']], [persisterPassingResult()]);
+
+    $runModel = (new EvalPersister)->persist($run);
+
+    $runModel->refresh();
+    expect($runModel->dataset_version_id)->not->toBeNull()
+        ->and($runModel->datasetVersion)->not->toBeNull()
+        ->and($runModel->datasetVersion?->checksum)->toBe($runModel->dataset?->checksum);
+});
+
+it('stores the cases snapshot on the version', function (): void {
+    $cases = [
+        ['input' => 'a', 'expected' => ['ok' => true]],
+        ['input' => 'b', 'meta' => ['name' => 'bee']],
+    ];
+    $run = buildRun($cases, [persisterPassingResult('a', 'aa'), persisterPassingResult('b', 'bb', 'bee')]);
+
+    (new EvalPersister)->persist($run);
+
+    $version = EvalDatasetVersionModel::query()->firstOrFail();
+    expect($version->cases)->toBe($cases)
+        ->and($version->case_count)->toBe(2);
+});
+
+it('updates first_seen_at to the first time a version appeared', function (): void {
+    $persister = new EvalPersister;
+    $run = buildRun([['input' => 'hi']], [persisterPassingResult()]);
+
+    $persister->persist($run);
+    $firstSeenAt = EvalDatasetVersionModel::query()->firstOrFail()->first_seen_at;
+
+    $persister->persist($run);
+
+    $version = EvalDatasetVersionModel::query()->firstOrFail();
+    expect($version->first_seen_at->toIso8601String())->toBe($firstSeenAt->toIso8601String());
 });
