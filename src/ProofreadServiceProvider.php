@@ -14,6 +14,7 @@ use Mosaiqo\Proofread\Clustering\FailureClusterer;
 use Mosaiqo\Proofread\Console\Commands\BenchmarkEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
+use Mosaiqo\Proofread\Console\Commands\CoverageCommand;
 use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportRunCommand;
@@ -87,6 +88,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(GenerateDatasetCommand::class)
             ->hasCommand(ClusterFailuresCommand::class)
             ->hasCommand(SimulateCostCommand::class)
+            ->hasCommand(CoverageCommand::class)
             ->hasCommand(DatasetDiffCommand::class)
             ->hasCommand(ExportRunCommand::class)
             ->hasCommand(ImportDatasetCommand::class)
