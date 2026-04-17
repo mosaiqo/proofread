@@ -467,6 +467,29 @@ And declare which suites are discoverable via the tool in
 ],
 ```
 
+## GitHub Actions
+
+Proofread ships a ready-to-use workflow template. Publish it to your
+project and customize the suite FQCN:
+
+```bash
+php artisan vendor:publish --tag=proofread-workflows
+```
+
+The workflow lands at `.github/workflows/proofread.yml` and runs your
+suites on every PR and push to `main`. It uploads JUnit XML as an
+artifact and renders a per-case report directly in the PR via
+`mikepenz/action-junit-report`.
+
+Required repository secrets if your suites use LLM-backed assertions
+(`Rubric`, `Hallucination`, `Similar`, `Language`):
+
+- `ANTHROPIC_API_KEY` — if your judge or agents use Anthropic.
+- `OPENAI_API_KEY` — if they use OpenAI.
+
+For deterministic CI runs without real LLM calls, add
+`--fake-judge=pass` to the `evals:run` command in the workflow.
+
 ## Configuration
 
 Publish the config file:

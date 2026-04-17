@@ -109,6 +109,10 @@ class ProofreadServiceProvider extends PackageServiceProvider
             __DIR__.'/Stubs/assertion.stub' => $this->app->basePath('stubs/proofread/assertion.stub'),
             __DIR__.'/Stubs/dataset.stub' => $this->app->basePath('stubs/proofread/dataset.stub'),
         ], 'proofread-stubs');
+
+        $this->publishes([
+            __DIR__.'/../stubs/workflows/proofread.yml' => $this->app->basePath('.github/workflows/proofread.yml'),
+        ], 'proofread-workflows');
     }
 
     private function registerLivewireComponents(): void

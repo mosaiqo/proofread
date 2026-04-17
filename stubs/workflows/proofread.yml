@@ -1,0 +1,83 @@
+name: Proofread Evals
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+concurrency:
+  group: proofread-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evals:
+    name: Run Proofread suites
+    runs-on: ubuntu-latest
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      # Add your LLM provider keys via repository secrets.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare storage for JUnit output
+        run: mkdir -p storage/evals
+
+      # If your suites persist runs to the database, uncomment the migrate
+      # step below so the SQLite schema exists before evals:run executes.
+      # - name: Run migrations
+      #   run: php artisan migrate --force
+
+      - name: Run Proofread suites
+        # Replace the suite FQCN(s) with your own. For deterministic CI runs
+        # without LLM calls, add `--fake-judge=pass` to the command.
+        run: |
+          php artisan evals:run \
+            "App\\Evals\\MySuite" \
+            --persist \
+            --junit=storage/evals/junit.xml \
+            --commit-sha="${{ github.sha }}"
+
+      - name: Upload JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofread-junit
+          path: storage/evals/junit.xml
+          if-no-files-found: warn
+
+      - name: Publish test report
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: storage/evals/junit.xml
+          check_name: Proofread Suites
+          detailed_summary: true
