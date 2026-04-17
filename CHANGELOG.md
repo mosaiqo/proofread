@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-17
+
+### Added
+
+- `evals:compare --format=markdown` renders the diff as a
+  PR-friendly Markdown document. Regressions lead, improvements
+  follow, stable cases collapse into a `<details>` block for
+  readability. Designed for use with
+  `peter-evans/create-or-update-comment` or equivalent PR-comment
+  actions. Pair with the new `--output=PATH` flag to write the
+  result to disk.
+- The published GitHub Actions workflow template now includes
+  commented scaffolding for generating and posting a PR comment
+  using the new markdown format. Consumers activate it by
+  implementing their own baseline strategy (artifact, shared DB,
+  or branch comparison).
+- Laravel Boost AI guidelines publishable via
+  `vendor:publish --tag=proofread-boost-guidelines`. The guidelines
+  land at `.ai/guidelines/proofread.md` and describe suite
+  structure, assertion selection, testing patterns, and CLI
+  workflow for AI-assisted test generation.
+- Laravel Telescope integration. If `laravel/telescope` is
+  installed, persisted eval runs are automatically recorded as
+  Telescope event entries tagged `proofread_eval`, carrying run
+  id, dataset, suite class, pass/fail counts, duration, cost, and
+  token usage. Registration is conditional on Telescope presence;
+  no configuration required.
+
 ## [0.6.1] - 2026-04-17
 
 ### Added

@@ -5,6 +5,22 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.7.0 from 0.6.x
+
+No breaking changes. Optional adoption:
+
+- Existing `evals:compare` invocations without `--format=markdown`
+  behave identically. A new `--output=PATH` flag lets any format
+  write to disk instead of stdout.
+- The published workflow template from 0.6.0 still works.
+  Republish with `--force` to pick up the commented PR-comment
+  scaffolding, or add the two optional steps manually.
+- Boost guidelines and Telescope integration are opt-in — no
+  action needed for projects that do not use them. To adopt:
+  `php artisan vendor:publish --tag=proofread-boost-guidelines`
+  for the AI guidelines; install `laravel/telescope` to get
+  automatic `proofread_eval` entries in the Telescope UI.
+
 ## Upgrading to 0.6.1 from 0.6.0
 
 No breaking changes. Optional adoption:
