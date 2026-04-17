@@ -1159,6 +1159,105 @@ table.table tbody tr:hover {
     border-style: dashed;
 }
 
+.comparison-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.winner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.winner-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.winner-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.matrix-table tbody td {
+    vertical-align: top;
+}
+
+.matrix-cell {
+    transition: background 0.12s ease;
+}
+
+.matrix-cell[wire\:click] {
+    cursor: pointer;
+}
+
+.matrix-cell[wire\:click]:hover {
+    background: var(--surface-hover);
+}
+
+.matrix-cell-pass {
+    background: rgba(91, 212, 129, 0.04);
+}
+
+.matrix-cell-fail {
+    background: rgba(240, 104, 122, 0.05);
+}
+
+.matrix-cell-err {
+    background: rgba(240, 200, 106, 0.05);
+}
+
+.matrix-cell-meta {
+    font-size: 11px;
+    margin-top: 4px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.matrix-cell-meta .sep {
+    color: var(--text-dim);
+}
+
+.matrix-footer-row td {
+    background: var(--bg-elevated);
+    font-variant-numeric: tabular-nums;
+    border-top: 1px solid var(--border-strong);
+}
+
+.matrix-footer-row td strong {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.cell-drawer {
+    width: 540px;
+    max-width: 94vw;
+}
+
+@media (max-width: 768px) {
+    .cell-drawer {
+        width: 100vw;
+        max-width: 100vw;
+    }
+}
+
 .badge.shadow-status-pending {
     background: var(--bg-elevated);
     color: var(--text-muted);

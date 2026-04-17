@@ -92,10 +92,10 @@
                         <tr
                             wire:key="comparison-{{ $comparison->id }}"
                             class="comparison-row"
-                            onclick="window.location='{{ url('/evals/comparisons/'.$comparison->id) }}'"
+                            onclick="window.location='{{ route('proofread.comparisons.show', $comparison) }}'"
                         >
                             <td>
-                                <a href="{{ url('/evals/comparisons/'.$comparison->id) }}">{{ $comparison->name }}</a>
+                                <a href="{{ route('proofread.comparisons.show', $comparison) }}">{{ $comparison->name }}</a>
                             </td>
                             <td>
                                 <span class="muted">{{ $comparison->dataset_name }}</span>
