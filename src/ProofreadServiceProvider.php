@@ -8,6 +8,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Laravel\Pulse\Pulse;
 use Laravel\Telescope\Telescope;
 use Livewire\Livewire;
 use Mosaiqo\Proofread\Clustering\FailureClusterer;
@@ -54,6 +55,7 @@ use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
 use Mosaiqo\Proofread\Listeners\NotifyWebhookOnRegression;
 use Mosaiqo\Proofread\Mcp\McpIntegration;
 use Mosaiqo\Proofread\Pricing\PricingTable;
+use Mosaiqo\Proofread\Pulse\EvalPulseRecorder;
 use Mosaiqo\Proofread\Runner\ComparisonPersister;
 use Mosaiqo\Proofread\Runner\ComparisonRunner;
 use Mosaiqo\Proofread\Runner\Concurrency\ConcurrencyDriver;
@@ -123,6 +125,10 @@ class ProofreadServiceProvider extends PackageServiceProvider
             Event::listen(EvalRunPersisted::class, EvalRunWatcher::class);
         }
 
+        if (class_exists(Pulse::class) && $this->app->bound(Pulse::class)) {
+            Event::listen(EvalRunPersisted::class, EvalPulseRecorder::class);
+        }
+
         if ((bool) config('proofread.webhooks.enabled', false)) {
             Event::listen(EvalRunRegressed::class, NotifyWebhookOnRegression::class);
         }
@@ -143,6 +149,10 @@ class ProofreadServiceProvider extends PackageServiceProvider
         $this->publishes([
             __DIR__.'/../stubs/boost/proofread-guidelines.md' => $this->app->basePath('.ai/guidelines/proofread.md'),
         ], 'proofread-boost-guidelines');
+
+        $this->publishes([
+            __DIR__.'/../resources/views/pulse/proofread.blade.php' => $this->app->resourcePath('views/vendor/pulse/cards/proofread.blade.php'),
+        ], 'proofread-pulse');
     }
 
     private function registerLivewireComponents(): void

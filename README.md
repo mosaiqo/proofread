@@ -532,6 +532,34 @@ Registration is conditional — Proofread checks for Telescope at
 boot time and wires up the listener only when it is available.
 No configuration required.
 
+## Laravel Pulse integration
+
+If your project uses `laravel/pulse`, Proofread automatically
+records persisted eval runs as Pulse metrics. Each run emits a
+`proofread_eval` counter keyed by `dataset::passed|failed`, a
+`proofread_eval_duration` gauge (avg + max, in ms), and a
+`proofread_eval_cost` sum (in micro-dollars) when cost data is
+available. They surface alongside your queries, jobs, and
+requests in the Pulse dashboard.
+
+Publish the optional dashboard card:
+
+```bash
+php artisan vendor:publish --tag=proofread-pulse
+```
+
+Then add it to your Pulse dashboard view
+`resources/views/vendor/pulse/dashboard.blade.php`:
+
+```blade
+<x-pulse>
+    @include('vendor.pulse.cards.proofread', ['cols' => 4, 'rows' => 2])
+</x-pulse>
+```
+
+Registration is conditional on Pulse being installed and bound in
+the container — no action needed if you don't use Pulse.
+
 ## Laravel Boost integration
 
 If your project uses `laravel/boost`, publish Proofread's AI
