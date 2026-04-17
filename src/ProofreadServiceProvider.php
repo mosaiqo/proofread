@@ -13,8 +13,10 @@ use Mosaiqo\Proofread\Clustering\FailureClusterer;
 use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
+use Mosaiqo\Proofread\Console\Commands\ExportDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportRunCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
+use Mosaiqo\Proofread\Console\Commands\ImportDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeAssertionCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeSuiteCommand;
@@ -72,6 +74,8 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ClusterFailuresCommand::class)
             ->hasCommand(DatasetDiffCommand::class)
             ->hasCommand(ExportRunCommand::class)
+            ->hasCommand(ImportDatasetCommand::class)
+            ->hasCommand(ExportDatasetCommand::class)
             ->hasCommand(ProofreadMakeSuiteCommand::class)
             ->hasCommand(ProofreadMakeAssertionCommand::class)
             ->hasCommand(ProofreadMakeDatasetCommand::class)
