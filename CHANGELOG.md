@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-17
+
+### Added
+
+- **CLI subject abstraction.** New `CliSubject` abstract class lets
+  suites evaluate against headless LLM CLIs instead of HTTP APIs.
+  Users with flat-rate subscriptions (Max, Pro) can run evals
+  without per-token API billing. Subclasses override `binary()`,
+  `args(prompt)`, `parseOutput(stdout, stderr)` hooks. Built-in
+  support for timeout, custom working directory, env vars, and
+  stdin input. Wraps `Symfony\Component\Process\Process` with
+  shell-safe array-style command construction.
+- `ClaudeCodeCliSubject` reference implementation for the headless
+  CLI shipped by Anthropic. Uses `--output-format json` to extract
+  the response text plus usage metadata (input/output tokens,
+  cache tokens, cost, model, session_id, turn count). Builder API:
+  `ClaudeCodeCliSubject::make()->withModel('claude-sonnet-4-6')->withTimeout(60)`.
+- `SubjectResolver` now recognizes `CliSubject` instances as a
+  first-class subject type alongside callables, Agent FQCNs, and
+  Agent instances. CLI subject invocations populate the standard
+  metadata keys (`latency_ms`, `tokens_in`, `tokens_out`,
+  `cost_usd`, `model`, `provider='cli'`, `raw`) so existing
+  assertions (LatencyLimit, TokenBudget, CostLimit) work
+  unchanged.
+- `CliInvocation` and `CliResponse` value objects for structured
+  subprocess results.
+- `CliTimeoutException` and `CliExecutionException` for
+  CLI-specific failure modes.
+
+### Limitations
+
+- CLI subscriptions are flat-rate; `cost_usd` reported by the CLI
+  may be 0 (subscription mode) even though tokens were consumed.
+- Subprocess spawning is heavier than HTTP. `--concurrency > 1` is
+  generally counterproductive with CLI subjects.
+- Some CLIs require authentication (login) outside of Proofread's
+  control. CI environments need pre-authenticated credentials.
+- Structured-output assertions and trajectory assertions require
+  API-level access (steps, tool calls) that headless CLIs may not
+  expose.
+
 ## [0.8.0] - 2026-04-17
 
 ### Added
@@ -557,7 +598,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/mosaiqo/proofread/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/mosaiqo/proofread/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/mosaiqo/proofread/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/mosaiqo/proofread/compare/v0.6.0...v0.6.1

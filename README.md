@@ -601,6 +601,84 @@ suite structure, assertion selection, testing patterns, and CLI
 workflow. If your Boost setup expects a different path, move the
 file after publishing.
 
+## CLI subjects (subscription-friendly evaluation)
+
+Most LLM providers bill per-token via their APIs. If you already
+pay a flat-rate subscription (Max, Pro, etc.), you may not want to
+rack up API charges on top of what you are already paying.
+Proofread lets you evaluate against headless CLI tools that run
+under your subscription.
+
+### Claude Code
+
+```php
+use Mosaiqo\Proofread\Cli\Subjects\ClaudeCodeCliSubject;
+use Mosaiqo\Proofread\Runner\EvalRunner;
+
+$subject = ClaudeCodeCliSubject::make()
+    ->withModel('claude-sonnet-4-6')
+    ->withTimeout(60);
+
+$run = (new EvalRunner)->run($subject, $dataset, $assertions);
+```
+
+The CLI must be installed and authenticated in the environment
+where evals run. `claude --output-format json` is parsed to extract
+the response text plus token usage, cost, and model metadata.
+`LatencyLimit`, `TokenBudget`, and `CostLimit` assertions work
+unchanged — tokens come from the CLI's reported usage, and cost is
+whatever the CLI reports (0 for subscription mode).
+
+### Extending for other CLIs
+
+Subclass `CliSubject` and implement three methods:
+
+```php
+use Mosaiqo\Proofread\Cli\CliResponse;
+use Mosaiqo\Proofread\Cli\CliSubject;
+
+final class MyCliSubject extends CliSubject
+{
+    public function binary(): string
+    {
+        return 'mycli';
+    }
+
+    public function args(string $prompt): array
+    {
+        return ['--prompt', $prompt, '--json'];
+    }
+
+    public function parseOutput(string $stdout, string $stderr): CliResponse
+    {
+        $decoded = json_decode($stdout, true);
+
+        return new CliResponse(
+            output: $decoded['response'] ?? '',
+            metadata: [
+                'tokens_in' => $decoded['tokens']['in'] ?? null,
+                'tokens_out' => $decoded['tokens']['out'] ?? null,
+                'model' => $decoded['model'] ?? null,
+            ],
+        );
+    }
+}
+```
+
+Optional overrides: `timeout()`, `workingDirectory()`, `env()`,
+`usesStdin()`, `estimateTokens()`.
+
+### Limitations
+
+- Subprocess spawning is heavier than HTTP. Avoid
+  `--concurrency > 1` with CLI subjects.
+- CI environments need the CLI pre-installed and authenticated.
+- `StructuredOutputAssertion` and `Trajectory` assertions require
+  API-level data that headless CLIs may not expose.
+- Maintenance burden: CLI output formats change between versions.
+  Proofread maintains `ClaudeCodeCliSubject`; community
+  implementations for other CLIs are welcome.
+
 ## Configuration
 
 Publish the config file:

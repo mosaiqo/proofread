@@ -5,6 +5,17 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.9.0 from 0.8.x
+
+No breaking changes. All additions. Optional adoption:
+
+- CLI subjects are a new entry point for evaluation. Existing
+  callable, Agent FQCN, and Agent instance subjects continue to
+  work identically.
+- `ClaudeCodeCliSubject` requires the `claude` CLI installed and
+  authenticated in the execution environment. See the CLI subjects
+  section in README for details.
+
 ## Upgrading to 0.8.0 from 0.7.x
 
 No breaking changes. All additions. Optional adoption:
