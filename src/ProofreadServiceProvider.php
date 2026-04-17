@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Mosaiqo\Proofread\Clustering\FailureClusterer;
+use Mosaiqo\Proofread\Console\Commands\BenchmarkEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
@@ -66,6 +67,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->discoversMigrations()
             ->hasCommand(RunEvalsCommand::class)
+            ->hasCommand(BenchmarkEvalsCommand::class)
             ->hasCommand(RunProviderComparisonCommand::class)
             ->hasCommand(CompareEvalsCommand::class)
             ->hasCommand(ShadowEvaluateCommand::class)
