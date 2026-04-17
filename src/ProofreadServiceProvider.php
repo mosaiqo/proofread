@@ -40,6 +40,12 @@ use Mosaiqo\Proofread\Http\Livewire\RunsList;
 use Mosaiqo\Proofread\Http\Livewire\ShadowPanel;
 use Mosaiqo\Proofread\Http\Middleware\ProofreadGate;
 use Mosaiqo\Proofread\Judge\Judge;
+use Mosaiqo\Proofread\Lint\PromptLinter;
+use Mosaiqo\Proofread\Lint\Rules\AmbiguityRule;
+use Mosaiqo\Proofread\Lint\Rules\ContradictionRule;
+use Mosaiqo\Proofread\Lint\Rules\LengthRule;
+use Mosaiqo\Proofread\Lint\Rules\MissingOutputFormatRule;
+use Mosaiqo\Proofread\Lint\Rules\MissingRoleRule;
 use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
 use Mosaiqo\Proofread\Listeners\NotifyWebhookOnRegression;
 use Mosaiqo\Proofread\Mcp\McpIntegration;
@@ -207,6 +213,14 @@ class ProofreadServiceProvider extends PackageServiceProvider
         $this->app->singleton(FailureClusterer::class, fn ($app): FailureClusterer => new FailureClusterer(
             $app->make(Similarity::class),
         ));
+
+        $this->app->singleton(PromptLinter::class, fn ($app): PromptLinter => new PromptLinter([
+            $app->make(LengthRule::class),
+            $app->make(MissingRoleRule::class),
+            $app->make(AmbiguityRule::class),
+            $app->make(ContradictionRule::class),
+            $app->make(MissingOutputFormatRule::class),
+        ]));
 
         $this->app->bind(
             RandomNumberProvider::class,
