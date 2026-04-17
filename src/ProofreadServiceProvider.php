@@ -12,6 +12,7 @@ use Livewire\Livewire;
 use Mosaiqo\Proofread\Clustering\FailureClusterer;
 use Mosaiqo\Proofread\Console\Commands\ClusterFailuresCommand;
 use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
+use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
@@ -57,6 +58,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ShadowAlertCommand::class)
             ->hasCommand(GenerateDatasetCommand::class)
             ->hasCommand(ClusterFailuresCommand::class)
+            ->hasCommand(DatasetDiffCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
     }
