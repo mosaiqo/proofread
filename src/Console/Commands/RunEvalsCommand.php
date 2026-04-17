@@ -29,6 +29,7 @@ final class RunEvalsCommand extends Command
         {--persist : Persist each run to the database via EvalPersister}
         {--queue : Dispatch each suite to the queue instead of running inline}
         {--commit-sha= : Commit SHA attached to the persisted run (only used with --queue)}
+        {--concurrency=1 : Run up to N cases in parallel. Default 1 (sequential). Only beneficial for I/O-bound subjects.}
         {--fake-judge= : Fake the judge agent for Rubric assertions: "pass", "fail", or a JSON file path}';
 
     /**
@@ -52,6 +53,11 @@ final class RunEvalsCommand extends Command
         $fakeJudgeOption = $this->option('fake-judge');
         $fakeJudgeSpec = is_string($fakeJudgeOption) && $fakeJudgeOption !== '' ? $fakeJudgeOption : null;
         $multipleSuites = count($suiteNames) > 1;
+
+        $concurrency = $this->parseConcurrency($this->option('concurrency'));
+        if ($concurrency === null) {
+            return 2;
+        }
 
         if ($fakeJudgeSpec !== null && ! $this->applyFakeJudge($fakeJudgeSpec)) {
             return 2;
@@ -99,7 +105,7 @@ final class RunEvalsCommand extends Command
                 $this->line('');
 
                 try {
-                    $run = $runner->run($suite->subject(), $dataset, $suite->assertions());
+                    $run = $runner->run($suite->subject(), $dataset, $suite->assertions(), $concurrency);
                 } catch (Throwable $e) {
                     $this->error('  Suite runner failed: '.$e->getMessage());
                     $anyFailure = true;
@@ -174,6 +180,32 @@ final class RunEvalsCommand extends Command
         }
 
         return 0;
+    }
+
+    private function parseConcurrency(mixed $raw): ?int
+    {
+        if ($raw === null) {
+            return 1;
+        }
+
+        if (is_int($raw)) {
+            return max(1, $raw);
+        }
+
+        if (! is_string($raw) || $raw === '') {
+            return 1;
+        }
+
+        if (preg_match('/^-?\d+$/', $raw) !== 1) {
+            $this->error(sprintf(
+                "--concurrency must be a non-negative integer, got '%s'",
+                $raw,
+            ));
+
+            return null;
+        }
+
+        return max(1, (int) $raw);
     }
 
     private function applyFakeJudge(string $spec): bool

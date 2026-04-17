@@ -9,6 +9,8 @@ use Laravel\Ai\AiServiceProvider;
 use Laravel\Mcp\Server\McpServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Mosaiqo\Proofread\ProofreadServiceProvider;
+use Mosaiqo\Proofread\Runner\Concurrency\ConcurrencyDriver;
+use Mosaiqo\Proofread\Runner\Concurrency\SyncConcurrencyDriver;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -37,6 +39,8 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
             'foreign_key_constraints' => true,
         ]);
+
+        $app->bind(ConcurrencyDriver::class, SyncConcurrencyDriver::class);
     }
 
     protected function defineDatabaseMigrations(): void
