@@ -50,11 +50,12 @@ abstract class EvalSuite
      * and compose assertions that vary per case. The default delegates to the
      * shared assertions() list.
      *
-     * Implementations should be cheap: the runner invokes this once per case
-     * during execution, and the CLI invokes it again per case ahead of time
-     * to build the pre-run header. Avoid container-heavy work or I/O here;
-     * construct lightweight assertion objects and defer expensive wiring to
-     * the assertion's own run() method.
+     * Invoked once per case at run time. The CLI header no longer invokes
+     * this method — override detection is performed via reflection to
+     * preserve single-pass execution. Implementations should still be
+     * cheap: avoid container-heavy work or I/O here; construct lightweight
+     * assertion objects and defer expensive wiring to the assertion's own
+     * run() method.
      *
      * @param  array<string, mixed>  $case
      * @return array<int, Assertion>

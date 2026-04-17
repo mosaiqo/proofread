@@ -355,23 +355,17 @@ final class RunEvalsCommand extends Command
 
     private function assertionsHeader(EvalSuite $suite, Dataset $dataset): string
     {
-        $min = PHP_INT_MAX;
-        $max = 0;
-        foreach ($dataset->cases as $case) {
-            $count = count($suite->assertionsFor($case));
-            if ($count < $min) {
-                $min = $count;
-            }
-            if ($count > $max) {
-                $max = $count;
-            }
-        }
+        $cases = $dataset->count();
+        $baseCount = count($suite->assertions());
 
-        $label = $min === $max
-            ? sprintf('%d assertions per case', $min)
-            : sprintf('%d-%d assertions per case', $min, $max);
+        $reflection = new \ReflectionMethod($suite, 'assertionsFor');
+        $isOverridden = $reflection->getDeclaringClass()->getName() !== EvalSuite::class;
 
-        return sprintf('  %d cases, %s', $dataset->count(), $label);
+        $label = $isOverridden
+            ? sprintf('%d base assertions (per-case may vary)', $baseCount)
+            : sprintf('%d assertions per case', $baseCount);
+
+        return sprintf('  %d cases, %s', $cases, $label);
     }
 
     private function junitPathFor(string $basePath, EvalSuite $suite, bool $multiple): string

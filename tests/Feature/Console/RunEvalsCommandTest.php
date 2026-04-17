@@ -9,6 +9,7 @@ use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Models\EvalDataset as EvalDatasetModel;
 use Mosaiqo\Proofread\Models\EvalRun as EvalRunModel;
 use Mosaiqo\Proofread\Suite\EvalSuite;
+use Mosaiqo\Proofread\Tests\Fixtures\Suites\AssertionsForSpySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\EmptySuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FailingSuite;
@@ -457,10 +458,18 @@ it('prints singular assertions count when all cases have the same count', functi
         ->and($output)->not->toContain('1-1 assertions per case');
 });
 
-it('prints assertions range when per-case counts differ', function (): void {
+it('prints a base count with "per-case may vary" when assertionsFor is overridden', function (): void {
     Artisan::call('evals:run', ['suites' => [VaryingAssertionsSuite::class]]);
 
     $output = Artisan::output();
 
-    expect($output)->toContain('2 cases, 2-4 assertions per case');
+    expect($output)->toContain('2 cases, 2 base assertions (per-case may vary)');
+});
+
+it('does not invoke assertionsFor from the CLI header', function (): void {
+    AssertionsForSpySuite::reset();
+
+    Artisan::call('evals:run', ['suites' => [AssertionsForSpySuite::class]]);
+
+    expect(AssertionsForSpySuite::$callCount)->toBe(0);
 });
