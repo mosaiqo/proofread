@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-17
+
+### Added
+
+- `EvalSuite::setUp()` and `EvalSuite::tearDown()` lifecycle hooks.
+  Override these to seed database state, initialize tenant context,
+  or prepare fixtures before a suite runs. `tearDown()` is called
+  inside a `finally` block so it runs even when the subject or an
+  assertion throws.
+- `EvalRunner::runSuite(EvalSuite $suite): EvalRun` method that
+  orchestrates a suite's full lifecycle (setUp, read dataset/subject/
+  assertions, run, tearDown). Existing callers — `evals:run`, the
+  `RunEvalSuiteJob` queue job, and the MCP `run_eval_suite` tool — now
+  route through this method, so every suite benefits from the lifecycle
+  hooks automatically.
+- `EvalSuite::assertionsFor(array $case): array` method. Override to
+  compose assertions that depend on per-case metadata
+  (e.g. `$case['meta']['expected_count']`). Defaults to delegating to
+  `assertions()`, so existing suites behave identically without changes.
+- `toPassSuite()` Pest expectation that accepts an `EvalSuite` and
+  runs it through the full lifecycle. Failure messages list up to
+  three failing cases with assertion names and reasons, mirroring
+  `toPassEval`'s output format.
+- `evals:run --fake-judge=SPEC` flag for running Rubric-enabled suites
+  from the CLI without hitting a real LLM. `SPEC` can be `pass`, `fail`,
+  or a path to a JSON file containing per-invocation judge responses.
+
+### Changed
+
+- `RunEvalsCommand`, `RunEvalSuiteJob`, and the MCP `run_eval_suite`
+  tool now all use `EvalRunner::runSuite()` under the hood. External
+  behavior is unchanged, but suites with `setUp`, `tearDown`, or
+  `assertionsFor` overrides now get full lifecycle support from every
+  entry point.
+
 ## [0.1.1] - 2026-04-17
 
 ### Added
@@ -162,6 +197,7 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/mosaiqo/proofread/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mosaiqo/proofread/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/mosaiqo/proofread/releases/tag/v0.1.0

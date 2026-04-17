@@ -157,6 +157,12 @@ abstract public function assertions(): array;
 
 See `src/Suite/EvalSuite.php` for the full contract.
 
+Suites can optionally override `setUp()` and `tearDown()` for
+database-dependent setup, and `assertionsFor(array $case)` to vary
+assertions per case based on metadata. Both `toPassSuite()` in Pest
+and the `evals:run` Artisan command drive the full lifecycle
+automatically.
+
 ### Subjects
 
 Three shapes are accepted:
@@ -197,6 +203,7 @@ numeric `score`, and arbitrary `metadata`.
 |---|---|---|
 | `toPassAssertion` | any output | `expect($output)->toPassAssertion(ContainsAssertion::make('x'))` |
 | `toPassEval` | callable / Agent | `expect($agent)->toPassEval($dataset, $assertions)` |
+| `toPassSuite`            | EvalSuite         | `expect($suite)->toPassSuite()`                       |
 | `toPassRubric` | string output | `expect($output)->toPassRubric('polite tone')` |
 | `toMatchSchema` | JSON output | `expect($json)->toMatchSchema($schemaArray)` |
 | `toCostUnder` | `EvalRun` | `expect($run)->toCostUnder(0.05)` |
@@ -216,7 +223,7 @@ expectations — no stub files to maintain.
 
 | Command | Purpose |
 |---|---|
-| `evals:run {suites*}` | Run one or more `EvalSuite` classes; supports `--persist`, `--junit`, `--queue` |
+| `evals:run {suites*}` | Run one or more `EvalSuite` classes. Supports `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, and `--fake-judge` (pass, fail, or JSON path). |
 | `evals:compare {base} {head}` | Structured diff between two persisted runs |
 | `evals:cluster` | Cluster failures by embedding similarity |
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
