@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Mosaiqo\Proofread\Models\EvalComparison;
 use Mosaiqo\Proofread\Models\EvalDataset;
 use Mosaiqo\Proofread\Models\EvalDatasetVersion;
 use Mosaiqo\Proofread\Models\EvalResult;
@@ -452,4 +453,360 @@ it('rejects unsupported --format values', function (): void {
 
     expect($exit)->toBe(2)
         ->and($output)->toContain('Unsupported --format');
+});
+
+/**
+ * @param  array<int, array{label: string, cases: list<array<string, mixed>>, run?: array<string, mixed>}>  $subjects
+ * @param  array<string, mixed>  $comparisonAttributes
+ */
+function seedExportComparison(
+    string $datasetName,
+    array $subjects,
+    array $comparisonAttributes = [],
+): EvalComparison {
+    $dataset = EvalDataset::query()->firstOrCreate(
+        ['name' => $datasetName],
+        ['case_count' => count($subjects[0]['cases'] ?? []), 'checksum' => hash('sha256', $datasetName)],
+    );
+
+    $labels = [];
+    foreach ($subjects as $subject) {
+        $labels[] = $subject['label'];
+    }
+
+    /** @var EvalComparison $comparison */
+    $comparison = EvalComparison::query()->create(array_merge([
+        'name' => $datasetName.'-cmp',
+        'suite_class' => null,
+        'dataset_name' => $datasetName,
+        'dataset_version_id' => null,
+        'subject_labels' => $labels,
+        'commit_sha' => null,
+        'total_runs' => count($subjects),
+        'passed_runs' => 0,
+        'failed_runs' => 0,
+        'total_cost_usd' => null,
+        'duration_ms' => 0.0,
+    ], $comparisonAttributes));
+
+    $passedRuns = 0;
+    $failedRuns = 0;
+    $totalCost = 0.0;
+    $hasCost = false;
+    $totalDuration = 0.0;
+
+    foreach ($subjects as $subject) {
+        $cases = $subject['cases'];
+        $runAttrs = $subject['run'] ?? [];
+        $passCount = 0;
+        $failCount = 0;
+        $errorCount = 0;
+        foreach ($cases as $row) {
+            if (isset($row['error_class'])) {
+                $errorCount++;
+                $failCount++;
+
+                continue;
+            }
+            if (($row['passed'] ?? true) === true) {
+                $passCount++;
+            } else {
+                $failCount++;
+            }
+        }
+
+        $runPassed = $failCount === 0;
+        if ($runPassed) {
+            $passedRuns++;
+        } else {
+            $failedRuns++;
+        }
+
+        $run = new EvalRun;
+        $run->fill(array_merge([
+            'dataset_id' => $dataset->id,
+            'dataset_version_id' => null,
+            'comparison_id' => $comparison->id,
+            'dataset_name' => $datasetName,
+            'suite_class' => null,
+            'subject_type' => 'agent',
+            'subject_class' => null,
+            'subject_label' => $subject['label'],
+            'commit_sha' => $comparisonAttributes['commit_sha'] ?? null,
+            'model' => null,
+            'passed' => $runPassed,
+            'pass_count' => $passCount,
+            'fail_count' => $failCount,
+            'error_count' => $errorCount,
+            'total_count' => count($cases),
+            'duration_ms' => 10.0,
+            'total_cost_usd' => null,
+            'total_tokens_in' => null,
+            'total_tokens_out' => null,
+        ], $runAttrs));
+        $run->save();
+
+        $totalDuration += (float) $run->duration_ms;
+        if ($run->total_cost_usd !== null) {
+            $totalCost += (float) $run->total_cost_usd;
+            $hasCost = true;
+        }
+
+        foreach ($cases as $row) {
+            $result = new EvalResult;
+            $result->fill([
+                'run_id' => $run->id,
+                'case_index' => $row['case_index'],
+                'case_name' => $row['case_name'] ?? null,
+                'input' => $row['input'] ?? ['value' => 'x'],
+                'output' => $row['output'] ?? null,
+                'expected' => $row['expected'] ?? null,
+                'passed' => $row['passed'] ?? true,
+                'assertion_results' => $row['assertion_results'] ?? [],
+                'error_class' => $row['error_class'] ?? null,
+                'error_message' => $row['error_message'] ?? null,
+                'error_trace' => null,
+                'duration_ms' => $row['duration_ms'] ?? 1.0,
+                'latency_ms' => null,
+                'tokens_in' => null,
+                'tokens_out' => null,
+                'cost_usd' => $row['cost_usd'] ?? null,
+                'model' => null,
+            ]);
+            $result->save();
+        }
+    }
+
+    $comparison->fill([
+        'passed_runs' => $passedRuns,
+        'failed_runs' => $failedRuns,
+        'total_cost_usd' => $hasCost ? $totalCost : null,
+        'duration_ms' => $totalDuration,
+    ])->save();
+
+    return $comparison->fresh() ?? $comparison;
+}
+
+it('exports a comparison as markdown when the id matches a comparison', function (): void {
+    $comparison = seedExportComparison('ds-cmp-md', [
+        [
+            'label' => 'haiku',
+            'cases' => [
+                ['case_index' => 0, 'case_name' => 'greeting', 'passed' => true],
+            ],
+        ],
+        [
+            'label' => 'sonnet',
+            'cases' => [
+                ['case_index' => 0, 'case_name' => 'greeting', 'passed' => true],
+            ],
+        ],
+    ]);
+
+    $exit = Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('# Eval Comparison:')
+        ->and($output)->toContain($comparison->id)
+        ->and($output)->toContain('haiku')
+        ->and($output)->toContain('sonnet');
+});
+
+it('exports a comparison as HTML', function (): void {
+    $comparison = seedExportComparison('ds-cmp-html', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+        ['label' => 'sonnet', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+
+    Artisan::call('evals:export', [
+        'run' => $comparison->id,
+        '--format' => 'html',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('<html')
+        ->and($output)->toContain('<style')
+        ->and($output)->toContain('Eval Comparison')
+        ->and($output)->toContain('haiku')
+        ->and($output)->toContain('sonnet');
+});
+
+it('includes the matrix with all cases and subjects', function (): void {
+    $comparison = seedExportComparison('ds-cmp-matrix', [
+        [
+            'label' => 'haiku',
+            'cases' => [
+                ['case_index' => 0, 'case_name' => 'alpha', 'passed' => true],
+                ['case_index' => 1, 'case_name' => 'beta', 'passed' => false],
+            ],
+        ],
+        [
+            'label' => 'sonnet',
+            'cases' => [
+                ['case_index' => 0, 'case_name' => 'alpha', 'passed' => true],
+                ['case_index' => 1, 'case_name' => 'beta', 'passed' => true],
+            ],
+        ],
+    ]);
+
+    Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('## Matrix')
+        ->and($output)->toContain('alpha')
+        ->and($output)->toContain('beta')
+        ->and($output)->toContain('PASS')
+        ->and($output)->toContain('FAIL');
+});
+
+it('includes winner summary rows', function (): void {
+    $comparison = seedExportComparison('ds-cmp-winners', [
+        [
+            'label' => 'haiku',
+            'cases' => [['case_index' => 0, 'case_name' => 'a', 'passed' => true]],
+            'run' => ['duration_ms' => 50.0, 'total_cost_usd' => 0.01],
+        ],
+        [
+            'label' => 'sonnet',
+            'cases' => [['case_index' => 0, 'case_name' => 'a', 'passed' => false]],
+            'run' => ['duration_ms' => 200.0, 'total_cost_usd' => 0.05],
+        ],
+    ]);
+
+    Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('## Winners')
+        ->and($output)->toContain('Best pass rate')
+        ->and($output)->toContain('Cheapest')
+        ->and($output)->toContain('Fastest');
+});
+
+it('includes per-subject stats sections', function (): void {
+    $comparison = seedExportComparison('ds-cmp-stats', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+        ['label' => 'sonnet', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+
+    Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('## Per-subject stats')
+        ->and($output)->toContain('### haiku')
+        ->and($output)->toContain('### sonnet');
+});
+
+it('resolves latest comparison with "latest" when type=comparison', function (): void {
+    seedExportRun('ds-latest-mixed', [['case_index' => 0, 'passed' => true]]);
+
+    $older = seedExportComparison('ds-cmp-latest-older', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+    $older->created_at = now()->subHour();
+    $older->save();
+
+    $newer = seedExportComparison('ds-cmp-latest-newer', [
+        ['label' => 'sonnet', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+    $newer->created_at = now();
+    $newer->save();
+
+    Artisan::call('evals:export', [
+        'run' => 'latest',
+        '--type' => 'comparison',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain($newer->id)
+        ->and($output)->not->toContain($older->id);
+});
+
+it('exits 2 when type=run but id matches only a comparison', function (): void {
+    $comparison = seedExportComparison('ds-cmp-typerun', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+
+    $exit = Artisan::call('evals:export', [
+        'run' => $comparison->id,
+        '--type' => 'run',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('Could not resolve');
+});
+
+it('exits 2 when type=comparison but id matches only a run', function (): void {
+    $run = seedExportRun('ds-onlyrun', [['case_index' => 0, 'passed' => true]]);
+
+    $exit = Artisan::call('evals:export', [
+        'run' => $run->id,
+        '--type' => 'comparison',
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(2)
+        ->and($output)->toContain('Could not resolve');
+});
+
+it('auto-detects a comparison when the id matches only a comparison', function (): void {
+    $comparison = seedExportComparison('ds-cmp-auto', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+        ['label' => 'sonnet', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+
+    $exit = Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0)
+        ->and($output)->toContain('# Eval Comparison:')
+        ->and($output)->toContain($comparison->id);
+});
+
+it('includes the comparison commit SHA when present', function (): void {
+    $comparison = seedExportComparison('ds-cmp-commit', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ], [
+        'commit_sha' => 'abc1234deadbeef',
+    ]);
+
+    Artisan::call('evals:export', ['run' => $comparison->id]);
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('abc1234deadbeef');
+});
+
+it('writes a comparison export to a file when --output is provided', function (): void {
+    $comparison = seedExportComparison('ds-cmp-outfile', [
+        ['label' => 'haiku', 'cases' => [['case_index' => 0, 'passed' => true]]],
+        ['label' => 'sonnet', 'cases' => [['case_index' => 0, 'passed' => true]]],
+    ]);
+    $dir = tempExportDir();
+    $path = $dir.'/comparison.md';
+
+    try {
+        Artisan::call('evals:export', [
+            'run' => $comparison->id,
+            '--output' => $path,
+        ]);
+
+        $contents = (string) file_get_contents($path);
+
+        expect(file_exists($path))->toBeTrue()
+            ->and($contents)->toContain('Eval Comparison')
+            ->and($contents)->toContain($comparison->id);
+    } finally {
+        removeExportDir($dir);
+    }
 });

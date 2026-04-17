@@ -218,8 +218,8 @@
         </div>
     @endif
 
+    {{-- Exports are currently CLI-only via `php artisan evals:export {comparison-id}`. --}}
     <div class="compare-actions">
-        <a class="drawer-link" href="{{ url('/evals/comparisons/'.$comparison->id.'/export') }}">Export comparison</a>
         <a class="drawer-link" href="{{ route('proofread.comparisons.index') }}">Back to list</a>
     </div>
 
