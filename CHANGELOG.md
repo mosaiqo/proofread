@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-17
+
+### Added
+
+- `CONTRIBUTING.md` with TDD workflow, commit conventions, coding
+  style, and release procedure.
+- `UPGRADING.md` with version-specific upgrade notes covering the
+  0.3.0 migration rename and the `EvalDataset.checksum` semantic
+  change. Includes a SQL / tinker snippet for consumers who relied
+  on `discoversMigrations()` auto-loading.
+- `run_provider_comparison` MCP tool — runs a `MultiSubjectEvalSuite`
+  through the `ComparisonRunner` and returns structured per-subject
+  stats. Accepts `suite_class`, `persist`, `commit_sha`, and
+  `provider_concurrency` inputs. Mirrors the design of
+  `run_eval_suite` for single-subject suites.
+
+### Documentation
+
+- README clarifies that `evals:export latest` resolves to the most
+  recent run; use `--type=comparison` to target comparisons.
+- README notes that `EvalRunner::runSuite` with `concurrency > 1` is
+  unsafe against SQLite subjects that write (SQLite serializes
+  writers). Recommended for LLM / HTTP subjects only.
+
 ## [0.4.0] - 2026-04-17
 
 ### Added
@@ -319,7 +343,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/mosaiqo/proofread/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/mosaiqo/proofread/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mosaiqo/proofread/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mosaiqo/proofread/compare/v0.1.1...v0.2.0

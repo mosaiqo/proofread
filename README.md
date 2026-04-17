@@ -227,7 +227,7 @@ expectations — no stub files to maintain.
 | `evals:compare {base} {head}` | Structured diff between two persisted runs |
 | `evals:dataset:diff {dataset}` | Compare two versions of a dataset. Accepts `--base`, `--head`, `--format`. |
 | `evals:providers {suite}` | Run a `MultiSubjectEvalSuite` and render a matrix of cases × subjects. Flags: `--persist`, `--commit-sha`, `--concurrency`, `--provider-concurrency`, `--fake-judge`, `--format`. |
-| `evals:export {id}` | Export a persisted run or comparison as self-contained Markdown or HTML. Flags: `--format`, `--output`, `--type=run\|comparison`. |
+| `evals:export {id}` | Export a persisted run or comparison as self-contained Markdown or HTML. `id` accepts a ULID, a commit SHA prefix, or `latest` (resolves to the most recent run). Use `--type=comparison` to target comparisons. Flags: `--format`, `--output`, `--type=run\|comparison`. |
 | `evals:cluster` | Cluster failures by embedding similarity |
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
@@ -252,6 +252,11 @@ Subjects must be serializable. Agent class-string FQCNs and static
 closures serialize cleanly. Ad-hoc closures that capture test-local
 state by reference (`use (&$x)`) cannot cross the process boundary
 and should only be used with `concurrency: 1`.
+
+> **Note:** concurrency > 1 is unsafe for subjects that write to
+> SQLite. SQLite serializes writers, so parallel SQLite writes will
+> hit "database is locked" errors. Use concurrency for LLM and HTTP
+> subjects, or subjects that only read from the database.
 
 ## Shadow evals
 
@@ -419,11 +424,12 @@ closed on missing data rather than silently passing.
 
 ## MCP integration
 
-When `laravel/mcp` is installed, Proofread exposes three tools:
+When `laravel/mcp` is installed, Proofread exposes four tools:
 
 - `list_eval_suites` — list registered `EvalSuite` classes
 - `run_eval_suite` — run a suite and return the structured result
 - `get_eval_run_diff` — diff two persisted runs by ULID
+- `run_provider_comparison` — run a `MultiSubjectEvalSuite` and return per-subject aggregate stats
 
 Register them from your own `Server` subclass:
 
