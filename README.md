@@ -560,6 +560,29 @@ Then add it to your Pulse dashboard view
 Registration is conditional on Pulse being installed and bound in
 the container — no action needed if you don't use Pulse.
 
+## OpenTelemetry integration
+
+If your project has `open-telemetry/api` installed (with a
+configured `TracerProvider`), Proofread emits a span tree for
+every persisted eval run:
+
+- Root span `proofread.eval.run` covers the full run duration.
+- Child span `proofread.eval.case` per case, parented to the root.
+- Each case span carries its assertion outcomes as OTel events
+  named `assertion`.
+
+Attributes are prefixed with `proofread.*` (`run.id`,
+`dataset.name`, `suite.class`, `run.passed`, `case.duration_ms`,
+etc.). Spans propagate to whatever exporter the host app has
+configured — Jaeger, Grafana Tempo, Honeycomb, an OTLP collector,
+and so on.
+
+Registration is conditional on the OpenTelemetry API being
+available. Proofread does not require it as a hard dependency;
+install `open-telemetry/api` (or the full SDK) in your project and
+wire a `TracerProvider` via `OpenTelemetry\API\Globals` to
+activate tracing.
+
 ## Laravel Boost integration
 
 If your project uses `laravel/boost`, publish Proofread's AI

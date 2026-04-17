@@ -35,6 +35,7 @@
         "laravel/pint": "^1.29",
         "laravel/pulse": "^1.7",
         "laravel/telescope": "^5.20",
+        "open-telemetry/sdk": "^1.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.1",
@@ -44,7 +45,8 @@
         "laravel/mcp": "Expose Proofread eval suites as MCP tools for use from MCP-compatible editors and assistants.",
         "laravel/boost": "Ship Proofread AI Guidelines and Agent Skill to Boost-powered editors.",
         "laravel/pulse": "Surface persisted eval runs in Pulse's dashboard alongside queries, jobs, and requests.",
-        "laravel/telescope": "Record persisted eval runs as Telescope entries for inline debugging."
+        "laravel/telescope": "Record persisted eval runs as Telescope entries for inline debugging.",
+        "open-telemetry/api": "Emit OpenTelemetry spans for persisted eval runs, propagating to whatever exporter the host app configures."
     },
     "autoload": {
         "psr-4": {

@@ -19,3 +19,7 @@ parameters:
             identifier: method.notFound
             message: '#Call to an undefined method Pest\\PendingCalls\\TestCall::(get|post|put|patch|delete|call)\(\)#'
             path: tests/Feature/Dashboard
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$(exporter|tracerProvider|tracer)\.#'
+            path: tests/Feature/Otel/EvalRunTracerTest.php

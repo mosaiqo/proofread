@@ -54,6 +54,7 @@ use Mosaiqo\Proofread\Lint\Rules\MissingRoleRule;
 use Mosaiqo\Proofread\Listeners\CheckForRegressionListener;
 use Mosaiqo\Proofread\Listeners\NotifyWebhookOnRegression;
 use Mosaiqo\Proofread\Mcp\McpIntegration;
+use Mosaiqo\Proofread\Otel\EvalRunTracer;
 use Mosaiqo\Proofread\Pricing\PricingTable;
 use Mosaiqo\Proofread\Pulse\EvalPulseRecorder;
 use Mosaiqo\Proofread\Runner\ComparisonPersister;
@@ -70,6 +71,8 @@ use Mosaiqo\Proofread\Simulation\CostSimulator;
 use Mosaiqo\Proofread\Snapshot\SnapshotStore;
 use Mosaiqo\Proofread\Telescope\EvalRunWatcher;
 use Mosaiqo\Proofread\Webhooks\RegressionWebhookNotifier;
+use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Trace\TracerInterface;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -127,6 +130,17 @@ class ProofreadServiceProvider extends PackageServiceProvider
 
         if (class_exists(Pulse::class) && $this->app->bound(Pulse::class)) {
             Event::listen(EvalRunPersisted::class, EvalPulseRecorder::class);
+        }
+
+        if (interface_exists(TracerInterface::class)) {
+            $this->app->singleton(EvalRunTracer::class, static function ($app): EvalRunTracer {
+                $tracer = Globals::tracerProvider()
+                    ->getTracer('mosaiqo/proofread', Proofread::VERSION);
+
+                return new EvalRunTracer($tracer);
+            });
+
+            Event::listen(EvalRunPersisted::class, EvalRunTracer::class);
         }
 
         if ((bool) config('proofread.webhooks.enabled', false)) {
