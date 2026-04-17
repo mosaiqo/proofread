@@ -209,6 +209,17 @@ numeric `score`, and arbitrary `metadata`.
 | `toCostUnder` | `EvalRun` | `expect($run)->toCostUnder(0.05)` |
 | `toMatchGoldenSnapshot` | any output | `expect($output)->toMatchGoldenSnapshot()` |
 
+Both `toPassEval` and `toPassSuite` assign the resulting `EvalRun`
+to the expectation's `->value` after the assertion passes, so
+callers can chain post-run inspection:
+
+```php
+$run = expect($agent)->toPassEval($dataset, $assertions)->value;
+
+expect($run->total_cost_usd)->toBeLessThan(0.05);
+expect($run->failures())->toBeEmpty();
+```
+
 Expectations are loaded via `Mosaiqo\Proofread\Testing\expectations.php`; wire
 it up from your `tests/Pest.php`:
 

@@ -8,6 +8,7 @@ use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Suite\EvalSuite;
 use Mosaiqo\Proofread\Support\AssertionResult;
 use Mosaiqo\Proofread\Support\Dataset;
+use Mosaiqo\Proofread\Support\EvalRun;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\ErroringSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\FailingSuite;
 use Mosaiqo\Proofread\Tests\Fixtures\Suites\LifecycleSpySuite;
@@ -205,4 +206,12 @@ it('respects per-case assertionsFor', function (): void {
     $message = $caught?->getMessage() ?? '';
     expect($message)->toContain('per-case-fail');
     expect($message)->toContain('per-case failure');
+});
+
+it('exposes the EvalRun via ->value after passing', function (): void {
+    $run = expect(new PassingSuite)->toPassSuite()->value;
+
+    expect($run)->toBeInstanceOf(EvalRun::class);
+    expect($run->passed())->toBeTrue();
+    expect($run->total())->toBeGreaterThan(0);
 });

@@ -161,6 +161,8 @@ expect()->extend('toPassSuite', function () {
         $run->passed() ? '' : proofread_format_suite_failure($subject, $run),
     );
 
+    $this->value = $run;
+
     return $this;
 });
 
@@ -183,6 +185,8 @@ expect()->extend('toPassEval', function (Dataset $dataset, array $assertions = [
         $run->passed(),
         $run->passed() ? '' : proofread_format_eval_failure($run, $assertions),
     );
+
+    $this->value = $run;
 
     return $this;
 });

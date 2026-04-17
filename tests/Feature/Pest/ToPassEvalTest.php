@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Mosaiqo\Proofread\Assertions\ContainsAssertion;
 use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Support\Dataset;
+use Mosaiqo\Proofread\Support\EvalRun;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\EchoAgent;
 use PHPUnit\Framework\ExpectationFailedException;
 
@@ -214,4 +215,19 @@ it('fails the expectation with a clear message when the subject is an unsupporte
     }
 
     expect($caught->getMessage())->toContain('not-a-class-nor-callable');
+});
+
+it('exposes the EvalRun via ->value after passing', function (): void {
+    $dataset = Dataset::make('chain', [
+        ['input' => 'foo bar'],
+        ['input' => 'foo baz'],
+    ]);
+
+    $run = expect(fn (string $input): string => $input)
+        ->toPassEval($dataset, [ContainsAssertion::make('foo')])
+        ->value;
+
+    expect($run)->toBeInstanceOf(EvalRun::class);
+    expect($run->passed())->toBeTrue();
+    expect($run->total())->toBe(2);
 });
