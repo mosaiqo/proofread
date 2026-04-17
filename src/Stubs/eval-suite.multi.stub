@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Mosaiqo\Proofread\Assertions\ContainsAssertion;
+use Mosaiqo\Proofread\Contracts\Assertion;
+use Mosaiqo\Proofread\Suite\MultiSubjectEvalSuite;
+use Mosaiqo\Proofread\Support\Dataset;
+
+final class {{ class }} extends MultiSubjectEvalSuite
+{
+    public function name(): string
+    {
+        return '{{ class }}';
+    }
+
+    public function dataset(): Dataset
+    {
+        return Dataset::make('{{ class }}', [
+            ['input' => 'example-input', 'expected' => 'example-output'],
+        ]);
+    }
+
+    /**
+     * @return array<string, callable|class-string|object>
+     */
+    public function subjects(): array
+    {
+        return [
+            // 'haiku'  => \App\Agents\YourAgentHaiku::class,
+            // 'sonnet' => \App\Agents\YourAgentSonnet::class,
+            'callable' => static fn (string $input): string => $input,
+        ];
+    }
+
+    /**
+     * @return array<int, Assertion>
+     */
+    public function assertions(): array
+    {
+        return [
+            ContainsAssertion::make('example-output'),
+        ];
+    }
+}

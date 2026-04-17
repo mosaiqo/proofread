@@ -15,6 +15,9 @@ use Mosaiqo\Proofread\Console\Commands\CompareEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\DatasetDiffCommand;
 use Mosaiqo\Proofread\Console\Commands\ExportRunCommand;
 use Mosaiqo\Proofread\Console\Commands\GenerateDatasetCommand;
+use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeAssertionCommand;
+use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeDatasetCommand;
+use Mosaiqo\Proofread\Console\Commands\Make\ProofreadMakeSuiteCommand;
 use Mosaiqo\Proofread\Console\Commands\RunEvalsCommand;
 use Mosaiqo\Proofread\Console\Commands\RunProviderComparisonCommand;
 use Mosaiqo\Proofread\Console\Commands\ShadowAlertCommand;
@@ -69,6 +72,9 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ClusterFailuresCommand::class)
             ->hasCommand(DatasetDiffCommand::class)
             ->hasCommand(ExportRunCommand::class)
+            ->hasCommand(ProofreadMakeSuiteCommand::class)
+            ->hasCommand(ProofreadMakeAssertionCommand::class)
+            ->hasCommand(ProofreadMakeDatasetCommand::class)
             ->hasRoute('dashboard')
             ->hasViews('proofread');
     }
@@ -96,6 +102,13 @@ class ProofreadServiceProvider extends PackageServiceProvider
         }
 
         $this->registerLivewireComponents();
+
+        $this->publishes([
+            __DIR__.'/Stubs/eval-suite.stub' => $this->app->basePath('stubs/proofread/eval-suite.stub'),
+            __DIR__.'/Stubs/eval-suite.multi.stub' => $this->app->basePath('stubs/proofread/eval-suite.multi.stub'),
+            __DIR__.'/Stubs/assertion.stub' => $this->app->basePath('stubs/proofread/assertion.stub'),
+            __DIR__.'/Stubs/dataset.stub' => $this->app->basePath('stubs/proofread/dataset.stub'),
+        ], 'proofread-stubs');
     }
 
     private function registerLivewireComponents(): void

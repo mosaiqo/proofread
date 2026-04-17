@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Mosaiqo\Proofread\Contracts\Assertion;
+use Mosaiqo\Proofread\Support\AssertionResult;
+
+final readonly class {{ class }} implements Assertion
+{
+    private function __construct(
+        // Add your configuration fields here.
+    ) {}
+
+    public static function make(): self
+    {
+        return new self(
+            // ...
+        );
+    }
+
+    public function run(mixed $output, array $context = []): AssertionResult
+    {
+        unset($context);
+
+        if (! is_string($output)) {
+            return AssertionResult::fail(
+                sprintf('Expected string output, got %s', gettype($output))
+            );
+        }
+
+        // Replace with your assertion logic.
+        return AssertionResult::pass('Replace with your assertion logic.');
+    }
+
+    public function name(): string
+    {
+        return '{{ snake_class }}';
+    }
+}

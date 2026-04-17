@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+use Mosaiqo\Proofread\Support\Dataset;
+
+return Dataset::make('{{ name }}', [
+    [
+        'input' => 'Example input 1',
+        'expected' => 'Example output 1',
+        'meta' => ['name' => 'case-one'],
+    ],
+    [
+        'input' => 'Example input 2',
+        'expected' => 'Example output 2',
+        'meta' => ['name' => 'case-two'],
+    ],
+    [
+        'input' => 'Example input 3',
+        'expected' => 'Example output 3',
+        'meta' => ['name' => 'case-three'],
+    ],
+]);
