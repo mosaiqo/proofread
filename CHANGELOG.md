@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-17
+
+### Added
+
+- `evals:run --gate-pass-rate=RATIO` flag. The command exits 1 when
+  the overall pass rate across all executed suites falls below the
+  given ratio, even if individual cases passed. Useful as a hard
+  quality gate in CI.
+- `evals:run --gate-cost-max=USD` flag. The command exits 1 when the
+  total cost reported by the executed runs exceeds the given USD
+  threshold. Budget guardrail for CI.
+- `dataset:import {file}` Artisan command. Imports a CSV or JSON
+  file into a PHP dataset file at `database/evals/`. Flags:
+  `--name`, `--output`, `--force`. CSV cells support scalars; use
+  JSON for complex inputs. Meta keys via `meta_*` columns in CSV or
+  a nested `meta` object in JSON.
+- `dataset:export {dataset}` Artisan command. Reads the latest (or
+  explicitly named) `EvalDatasetVersion` for a dataset and writes
+  its cases as JSON or CSV. Flags: `--format`, `--output`,
+  `--dataset-version`.
+- `evals:benchmark {suite}` Artisan command. Runs a suite N times
+  and reports pass-rate variance, duration percentiles, total cost,
+  and per-case stability. Flags: `--iterations`, `--concurrency`,
+  `--fake-judge`, `--flakiness-threshold`, `--format`. Exits 1 when
+  any case's pass ratio across iterations falls below the
+  flakiness threshold (default 0.8).
+
 ## [0.6.0] - 2026-04-17
 
 ### Added
@@ -442,7 +469,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/mosaiqo/proofread/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mosaiqo/proofread/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/mosaiqo/proofread/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mosaiqo/proofread/compare/v0.4.1...v0.5.0

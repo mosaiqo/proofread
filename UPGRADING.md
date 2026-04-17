@@ -5,6 +5,15 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.6.1 from 0.6.0
+
+No breaking changes. Optional adoption:
+
+- `evals:run` now accepts `--gate-pass-rate` and `--gate-cost-max`
+  flags. Without them, behavior is identical to 0.6.0.
+- Three new commands are available out of the box:
+  `evals:benchmark`, `dataset:import`, `dataset:export`.
+
 ## Upgrading to 0.6.0 from 0.5.x
 
 No breaking changes. All additions. Optional adoption:

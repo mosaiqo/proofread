@@ -238,7 +238,8 @@ expectations — no stub files to maintain.
 
 | Command | Purpose |
 |---|---|
-| `evals:run {suites*}` | Run one or more `EvalSuite` classes. Flags: `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, `--fake-judge`, `--concurrency`. |
+| `evals:run {suites*}` | Run one or more `EvalSuite` classes. Flags: `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, `--fake-judge`, `--concurrency`, `--gate-pass-rate`, `--gate-cost-max`. |
+| `evals:benchmark {suite}` | Run a suite N times and report pass-rate variance, duration percentiles, cost, and per-case flakiness. Flags: `--iterations`, `--concurrency`, `--fake-judge`, `--flakiness-threshold`, `--format`. |
 | `evals:compare {base} {head}` | Structured diff between two persisted runs |
 | `evals:dataset:diff {dataset}` | Compare two versions of a dataset. Accepts `--base`, `--head`, `--format`. |
 | `evals:providers {suite}` | Run a `MultiSubjectEvalSuite` and render a matrix of cases × subjects. Flags: `--persist`, `--commit-sha`, `--concurrency`, `--provider-concurrency`, `--fake-judge`, `--format`. |
@@ -247,6 +248,8 @@ expectations — no stub files to maintain.
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
 | `dataset:generate` | Generate synthetic cases from a schema via an LLM |
+| `dataset:import {file}` | Import a CSV or JSON file into a PHP dataset file. Flags: `--name`, `--output`, `--force`. |
+| `dataset:export {dataset}` | Export a persisted dataset version as CSV or JSON. Flags: `--format`, `--output`, `--dataset-version`. |
 | `proofread:make-suite {name}` | Scaffold a new `EvalSuite`. Flag: `--multi`. |
 | `proofread:make-assertion {name}` | Scaffold a new `Assertion` class. |
 | `proofread:make-dataset {name}` | Scaffold a dataset PHP file. Flag: `--path`. |
