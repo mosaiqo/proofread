@@ -5,6 +5,23 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.5.1 from 0.5.0
+
+### `evals:run` now honors `assertionsFor` overrides
+
+If your `EvalSuite` subclass overrides `assertionsFor()` to add or
+vary assertions per case, the CLI command `evals:run` invocation
+now actually runs those assertions. Previously (0.2.0–0.5.0) the CLI
+silently skipped them, reporting pass on cases that should have
+failed.
+
+If your CI shows new failures on `evals:run` after upgrading, those
+are real regressions that the per-case assertions catch. Inspect the
+`FAIL` output for the assertion name and reason.
+
+No migration or code change is required on your side — the fix is
+transparent to consumers with correct tests.
+
 ## Upgrading to 0.5.0 from 0.4.x
 
 ### `AssertionResult` is sealed

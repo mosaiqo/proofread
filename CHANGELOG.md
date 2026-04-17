@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-17
+
+### Fixed
+
+- `evals:run` now correctly invokes `EvalSuite::assertionsFor()` on
+  every case. Prior versions (0.2.0 through 0.5.0) dispatched the CLI
+  path through `EvalRunner::run()` with the fixed `assertions()` list,
+  silently skipping per-case assertion overrides. Suites whose
+  `assertionsFor()` returned assertions beyond `assertions()` would
+  produce false-positive pass results at the CLI. The `toPassSuite`
+  Pest expectation, `RunEvalSuiteJob`, the MCP `run_eval_suite` tool,
+  and direct `EvalRunner::runSuite()` calls were already correct.
+
+### Added
+
+- `EvalRunner::runSuite()` accepts an optional `?\Closure $filter`
+  parameter that pre-filters cases before iteration. The `evals:run`
+  CLI uses this to implement `--filter` while routing through the
+  `runSuite` path so `assertionsFor` is honored.
+
+### Upgrade notes
+
+Consumers whose suites defined `assertionsFor()` overrides and ran
+them via `php artisan evals:run` should expect previously-green runs
+to surface real failures after upgrading. This is the corrected
+behavior — the former result was silent-wrong.
+
 ## [0.5.0] - 2026-04-17
 
 ### Added
@@ -381,7 +408,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/mosaiqo/proofread/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/mosaiqo/proofread/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/mosaiqo/proofread/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/mosaiqo/proofread/compare/v0.3.0...v0.4.0
