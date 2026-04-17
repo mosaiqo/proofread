@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-17
+
+### Added
+
+- **Prompt linting.** New `proofread:lint {agents*}` Artisan command
+  runs deterministic static analysis against an Agent's
+  `instructions()` and reports issues with severity (error /
+  warning / info). Built-in rules cover instruction length,
+  missing role definition, hedging/ambiguous phrasing,
+  contradictions, and missing output-format specification for
+  agents implementing `HasStructuredOutput`. Optional
+  `--with-judge` flag adds an LLM-based `SemanticQualityRule` that
+  asks a judge to grade instruction quality and surface specific
+  issues. Output formats: `table`, `json`, `markdown`.
+- **Cost simulation.** New `evals:cost-simulate {agent}` Artisan
+  command projects cost against alternative models using real
+  shadow-capture traffic data. Reports current cost, per-alternative
+  projection, delta, per-capture cost, and identifies the cheapest
+  alternative with savings percentage. Flags: `--days`, `--model`
+  (repeatable), `--format=table|json`.
+- **Dataset coverage analysis.** New `evals:coverage {agent}
+  {dataset}` Artisan command embeds shadow captures and dataset
+  cases, then classifies captures as covered or uncovered based on
+  cosine similarity to the nearest case. Uncovered captures are
+  clustered via the embedding-based clusterer to surface missing
+  dataset cases. Flags: `--days`, `--threshold`, `--max-captures`,
+  `--embedding-model`, `--format`.
+- **Laravel Pulse integration.** If `laravel/pulse` is installed,
+  persisted eval runs are automatically recorded as Pulse metrics
+  (pass/fail count, cost in micro-dollars, duration avg/max).
+  Publishable Pulse card at
+  `resources/views/vendor/pulse/cards/proofread.blade.php` shows
+  24h stats + recent runs. Activate via
+  `vendor:publish --tag=proofread-pulse`.
+- **OpenTelemetry integration.** If `open-telemetry/api` is
+  installed with a configured `TracerProvider`, Proofread emits a
+  span tree for every persisted eval run: a root
+  `proofread.eval.run` span, child `proofread.eval.case` spans per
+  result, and per-assertion events on each case span. Attributes
+  under the `proofread.*` namespace. Spans propagate to whatever
+  exporter the host app has configured.
+
+### Fixed
+
+- `tests/TestCase.php` now pins `queue.default=sync` and
+  `app.debug=false` in the test environment, preventing
+  intermittent failures when the orchestra/testbench base `.env`
+  defaults shift. Fixes the `RegressionWebhookNotifierTest` jobs
+  table failure and the `FoundationTest` Livewire assets mismatch.
+
+### Changed
+
+- `Similarity::embed(array $texts, ?string $model): array` is now
+  a public method, exposing batched embedding as a single entry
+  point shared by `FailureClusterer` and `CoverageAnalyzer`.
+- `composer.json` suggest entry for `laravel/mcp` no longer names a
+  specific assistant. References to the previous assistant-specific
+  name in the suggest entry and README have been replaced with
+  generic "MCP-compatible editors and assistants" language.
+
 ## [0.7.0] - 2026-04-17
 
 ### Added
@@ -497,7 +557,9 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/mosaiqo/proofread/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/mosaiqo/proofread/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/mosaiqo/proofread/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/mosaiqo/proofread/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/mosaiqo/proofread/compare/v0.5.0...v0.5.1

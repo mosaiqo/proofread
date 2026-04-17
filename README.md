@@ -245,6 +245,9 @@ expectations — no stub files to maintain.
 | `evals:providers {suite}` | Run a `MultiSubjectEvalSuite` and render a matrix of cases × subjects. Flags: `--persist`, `--commit-sha`, `--concurrency`, `--provider-concurrency`, `--fake-judge`, `--format`. |
 | `evals:export {id}` | Export a persisted run or comparison as self-contained Markdown or HTML. `id` accepts a ULID, a commit SHA prefix, or `latest` (resolves to the most recent run). Use `--type=comparison` to target comparisons. Flags: `--format`, `--output`, `--type=run\|comparison`. |
 | `evals:cluster` | Cluster failures by embedding similarity |
+| `evals:cost-simulate {agent}` | Project cost against alternative models using shadow capture data. Flags: `--days`, `--model`, `--format`. |
+| `evals:coverage {agent} {dataset}` | Analyze dataset coverage against shadow captures using embeddings. Flags: `--days`, `--threshold`, `--max-captures`, `--embedding-model`, `--format`. |
+| `proofread:lint {agents*}` | Static analysis of Agent `instructions()`. Flags: `--format`, `--severity`, `--with-judge`. |
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
 | `dataset:generate` | Generate synthetic cases from a schema via an LLM |

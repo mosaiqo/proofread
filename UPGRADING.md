@@ -5,6 +5,20 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.8.0 from 0.7.x
+
+No breaking changes. All additions. Optional adoption:
+
+- The new commands (`proofread:lint`, `evals:cost-simulate`,
+  `evals:coverage`) are available after `composer update`. No
+  configuration required.
+- Pulse and OpenTelemetry integrations activate automatically when
+  their respective packages are installed. No action needed for
+  projects that don't use them.
+- `Similarity::embed()` is a public method since 0.8.0. If you
+  implemented workarounds to batch embeddings in custom services,
+  you can now delegate to this method.
+
 ## Upgrading to 0.7.0 from 0.6.x
 
 No breaking changes. Optional adoption:
