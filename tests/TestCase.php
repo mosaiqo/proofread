@@ -32,6 +32,7 @@ abstract class TestCase extends Orchestra
 
         $app['env'] = 'local';
         $config->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $config->set('app.debug', false);
         $config->set('database.default', 'testing');
         $config->set('database.connections.testing', [
             'driver' => 'sqlite',
@@ -39,6 +40,7 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
             'foreign_key_constraints' => true,
         ]);
+        $config->set('queue.default', 'sync');
 
         $app->bind(ConcurrencyDriver::class, SyncConcurrencyDriver::class);
     }
