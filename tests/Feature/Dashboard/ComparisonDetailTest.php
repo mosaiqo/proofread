@@ -343,3 +343,13 @@ it('handles comparisons with a single subject gracefully', function (): void {
         ->assertSee('solo')
         ->assertSee('OnlyCase');
 });
+
+it('renders export buttons for markdown and HTML', function (): void {
+    $comparison = makeComparisonWithRuns();
+
+    Livewire::test(ComparisonDetail::class, ['comparison' => $comparison->refresh()])
+        ->assertSee('Export Markdown')
+        ->assertSee('Export HTML')
+        ->assertSee(route('proofread.comparisons.export', ['comparison' => $comparison->id, 'format' => 'md']), false)
+        ->assertSee(route('proofread.comparisons.export', ['comparison' => $comparison->id, 'format' => 'html']), false);
+});

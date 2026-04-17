@@ -274,3 +274,13 @@ it('formats long output with a show-more toggle', function (): void {
 
     $component->assertSee('Show more');
 });
+
+it('renders export buttons for markdown and HTML', function (): void {
+    $run = detailRun(['dataset_name' => 'export-buttons-ds']);
+
+    Livewire::test(RunDetail::class, ['run' => $run])
+        ->assertSee('Export Markdown')
+        ->assertSee('Export HTML')
+        ->assertSee(route('proofread.runs.export', ['run' => $run->id, 'format' => 'md']), false)
+        ->assertSee(route('proofread.runs.export', ['run' => $run->id, 'format' => 'html']), false);
+});

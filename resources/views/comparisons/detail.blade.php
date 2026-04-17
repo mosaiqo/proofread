@@ -218,9 +218,10 @@
         </div>
     @endif
 
-    {{-- Exports are currently CLI-only via `php artisan evals:export {comparison-id}`. --}}
     <div class="compare-actions">
         <a class="drawer-link" href="{{ route('proofread.comparisons.index') }}">Back to list</a>
+        <a class="button" href="{{ route('proofread.comparisons.export', ['comparison' => $comparison->id, 'format' => 'md']) }}">Export Markdown</a>
+        <a class="button" href="{{ route('proofread.comparisons.export', ['comparison' => $comparison->id, 'format' => 'html']) }}">Export HTML</a>
     </div>
 
     @if ($selectedCell !== null)

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Mosaiqo\Proofread\Console\Commands;
 
-use Closure;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\View\Factory as ViewFactory;
-use Illuminate\Database\Eloquent\Collection;
+use Mosaiqo\Proofread\Export\EvalComparisonExporter;
+use Mosaiqo\Proofread\Export\EvalRunExporter;
 use Mosaiqo\Proofread\Models\EvalComparison;
-use Mosaiqo\Proofread\Models\EvalResult;
 use Mosaiqo\Proofread\Models\EvalRun;
 use Mosaiqo\Proofread\Proofread;
 use Mosaiqo\Proofread\Support\ComparisonResolver;
@@ -47,7 +45,8 @@ final class ExportRunCommand extends Command
     public function handle(
         RunResolver $runResolver,
         ComparisonResolver $comparisonResolver,
-        ViewFactory $views,
+        EvalRunExporter $runExporter,
+        EvalComparisonExporter $comparisonExporter,
     ): int {
         $runArg = $this->argument('run');
         $reference = is_string($runArg) ? $runArg : '';
@@ -70,8 +69,8 @@ final class ExportRunCommand extends Command
         }
 
         $rendered = $subject instanceof EvalComparison
-            ? $this->renderComparison($subject, $format, $views)
-            : $this->renderRun($subject, $format, $views);
+            ? $comparisonExporter->render($subject, $format)
+            : $runExporter->render($subject, $format);
 
         $outputOption = $this->option('output');
         $outputPath = is_string($outputOption) && $outputOption !== '' ? $outputOption : null;
@@ -136,94 +135,5 @@ final class ExportRunCommand extends Command
         }
 
         return $format;
-    }
-
-    private function renderRun(EvalRun $run, string $format, ViewFactory $views): string
-    {
-        $run->loadMissing('datasetVersion');
-        /** @var Collection<int, EvalResult> $results */
-        $results = EvalResult::query()
-            ->where('run_id', $run->id)
-            ->orderBy('case_index')
-            ->get();
-
-        $view = $format === 'html' ? 'proofread::exports.run.html' : 'proofread::exports.run.md';
-
-        return $views->make($view, [
-            'run' => $run,
-            'results' => $results,
-            'datasetVersionChecksum' => $run->datasetVersion?->checksum,
-            'proofreadVersion' => Proofread::VERSION,
-            'generatedAt' => gmdate('Y-m-d H:i:s').' UTC',
-            'truncate' => $this->truncator(),
-        ])->render();
-    }
-
-    private function renderComparison(EvalComparison $comparison, string $format, ViewFactory $views): string
-    {
-        $comparison->loadMissing(['datasetVersion', 'runs.results']);
-
-        $matrixRows = $this->buildMatrixRows($comparison);
-
-        $view = $format === 'html' ? 'proofread::exports.comparison.html' : 'proofread::exports.comparison.md';
-
-        return $views->make($view, [
-            'comparison' => $comparison,
-            'matrixRows' => $matrixRows,
-            'bestByPassRate' => $comparison->bestByPassRate(),
-            'cheapest' => $comparison->cheapest(),
-            'fastest' => $comparison->fastest(),
-            'datasetVersionChecksum' => $comparison->datasetVersion?->checksum,
-            'proofreadVersion' => Proofread::VERSION,
-            'generatedAt' => gmdate('Y-m-d H:i:s').' UTC',
-        ])->render();
-    }
-
-    /**
-     * @return list<array{index: int, name: string, cells: list<array{subject_label: string, passed: bool, error: bool}>}>
-     */
-    private function buildMatrixRows(EvalComparison $comparison): array
-    {
-        $firstRun = $comparison->runs->first();
-        if ($firstRun === null) {
-            return [];
-        }
-
-        $caseNames = [];
-        foreach ($firstRun->results as $result) {
-            $caseNames[(int) $result->case_index] = $result->case_name ?? ('case '.$result->case_index);
-        }
-        ksort($caseNames);
-
-        $rows = [];
-        foreach ($caseNames as $index => $name) {
-            $cells = [];
-            foreach ($comparison->runs as $run) {
-                $result = $run->results->firstWhere('case_index', $index);
-                $cells[] = [
-                    'subject_label' => (string) ($run->subject_label ?? ''),
-                    'passed' => $result !== null ? (bool) $result->passed : false,
-                    'error' => $result?->error_class !== null,
-                ];
-            }
-            $rows[] = [
-                'index' => (int) $index,
-                'name' => (string) $name,
-                'cells' => $cells,
-            ];
-        }
-
-        return $rows;
-    }
-
-    private function truncator(): Closure
-    {
-        return static function (string $value, int $limit): string {
-            if (strlen($value) <= $limit) {
-                return $value;
-            }
-
-            return substr($value, 0, $limit).'... (truncated)';
-        };
     }
 }

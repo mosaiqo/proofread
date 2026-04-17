@@ -354,4 +354,9 @@
             </div>
         </aside>
     @endif
+
+    <div class="run-export-actions">
+        <a class="button" href="{{ route('proofread.runs.export', ['run' => $run->id, 'format' => 'md']) }}">Export Markdown</a>
+        <a class="button" href="{{ route('proofread.runs.export', ['run' => $run->id, 'format' => 'html']) }}">Export HTML</a>
+    </div>
 </div>
