@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-17
+
+### Added
+
+- Multi-provider comparison subsystem. Build a
+  `MultiSubjectEvalSuite` declaring a map of `label => subject` and run
+  the same dataset against every subject in a single invocation.
+- `MultiSubjectEvalSuite` abstract class extending `EvalSuite`.
+  `subjects(): array<string, mixed>` returns the map; `subject()` is
+  final and returns the first subject for backward compatibility with
+  single-subject runners.
+- `EvalComparison` Eloquent model + schema (`eval_comparisons` table,
+  nullable `comparison_id` and `subject_label` columns on `eval_runs`).
+  Comparisons link to their dataset version and persist aggregate
+  stats (total_runs, passed_runs, failed_runs, total_cost_usd, duration).
+- `Support\EvalComparison` immutable value object — the in-memory
+  result of a comparison run. Exposes `passed()`, `passRates()`,
+  `totalCosts()`, `runForSubject($label)`.
+- `ComparisonRunner` service that orchestrates running a
+  `MultiSubjectEvalSuite` against each subject. `setUp`/`tearDown`
+  invoked once per comparison; subjects can run sequentially or in
+  parallel via the existing `ConcurrencyDriver` (provider-level
+  parallelism). Inner case concurrency is orthogonal and still
+  available.
+- `ComparisonPersister` service — persists a `Support\EvalComparison`
+  into an `EvalComparison` Eloquent model plus N `EvalRun` rows linked
+  via `comparison_id` and `subject_label`. Transactional.
+- `evals:providers {suite}` Artisan command. Flags: `--persist`,
+  `--commit-sha`, `--concurrency` (cases per run), `--provider-concurrency`
+  (subjects in parallel), `--fake-judge`, `--format=table|json`.
+  Renders a matrix of cases × subjects with pass/fail badges plus
+  per-subject aggregate rows (pass rate, cost, avg latency). Exit
+  codes: 0 all pass, 1 any subject fails, 2 args/class error.
+- `evals:export {id}` now also exports comparisons. Auto-detects the
+  identifier type (run vs comparison) by ULID uniqueness, with
+  `--type=run|comparison` as an explicit override for edge cases.
+  Comparisons render as Markdown or HTML documents including header,
+  summary, winners (best pass rate / cheapest / fastest), a cases ×
+  subjects matrix, and per-subject stats sections.
+- `ComparisonResolver` helper — resolves a comparison by full ULID,
+  ULID prefix, commit SHA prefix (4-40 hex), or the `latest` keyword.
+  Mirrors `RunResolver`.
+- `/evals/comparisons` Livewire list view. Filters (dataset, status,
+  search), paginated, stat cards (total comparisons, 7-day pass rate,
+  active datasets compared), subject pills with overflow indicator.
+- `/evals/comparisons/{comparison}` Livewire matrix detail. Header
+  with metadata, three winner cards
+  (best pass rate / cheapest / fastest), matrix cell grid with
+  click-to-drill drawer showing input/output/assertions/metadata/error,
+  and a link from each drawer to the full `EvalRun` of the subject.
+- `JudgeFaker` shared helper — extracts the `--fake-judge` logic from
+  `RunEvalsCommand` so `evals:providers` reuses the same `pass|fail|path`
+  semantics without duplicating code.
+- `EvalRunner::runSuiteForSubject()` — internal method used by
+  `ComparisonRunner` to invoke the runner for a single subject while
+  injecting `subject_label` into each case's context. Marked
+  `@internal`; public APIs are unchanged.
+
+### Changed
+
+- `EvalPersister::persist()` accepts two new optional parameters:
+  `?string $comparisonId` and `?string $subjectLabel`. They are written
+  onto the created `EvalRun` row when provided. Existing callers do not
+  need to change — the parameters default to null and the stored
+  behavior is identical.
+- Dashboard navigation includes a "Comparisons" link.
+
 ## [0.3.0] - 2026-04-17
 
 ### Added
@@ -252,7 +319,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mosaiqo/proofread/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mosaiqo/proofread/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/mosaiqo/proofread/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/mosaiqo/proofread/compare/v0.1.0...v0.1.1

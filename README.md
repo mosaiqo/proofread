@@ -226,7 +226,8 @@ expectations — no stub files to maintain.
 | `evals:run {suites*}` | Run one or more `EvalSuite` classes. Flags: `--persist`, `--fail-fast`, `--filter`, `--junit`, `--queue`, `--commit-sha`, `--fake-judge`, `--concurrency`. |
 | `evals:compare {base} {head}` | Structured diff between two persisted runs |
 | `evals:dataset:diff {dataset}` | Compare two versions of a dataset. Accepts `--base`, `--head`, `--format`. |
-| `evals:export {run}` | Export a persisted run as self-contained Markdown or HTML. Accepts `--format`, `--output`. |
+| `evals:providers {suite}` | Run a `MultiSubjectEvalSuite` and render a matrix of cases × subjects. Flags: `--persist`, `--commit-sha`, `--concurrency`, `--provider-concurrency`, `--fake-judge`, `--format`. |
+| `evals:export {id}` | Export a persisted run or comparison as self-contained Markdown or HTML. Flags: `--format`, `--output`, `--type=run\|comparison`. |
 | `evals:cluster` | Cluster failures by embedding similarity |
 | `shadow:evaluate` | Evaluate captured shadow traffic against registered assertions |
 | `shadow:alert` | Check pass-rate alerts against thresholds |
@@ -303,6 +304,57 @@ And enable shadow capture in `config/proofread.php`:
 
 See `src/Shadow/` for the full surface.
 
+## Multi-provider comparison
+
+Compare the same dataset against multiple subjects — typically
+different models, providers, or prompt variations — in a single
+invocation. Extend `MultiSubjectEvalSuite` and declare
+`subjects(): array<string, mixed>`:
+
+```php
+final class SentimentMatrixSuite extends MultiSubjectEvalSuite
+{
+    public function name(): string
+    {
+        return 'sentiment-matrix';
+    }
+
+    public function dataset(): Dataset
+    {
+        return Dataset::make('sentiment', [...]);
+    }
+
+    public function subjects(): array
+    {
+        return [
+            'haiku'  => SentimentAgentHaiku::class,
+            'sonnet' => SentimentAgentSonnet::class,
+            'opus'   => SentimentAgentOpus::class,
+        ];
+    }
+
+    public function assertions(): array
+    {
+        return [Rubric::make('Must classify correctly.')->minScore(0.8)];
+    }
+}
+```
+
+Run it:
+
+```bash
+php artisan evals:providers App\\Evals\\SentimentMatrixSuite --persist --provider-concurrency=3
+```
+
+Output is a matrix of cases × subjects with pass/fail status and
+per-subject aggregate stats. The persisted comparison is browsable
+at `/evals/comparisons/{id}` in the dashboard, exportable via
+`evals:export {id}`, and queryable via the `EvalComparison` model.
+
+Helper methods on `EvalComparison`: `bestByPassRate()`, `cheapest()`,
+`fastest()`. No opinionated overall winner — the three axes are
+surfaced separately.
+
 ## Dashboard
 
 A Livewire-powered dashboard ships with the package at `/evals` (configurable).
@@ -313,6 +365,8 @@ Routes:
 - `/evals/runs/{ulid}` — per-case drill-down
 - `/evals/datasets` — dataset explorer with sparklines
 - `/evals/compare` — side-by-side diff between two runs
+- `/evals/comparisons` — multi-provider comparison history with filters and stats
+- `/evals/comparisons/{id}` — matrix detail with winner cards and drill-down drawer
 - `/evals/costs` — cost breakdown by model and dataset
 - `/evals/shadow` — captures, evals, and promote-to-dataset workflow
 
