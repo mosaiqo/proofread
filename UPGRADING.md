@@ -5,6 +5,38 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.5.0 from 0.4.x
+
+### `AssertionResult` is sealed
+
+Only `AssertionResult` and `JudgeResult` may now inherit from
+`AssertionResult`. If your code extends `AssertionResult` outside
+the package, construction will now throw `LogicException`. Open an
+issue if you have a legitimate use case and we can discuss extending
+the allowed list.
+
+### `toPassEval` / `toPassSuite` now set `$this->value`
+
+Callers that relied on `->value` returning the original subject
+after these expectations will see the resulting `EvalRun` instead.
+Chain the expectation first, then inspect the run:
+
+```php
+// Old: $subject was the expect() value.
+// New: the run replaces the value after the assertion passes.
+$run = expect($agent)->toPassEval($dataset, $assertions)->value;
+```
+
+### `evals:run` header format changed for suites overriding `assertionsFor`
+
+Suites that override `EvalSuite::assertionsFor()` previously saw a
+range like `2 cases, 2-4 assertions per case` in the CLI header.
+0.5.0 replaces that with a base count plus a "per-case may vary"
+note: `2 cases, 2 base assertions (per-case may vary)`. Suites that
+do not override `assertionsFor` retain the singular form
+`N cases, M assertions per case`. If you scrape CLI output for
+assertion counts, adapt your matchers accordingly.
+
 ## Upgrading to 0.4.0 from 0.3.x
 
 No consumer action required. Multi-provider comparison is an opt-in

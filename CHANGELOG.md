@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-17
+
+### Added
+
+- `EvalComparison::dataset()` BelongsTo relationship linking a
+  comparison to its dataset via `dataset_name`. `eval_datasets.name`
+  already carries a unique index (present since 0.1.0), matching the
+  `firstOrCreate` behavior of `EvalPersister`.
+- Web export routes for runs and comparisons:
+  `GET /evals/runs/{run}/export` and
+  `GET /evals/comparisons/{comparison}/export`. Both support
+  `?format=md|html` and return the rendered document with
+  `Content-Disposition: attachment` for direct download.
+- "Export Markdown" and "Export HTML" buttons on run detail and
+  comparison detail views. Gated by the same `viewEvals` Gate that
+  protects the rest of the dashboard.
+- `EvalRunExporter` and `EvalComparisonExporter` services. Both the
+  CLI command `evals:export` and the new web controllers delegate
+  to these services, so the rendering logic lives in one place.
+- `toPassEval` and `toPassSuite` Pest expectations now assign the
+  resulting `EvalRun` to `$this->value`, so callers can chain
+  post-run assertions:
+  `$run = expect($agent)->toPassEval(...)->value;`.
+
+### Changed
+
+- `AssertionResult` is now sealed: only `AssertionResult` and
+  `JudgeResult` are allowed subclasses. External subclasses raise
+  `LogicException` at construction. The `@internal` class docblock
+  calls this out explicitly.
+- `evals:run` header no longer invokes `EvalSuite::assertionsFor()`
+  while computing the pre-run summary. Reflection detects whether
+  the suite overrides the method; if not, the header prints the
+  fixed count from `assertions()`. If yes, it prints the base count
+  with a "per-case may vary" note. The header is now a single-pass
+  operation — no per-case iteration — so suites with expensive
+  `assertionsFor()` implementations no longer pay a double cost.
+
 ## [0.4.1] - 2026-04-17
 
 ### Added
@@ -343,7 +381,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/mosaiqo/proofread/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/mosaiqo/proofread/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/mosaiqo/proofread/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/mosaiqo/proofread/compare/v0.2.0...v0.3.0

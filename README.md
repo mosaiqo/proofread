@@ -379,10 +379,12 @@ Routes:
 - `/evals/overview` — home with trend chart and recent regressions
 - `/evals/runs` — run history with filters and stats
 - `/evals/runs/{ulid}` — per-case drill-down
+- `/evals/runs/{ulid}/export?format=md|html` — download the run as a self-contained Markdown or HTML document
 - `/evals/datasets` — dataset explorer with sparklines
 - `/evals/compare` — side-by-side diff between two runs
 - `/evals/comparisons` — multi-provider comparison history with filters and stats
 - `/evals/comparisons/{id}` — matrix detail with winner cards and drill-down drawer
+- `/evals/comparisons/{id}/export?format=md|html` — download the comparison as a self-contained Markdown or HTML document
 - `/evals/costs` — cost breakdown by model and dataset
 - `/evals/shadow` — captures, evals, and promote-to-dataset workflow
 
