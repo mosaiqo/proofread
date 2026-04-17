@@ -266,3 +266,18 @@ it('returns the fastest run via fastest()', function (): void {
 
     expect($comparison->fastest()?->id)->toBe($fast->id);
 });
+
+it('belongs to a dataset via name', function (): void {
+    $dataset = newComparisonDataset('cmp-belongs-to');
+    $comparison = newComparison(['dataset_name' => 'cmp-belongs-to']);
+
+    expect($comparison->dataset())->toBeInstanceOf(BelongsTo::class)
+        ->and($comparison->dataset?->id)->toBe($dataset->id)
+        ->and($comparison->dataset?->name)->toBe('cmp-belongs-to');
+});
+
+it('returns null dataset when the name does not match', function (): void {
+    $comparison = newComparison(['dataset_name' => 'cmp-missing-dataset']);
+
+    expect($comparison->dataset)->toBeNull();
+});

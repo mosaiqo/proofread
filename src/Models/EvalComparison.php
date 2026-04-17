@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property float $duration_ms
  * @property CarbonInterface|null $created_at
  * @property CarbonInterface|null $updated_at
+ * @property EvalDataset|null $dataset
  * @property EvalDatasetVersion|null $datasetVersion
  * @property Collection<int, EvalRun> $runs
  */
@@ -63,6 +64,14 @@ class EvalComparison extends Model
         'total_cost_usd' => 'float',
         'duration_ms' => 'float',
     ];
+
+    /**
+     * @return BelongsTo<EvalDataset, $this>
+     */
+    public function dataset(): BelongsTo
+    {
+        return $this->belongsTo(EvalDataset::class, 'dataset_name', 'name');
+    }
 
     /**
      * @return BelongsTo<EvalDatasetVersion, $this>
