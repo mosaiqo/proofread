@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Mosaiqo\Proofread\Lint\LintIssue;
 use Mosaiqo\Proofread\Lint\LintReport;
 use Mosaiqo\Proofread\Lint\PromptLinter;
+use Mosaiqo\Proofread\Lint\Rules\SemanticQualityRule;
 
 final class LintCommand extends Command
 {
@@ -17,7 +18,8 @@ final class LintCommand extends Command
      */
     protected $signature = 'proofread:lint {agents* : FQCNs of Agent classes to lint}
         {--format=table : Output format: table, json, or markdown}
-        {--severity=all : Minimum severity to report: all, info, warning, error}';
+        {--severity=all : Minimum severity to report: all, info, warning, error}
+        {--with-judge : Also apply the SemanticQualityRule (LLM-based analysis)}';
 
     /**
      * @var string
@@ -37,6 +39,13 @@ final class LintCommand extends Command
         $severity = $this->resolveSeverity();
         if ($severity === null) {
             return 2;
+        }
+
+        if ((bool) $this->option('with-judge')) {
+            $linter = new PromptLinter([
+                ...$linter->rules(),
+                app(SemanticQualityRule::class),
+            ]);
         }
 
         $reports = [];

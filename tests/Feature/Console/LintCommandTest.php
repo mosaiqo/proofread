@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Artisan;
+use Mosaiqo\Proofread\Judge\JudgeAgent;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\LintFixtures\AmbiguousAgent;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\LintFixtures\CleanAgent;
 use Mosaiqo\Proofread\Tests\Fixtures\Agents\LintFixtures\ContradictoryAgent;
@@ -120,4 +121,51 @@ it('includes the line number for ambiguity issues in table output', function ():
 
     expect($output)->toContain('line');
     expect($output)->toContain('ambiguity');
+});
+
+it('applies semantic quality rule with --with-judge', function (): void {
+    config()->set('proofread.judge.default_model', 'default-judge');
+    config()->set('proofread.judge.max_retries', 1);
+    config()->set('ai.default', 'openai');
+
+    JudgeAgent::fake([json_encode([
+        'passed' => true,
+        'score' => 0.8,
+        'reason' => 'ok',
+        'issues' => ['Be more specific about tone.'],
+    ])]);
+
+    $exit = Artisan::call('proofread:lint', [
+        'agents' => [CleanAgent::class],
+        '--with-judge' => true,
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0);
+    expect($output)->toContain('semantic_quality');
+    expect($output)->toContain('Be more specific');
+});
+
+it('does not apply semantic rule without the flag', function (): void {
+    config()->set('proofread.judge.default_model', 'default-judge');
+    config()->set('proofread.judge.max_retries', 1);
+    config()->set('ai.default', 'openai');
+
+    JudgeAgent::fake([json_encode([
+        'passed' => false,
+        'score' => 0.1,
+        'reason' => 'bad',
+        'issues' => ['Would be reported if the flag were set.'],
+    ])]);
+
+    $exit = Artisan::call('proofread:lint', [
+        'agents' => [CleanAgent::class],
+    ]);
+
+    $output = Artisan::output();
+
+    expect($exit)->toBe(0);
+    expect($output)->not->toContain('semantic_quality');
+    expect($output)->not->toContain('Would be reported');
 });
