@@ -411,6 +411,1891 @@
     "body": "Both arguments accept: - A numeric run id: 42 - A commit SHA: abc1234 - The literal latest Typical CI use: compare the PR's run against the main branch's most recent run. > **[info]** latest resolves to the most recent run for both > evals:compare and evals:dataset:diff. Combine with --commit-sha on > evals:run --queue to make PR-vs-main comparisons deterministic."
   },
   {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Concrete assertion classes shipped with Proofread. All implement the Assertion interface and return an AssertionResult (or JudgeResult for LLM-as-judge). | Class | Kind | Description | |---|---|---| | ContainsAssertion | Final class | — | | CostLimit | Final class | — | | CountAssertion | Final class | — | | GoldenSnapshot | Final class | — | | HallucinationAssertion | Final class | LLM-as-judge assertion that fails when the output contains claims, facts, or details not present in or derivable from the provided ground truth. | | JsonSchemaAssertion | Final class | — | | LanguageAssertion | Final class | LLM-as-judge assertion that verifies the output is primarily written in the expected language. Accepts ISO 639-1 codes (en, es) or common names (English, Spanish); language identifier is normalized to lowercase. | | LatencyLimit | Final class | — | | LengthAssertion | Final class | — | | PiiLeakageAssertion | Final class | Deterministic PII leakage check. Applies the configured {@see PiiSanitizer} redaction patterns to the output and fails when at least one placeholder has been inserted. | | RegexAssertion | Final class | — | | Rubric | Final class | LLM-as-judge assertion that scores output against natural-language criteria. | | Similar | Final class | — | | StructuredOutputAssertion | Final class | Assertion that validates an agent's output conforms to the JSON schema it declares via {@see HasStructuredOutput}. Produces error messages and metadata tailored to the \"LLM must return structured JSON\" scenario. | | TokenBudget | Final class | — | | Trajectory | Final class | — | --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/ContainsAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly string $needle - readonly bool $caseSensitive --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/CostLimit.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly float $maxUsd --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/CountAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly ?int $min - readonly ?int $max --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/GoldenSnapshot.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/HallucinationAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that fails when the output contains claims, facts, or details not present in or derivable from the provided ground truth. - readonly string $groundTruth - readonly ?string $model - readonly float $minScore --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/JsonSchemaAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion Build an assertion from the structured-output schema declared by an Agent. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LanguageAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that verifies the output is primarily written in the expected language. Accepts ISO 639-1 codes (en, es) or common names (English, Spanish); language identifier is normalized to lowercase. - readonly string $language - readonly ?string $model --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LatencyLimit.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly float $maxMs --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LengthAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly ?int $min - readonly ?int $max --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/PiiLeakageAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion Deterministic PII leakage check. Applies the configured {@see PiiSanitizer} redaction patterns to the output and fails when at least one placeholder has been inserted. Only string outputs are supported because {@see \\PiiSanitizer::sanitizeOutput} operates on strings. Array/object traversal via PII keys is a concern of shadow input sanitization, not output leakage detection. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/RegexAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly string $pattern --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Rubric.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that scores output against natural-language criteria. When testing code that uses this assertion, avoid real LLM calls by faking the judge agent. Proofread uses an internal {@see \\JudgeAgent} class that extends the Laravel AI SDK's Agent contract, so you can fake it with the SDK's fake helper: Make sure config('ai.default') points to any provider and that config('proofread.judge.default_model') is set — both are loaded by the default service provider and are typically already in place. - readonly string $criteria - readonly ?string $model - readonly float $minScore --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Similar.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly string $reference - readonly ?string $model - readonly float $minScore --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/StructuredOutputAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion Assertion that validates an agent's output conforms to the JSON schema it declares via {@see HasStructuredOutput}. Produces error messages and metadata tailored to the \"LLM must return structured JSON\" scenario. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/TokenBudget.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion - readonly ?int $maxInput - readonly ?int $maxOutput - readonly ?int $maxTotal --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Trajectory.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | ContainsAssertion | Final class | — | | CostLimit | Final class | — | | CountAssertion | Final class | — | | GoldenSnapshot | Final class | — | | HallucinationAssertion | Final class | LLM-as-judge assertion that fails when the output contains claims, facts, or details not present in or derivable from the provided ground truth. | | JsonSchemaAssertion | Final class | — | | LanguageAssertion | Final class | LLM-as-judge assertion that verifies the output is primarily written in the expected language. Accepts ISO 639-1 codes (en, es) or common names (English, Spanish); language identifier is normalized to lowercase. | | LatencyLimit | Final class | — | | LengthAssertion | Final class | — | | PiiLeakageAssertion | Final class | Deterministic PII leakage check. Applies the configured {@see PiiSanitizer} redaction patterns to the output and fails when at least one placeholder has been inserted. | | RegexAssertion | Final class | — | | Rubric | Final class | LLM-as-judge assertion that scores output against natural-language criteria. | | Similar | Final class | — | | StructuredOutputAssertion | Final class | Assertion that validates an agent's output conforms to the JSON schema it declares via {@see HasStructuredOutput}. Produces error messages and metadata tailored to the \"LLM must return structured JSON\" scenario. | | TokenBudget | Final class | — | | Trajectory | Final class | — | ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "ContainsAssertion",
+    "sectionId": "containsassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/ContainsAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $needle - readonly bool $caseSensitive ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "CostLimit",
+    "sectionId": "costlimit",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/CostLimit.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly float $maxUsd ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "CountAssertion",
+    "sectionId": "countassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/CountAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly ?int $min - readonly ?int $max ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "GoldenSnapshot",
+    "sectionId": "goldensnapshot",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/GoldenSnapshot.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "HallucinationAssertion",
+    "sectionId": "hallucinationassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/HallucinationAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that fails when the output contains claims, facts, or details not present in or derivable from the provided ground truth."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Testing with a faked judge",
+    "sectionId": "testing-with-a-faked-judge",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $groundTruth - readonly ?string $model - readonly float $minScore ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "JsonSchemaAssertion",
+    "sectionId": "jsonschemaassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/JsonSchemaAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": "Build an assertion from the structured-output schema declared by an Agent."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "LanguageAssertion",
+    "sectionId": "languageassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LanguageAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that verifies the output is primarily written in the expected language. Accepts ISO 639-1 codes (en, es) or common names (English, Spanish); language identifier is normalized to lowercase."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $language - readonly ?string $model ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "LatencyLimit",
+    "sectionId": "latencylimit",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LatencyLimit.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly float $maxMs ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "LengthAssertion",
+    "sectionId": "lengthassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/LengthAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly ?int $min - readonly ?int $max ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "PiiLeakageAssertion",
+    "sectionId": "piileakageassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/PiiLeakageAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion Deterministic PII leakage check. Applies the configured {@see PiiSanitizer} redaction patterns to the output and fails when at least one placeholder has been inserted. Only string outputs are supported because {@see \\PiiSanitizer::sanitizeOutput} operates on strings. Array/object traversal via PII keys is a concern of shadow input sanitization, not output leakage detection."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "RegexAssertion",
+    "sectionId": "regexassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/RegexAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $pattern ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Rubric",
+    "sectionId": "rubric",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Rubric.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion LLM-as-judge assertion that scores output against natural-language criteria."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Testing with a faked judge",
+    "sectionId": "testing-with-a-faked-judge",
+    "body": "When testing code that uses this assertion, avoid real LLM calls by faking the judge agent. Proofread uses an internal {@see \\JudgeAgent} class that extends the Laravel AI SDK's Agent contract, so you can fake it with the SDK's fake helper: Make sure config('ai.default') points to any provider and that config('proofread.judge.default_model') is set — both are loaded by the default service provider and are typically already in place."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $criteria - readonly ?string $model - readonly float $minScore ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Similar",
+    "sectionId": "similar",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Similar.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $reference - readonly ?string $model - readonly float $minScore ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "StructuredOutputAssertion",
+    "sectionId": "structuredoutputassertion",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/StructuredOutputAssertion.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion Assertion that validates an agent's output conforms to the JSON schema it declares via {@see HasStructuredOutput}. Produces error messages and metadata tailored to the \"LLM must return structured JSON\" scenario."
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "TokenBudget",
+    "sectionId": "tokenbudget",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/TokenBudget.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly ?int $maxInput - readonly ?int $maxOutput - readonly ?int $maxTotal ---"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Trajectory",
+    "sectionId": "trajectory",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Assertions - **Source:** src/Assertions/Trajectory.php - **Implements:** Mosaiqo\\Proofread\\Contracts\\Assertion"
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/assertions-api",
+    "title": "Assertions API",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Artisan commands exposed by Proofread. Invoke via php artisan <signature>. | Class | Kind | Description | |---|---|---| | BenchmarkEvalsCommand | Final class | Run a suite multiple times and report stability statistics. | | ClusterFailuresCommand | Final class | Group recent failures by semantic similarity so operators can spot systemic patterns instead of reading failures case-by-case. | | CompareEvalsCommand | Final class | Compare two persisted eval runs of the same dataset and report the diff. | | CoverageCommand | Final class | Surface which production captures the dataset does not cover. Embed every dataset case and every recent capture, match each capture to its nearest case by cosine similarity, report the gap, and cluster the uncovered captures so the next dataset revision has obvious targets. | | DatasetDiffCommand | Final class | Diff two versions of a dataset. | | ExportDatasetCommand | Final class | Export a persisted dataset version as JSON or CSV. | | ExportRunCommand | Final class | Export a persisted eval run or comparison as a self-contained Markdown or HTML document. | | GenerateDatasetCommand | Final class | — | | ImportDatasetCommand | Final class | Import a CSV or JSON file into a PHP dataset file usable by Proofread. | | LintCommand | Final class | — | | ProofreadMakeAssertionCommand | Final class | — | | ProofreadMakeDatasetCommand | Final class | — | | ProofreadMakeSuiteCommand | Final class | — | | RunEvalsCommand | Final class | — | | RunProviderComparisonCommand | Final class | — | | ShadowAlertCommand | Final class | Evaluate the rolling shadow pass rate for one or all agents and dispatch a ShadowPassRateDroppedNotification for each agent whose pass rate has dropped below the configured threshold. Alerts are deduped via the cache so an agent below threshold does not page on every scheduled run. | | ShadowEvaluateCommand | Final class | — | | SimulateCostCommand | Final class | Simulate what an agent's historical production traffic would have cost under alternative models. Analyzes shadow captures inside a time window and produces a side-by-side cost comparison to help decide whether switching models is worth it. | --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/BenchmarkEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Run a suite multiple times and report stability statistics. Unlike evals:run, this command treats the suite as a fixed benchmark and measures how reliably it passes across N iterations. Useful when the underlying subject is non-deterministic (LLMs) and you want to quantify flakiness and pricing variance before trusting a pass/fail signal from a single run. Exit codes: - 0 → every case is stable (pass ratio >= threshold across iterations). - 1 → one or more cases fall below the flakiness threshold. - 2 → argument/resolution error. > Run a suite N times and report pass-rate variance, duration percentiles, cost, and flakiness. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ClusterFailuresCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Group recent failures by semantic similarity so operators can spot systemic patterns instead of reading failures case-by-case. > Group failing eval results or shadow evals by semantic similarity. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/CompareEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Compare two persisted eval runs of the same dataset and report the diff. Accepted reference forms for the base/head arguments: - Full ULID (26 chars) - matched exactly. - Short or full commit SHA (7-40 hex chars) - matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" - the most recently created run in the DB. Exit codes follow CI conventions: 0 when there are no regressions, 1 when regressions are detected, 2 on argument/resolution errors. > Compare two persisted eval runs and report regressions, improvements, and cost/duration deltas. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/CoverageCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Surface which production captures the dataset does not cover. Embed every dataset case and every recent capture, match each capture to its nearest case by cosine similarity, report the gap, and cluster the uncovered captures so the next dataset revision has obvious targets. > Analyze which shadow captures are not covered by a dataset using embedding similarity. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/DatasetDiffCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Diff two versions of a dataset. Accepted reference forms for the --base / --head options: - Short checksum (>= 6 hex chars) matched as prefix on the version checksum. - Run ULID (26 chars) — resolves to that run's dataset_version_id. - Literal \"latest\" — most recent version by first_seen_at. - Literal \"previous\" or \"latest-1\" — second-most-recent version by first_seen_at. Cases are indexed by meta.name when present, otherwise by positional case_index. The comparison compares input + expected + meta (with the indexing field stripped from meta when it was meta.name). > Diff two dataset versions to see how cases were added, removed, or modified. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ExportDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Export a persisted dataset version as JSON or CSV. Version resolution (in order): - --version=latest (default) → most recent version by first_seen_at. - --version=<short-checksum> → prefix match (>= 6 hex chars) against eval_dataset_versions.checksum. > Export a persisted dataset version as JSON or CSV. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ExportRunCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Export a persisted eval run or comparison as a self-contained Markdown or HTML document. Accepted reference forms for the {run} argument: - Full ULID (26 chars). - Commit SHA prefix (4-40 hex chars). - Literal \"latest\". Use --type to disambiguate between runs and comparisons when the identifier could match both. > Export a persisted eval run or comparison as a shareable Markdown or HTML document. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/GenerateDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Generate a synthetic dataset using an LLM. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ImportDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Import a CSV or JSON file into a PHP dataset file usable by Proofread. CSV limitations: - Cells are parsed as scalar strings; complex values (arrays, nested structures) cannot be expressed. Use JSON for those shapes. - Meta keys are encoded via meta_* columns and flattened into a one-level meta array. JSON format: - Top-level array of case objects. - Each case must contain input. expected and meta are optional and can be arbitrarily nested. > Import a CSV or JSON file into a Proofread dataset PHP file. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/LintCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Static analysis of Agent instructions: detect missing roles, ambiguity, contradictions, and more. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeAssertionCommand.php - **Extends:** Illuminate\\Console\\GeneratorCommand - **Implements:** Illuminate\\Contracts\\Console\\PromptsForMissingInput, Symfony\\Component\\Console\\Command\\SignalableCommandInterface --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Create a new Proofread dataset PHP file --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeSuiteCommand.php - **Extends:** Illuminate\\Console\\GeneratorCommand - **Implements:** Illuminate\\Contracts\\Console\\PromptsForMissingInput, Symfony\\Component\\Console\\Command\\SignalableCommandInterface --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/RunEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Run one or more Proofread eval suites and report the results. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/RunProviderComparisonCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Run a MultiSubjectEvalSuite against all declared subjects and report a comparison matrix. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ShadowAlertCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Evaluate the rolling shadow pass rate for one or all agents and dispatch a ShadowPassRateDroppedNotification for each agent whose pass rate has dropped below the configured threshold. Alerts are deduped via the cache so an agent below threshold does not page on every scheduled run. Exit codes follow the convention that alerts are business signals, not command failures: the command returns 0 whenever it ran cleanly (including when it dispatched notifications), and a non-zero code only on internal errors surfaced by the runtime. > Check shadow pass rates against threshold and dispatch alerts for regressions. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ShadowEvaluateCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface > Evaluate shadow captures against their registered assertions. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/SimulateCostCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Simulate what an agent's historical production traffic would have cost under alternative models. Analyzes shadow captures inside a time window and produces a side-by-side cost comparison to help decide whether switching models is worth it. > Project the historical cost of an agent under alternative models using shadow captures."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | BenchmarkEvalsCommand | Final class | Run a suite multiple times and report stability statistics. | | ClusterFailuresCommand | Final class | Group recent failures by semantic similarity so operators can spot systemic patterns instead of reading failures case-by-case. | | CompareEvalsCommand | Final class | Compare two persisted eval runs of the same dataset and report the diff. | | CoverageCommand | Final class | Surface which production captures the dataset does not cover. Embed every dataset case and every recent capture, match each capture to its nearest case by cosine similarity, report the gap, and cluster the uncovered captures so the next dataset revision has obvious targets. | | DatasetDiffCommand | Final class | Diff two versions of a dataset. | | ExportDatasetCommand | Final class | Export a persisted dataset version as JSON or CSV. | | ExportRunCommand | Final class | Export a persisted eval run or comparison as a self-contained Markdown or HTML document. | | GenerateDatasetCommand | Final class | — | | ImportDatasetCommand | Final class | Import a CSV or JSON file into a PHP dataset file usable by Proofread. | | LintCommand | Final class | — | | ProofreadMakeAssertionCommand | Final class | — | | ProofreadMakeDatasetCommand | Final class | — | | ProofreadMakeSuiteCommand | Final class | — | | RunEvalsCommand | Final class | — | | RunProviderComparisonCommand | Final class | — | | ShadowAlertCommand | Final class | Evaluate the rolling shadow pass rate for one or all agents and dispatch a ShadowPassRateDroppedNotification for each agent whose pass rate has dropped below the configured threshold. Alerts are deduped via the cache so an agent below threshold does not page on every scheduled run. | | ShadowEvaluateCommand | Final class | — | | SimulateCostCommand | Final class | Simulate what an agent's historical production traffic would have cost under alternative models. Analyzes shadow captures inside a time window and produces a side-by-side cost comparison to help decide whether switching models is worth it. | ---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "BenchmarkEvalsCommand",
+    "sectionId": "benchmarkevalscommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/BenchmarkEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Run a suite multiple times and report stability statistics. Unlike evals:run, this command treats the suite as a fixed benchmark and measures how reliably it passes across N iterations. Useful when the underlying subject is non-deterministic (LLMs) and you want to quantify flakiness and pricing variance before trusting a pass/fail signal from a single run. Exit codes: - 0 → every case is stable (pass ratio >= threshold across iterations). - 1 → one or more cases fall below the flakiness threshold. - 2 → argument/resolution error."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Run a suite N times and report pass-rate variance, duration percentiles, cost, and flakiness."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ClusterFailuresCommand",
+    "sectionId": "clusterfailurescommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ClusterFailuresCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Group recent failures by semantic similarity so operators can spot systemic patterns instead of reading failures case-by-case."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Group failing eval results or shadow evals by semantic similarity."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "CompareEvalsCommand",
+    "sectionId": "compareevalscommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/CompareEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Compare two persisted eval runs of the same dataset and report the diff. Accepted reference forms for the base/head arguments: - Full ULID (26 chars) - matched exactly. - Short or full commit SHA (7-40 hex chars) - matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" - the most recently created run in the DB. Exit codes follow CI conventions: 0 when there are no regressions, 1 when regressions are detected, 2 on argument/resolution errors."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Compare two persisted eval runs and report regressions, improvements, and cost/duration deltas."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "CoverageCommand",
+    "sectionId": "coveragecommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/CoverageCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Surface which production captures the dataset does not cover. Embed every dataset case and every recent capture, match each capture to its nearest case by cosine similarity, report the gap, and cluster the uncovered captures so the next dataset revision has obvious targets."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Analyze which shadow captures are not covered by a dataset using embedding similarity."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "DatasetDiffCommand",
+    "sectionId": "datasetdiffcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/DatasetDiffCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Diff two versions of a dataset. Accepted reference forms for the --base / --head options: - Short checksum (>= 6 hex chars) matched as prefix on the version checksum. - Run ULID (26 chars) — resolves to that run's dataset_version_id. - Literal \"latest\" — most recent version by first_seen_at. - Literal \"previous\" or \"latest-1\" — second-most-recent version by first_seen_at. Cases are indexed by meta.name when present, otherwise by positional case_index. The comparison compares input + expected + meta (with the indexing field stripped from meta when it was meta.name)."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Diff two dataset versions to see how cases were added, removed, or modified."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ExportDatasetCommand",
+    "sectionId": "exportdatasetcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ExportDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Export a persisted dataset version as JSON or CSV. Version resolution (in order): - --version=latest (default) → most recent version by first_seen_at. - --version=<short-checksum> → prefix match (>= 6 hex chars) against eval_dataset_versions.checksum."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Export a persisted dataset version as JSON or CSV."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ExportRunCommand",
+    "sectionId": "exportruncommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ExportRunCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Export a persisted eval run or comparison as a self-contained Markdown or HTML document. Accepted reference forms for the {run} argument: - Full ULID (26 chars). - Commit SHA prefix (4-40 hex chars). - Literal \"latest\". Use --type to disambiguate between runs and comparisons when the identifier could match both."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Export a persisted eval run or comparison as a shareable Markdown or HTML document."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "GenerateDatasetCommand",
+    "sectionId": "generatedatasetcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/GenerateDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Generate a synthetic dataset using an LLM."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ImportDatasetCommand",
+    "sectionId": "importdatasetcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ImportDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Import a CSV or JSON file into a PHP dataset file usable by Proofread. CSV limitations: - Cells are parsed as scalar strings; complex values (arrays, nested structures) cannot be expressed. Use JSON for those shapes. - Meta keys are encoded via meta_* columns and flattened into a one-level meta array. JSON format: - Top-level array of case objects. - Each case must contain input. expected and meta are optional and can be arbitrarily nested."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Import a CSV or JSON file into a Proofread dataset PHP file."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "LintCommand",
+    "sectionId": "lintcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/LintCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Static analysis of Agent instructions: detect missing roles, ambiguity, contradictions, and more."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ProofreadMakeAssertionCommand",
+    "sectionId": "proofreadmakeassertioncommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeAssertionCommand.php - **Extends:** Illuminate\\Console\\GeneratorCommand - **Implements:** Illuminate\\Contracts\\Console\\PromptsForMissingInput, Symfony\\Component\\Console\\Command\\SignalableCommandInterface ---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ProofreadMakeDatasetCommand",
+    "sectionId": "proofreadmakedatasetcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeDatasetCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Create a new Proofread dataset PHP file"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ProofreadMakeSuiteCommand",
+    "sectionId": "proofreadmakesuitecommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands\\Make - **Source:** src/Console/Commands/Make/ProofreadMakeSuiteCommand.php - **Extends:** Illuminate\\Console\\GeneratorCommand - **Implements:** Illuminate\\Contracts\\Console\\PromptsForMissingInput, Symfony\\Component\\Console\\Command\\SignalableCommandInterface ---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "RunEvalsCommand",
+    "sectionId": "runevalscommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/RunEvalsCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Run one or more Proofread eval suites and report the results."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "RunProviderComparisonCommand",
+    "sectionId": "runprovidercomparisoncommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/RunProviderComparisonCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Run a MultiSubjectEvalSuite against all declared subjects and report a comparison matrix."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ShadowAlertCommand",
+    "sectionId": "shadowalertcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ShadowAlertCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Evaluate the rolling shadow pass rate for one or all agents and dispatch a ShadowPassRateDroppedNotification for each agent whose pass rate has dropped below the configured threshold. Alerts are deduped via the cache so an agent below threshold does not page on every scheduled run. Exit codes follow the convention that alerts are business signals, not command failures: the command returns 0 whenever it ran cleanly (including when it dispatched notifications), and a non-zero code only on internal errors surfaced by the runtime."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Check shadow pass rates against threshold and dispatch alerts for regressions."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "ShadowEvaluateCommand",
+    "sectionId": "shadowevaluatecommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/ShadowEvaluateCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Evaluate shadow captures against their registered assertions."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "SimulateCostCommand",
+    "sectionId": "simulatecostcommand",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Console\\Commands - **Source:** src/Console/Commands/SimulateCostCommand.php - **Extends:** Illuminate\\Console\\Command - **Implements:** Symfony\\Component\\Console\\Command\\SignalableCommandInterface Simulate what an agent's historical production traffic would have cost under alternative models. Analyzes shadow captures inside a time window and produces a side-by-side cost comparison to help decide whether switching models is worth it."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Artisan signature",
+    "sectionId": "artisan-signature",
+    "body": "> Project the historical cost of an agent under alternative models using shadow captures."
+  },
+  {
+    "slug": "api-reference/artisan-commands",
+    "title": "Artisan commands",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Eval runners, persisters, subject resolution, and suite base classes. | Class | Kind | Description | |---|---|---| | ComparisonPersister | Final class | — | | ComparisonRunner | Final class | — | | ConcurrencyDriver | Interface | Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. | | EvalPersister | Class | Converts an in-memory EvalRun value object into persisted Eloquent rows. | | EvalRunner | Final class | — | | EvalSuite | Abstract class | — | | LaravelConcurrencyDriver | Final class | — | | MultiSubjectEvalSuite | Abstract class | Abstract base for suites that evaluate the same dataset against multiple subjects (typically different models, providers, or prompt variations). | | SubjectInvocation | Final class | — | | SubjectResolver | Final class | — | | SyncConcurrencyDriver | Final class | Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. | --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/ComparisonPersister.php --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/ComparisonRunner.php Run the suite against each declared subject and return the aggregate. --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/ConcurrencyDriver.php Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. Run the given closures in parallel and return an array of their results, preserving the input key order. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/EvalPersister.php Converts an in-memory EvalRun value object into persisted Eloquent rows. Consumes the immutable Support\\EvalRun without mutating it. The entire operation runs inside a single DB transaction so partial runs never leak into the database. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/EvalRunner.php Run the subject against every case in the dataset and evaluate assertions. When $subject is a callable, it is invoked as fn (mixed $input, array $case): mixed where $input is $case['input'] pre-unwrapped and $case is the full case array. See {@see \\EvalSuite::subject()} for accepted subject shapes. Run an entire EvalSuite orchestrating its lifecycle. Invokes $suite->setUp(), resolves the subject once, then iterates the dataset asking the suite for per-case assertions via {@see \\EvalSuite::assertionsFor()}. tearDown runs in a finally block so it triggers even if subject or assertions throw; it is skipped when setUp itself throws, matching classic xUnit semantics. --- - **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Suite - **Source:** src/Suite/EvalSuite.php Returns the subject under evaluation. Can be one of: - A {@see \\Closure} / callable — invoked as fn (mixed $input, array $case): mixed where $input is $case['input'] pre-unwrapped and $case is the full case array (including expected, meta, etc.). - A class-string FQCN of a class implementing {@see \\Agent} — resolved from the container and invoked with the case input as the prompt. - An instance of an Agent — invoked as above. For callables with multiple named inputs, have each case's input be an associative array and unwrap inside the closure: Type validation is performed by the runner, not by the suite. Returns the assertions to run against a specific case. Override to read per-case metadata (e.g. $case['meta']['expected_count']) and compose assertions that vary per case. The default delegates to the shared assertions() list. Invoked once per case at run time. The CLI header no longer invokes this method — override detection is performed via reflection to preserve single-pass execution. Implementations should still be cheap: avoid container-heavy work or I/O here; construct lightweight assertion objects and defer expensive wiring to the assertion's own run() method. Lifecycle hook invoked before dataset/subject/assertions are read. Override to set up database state, tenant context, or other prerequisites that the suite's data depends on. Lifecycle hook invoked after the suite finishes running. Called in a finally block so it runs even if the subject throws. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/LaravelConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver --- - **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Suite - **Source:** src/Suite/MultiSubjectEvalSuite.php - **Extends:** Mosaiqo\\Proofread\\Suite\\EvalSuite Abstract base for suites that evaluate the same dataset against multiple subjects (typically different models, providers, or prompt variations). Implementers override subjects() returning a map of label -> subject. Labels become column headers in comparison reports. Subjects follow the same contract as EvalSuite::subject() -- callables, Agent FQCNs, or Agent instances. When run through a legacy single-subject runner, behaves as a regular EvalSuite by returning the first subject from subjects(). Returns the first subject from subjects() for backward compatibility with runners that only understand single-subject suites. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/SubjectInvocation.php - readonly mixed $output - readonly array $metadata --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/SubjectResolver.php --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/SyncConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. - int $invocations - array $taskCountPerInvocation"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | ComparisonPersister | Final class | — | | ComparisonRunner | Final class | — | | ConcurrencyDriver | Interface | Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. | | EvalPersister | Class | Converts an in-memory EvalRun value object into persisted Eloquent rows. | | EvalRunner | Final class | — | | EvalSuite | Abstract class | — | | LaravelConcurrencyDriver | Final class | — | | MultiSubjectEvalSuite | Abstract class | Abstract base for suites that evaluate the same dataset against multiple subjects (typically different models, providers, or prompt variations). | | SubjectInvocation | Final class | — | | SubjectResolver | Final class | — | | SyncConcurrencyDriver | Final class | Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. | ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "ComparisonPersister",
+    "sectionId": "comparisonpersister",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/ComparisonPersister.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "ComparisonRunner",
+    "sectionId": "comparisonrunner",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/ComparisonRunner.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Run the suite against each declared subject and return the aggregate. ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "ConcurrencyDriver",
+    "sectionId": "concurrencydriver",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/ConcurrencyDriver.php Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites."
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Run the given closures in parallel and return an array of their results, preserving the input key order. ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "EvalPersister",
+    "sectionId": "evalpersister",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/EvalPersister.php Converts an in-memory EvalRun value object into persisted Eloquent rows. Consumes the immutable Support\\EvalRun without mutating it. The entire operation runs inside a single DB transaction so partial runs never leak into the database."
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "EvalRunner",
+    "sectionId": "evalrunner",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/EvalRunner.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Run the subject against every case in the dataset and evaluate assertions. When $subject is a callable, it is invoked as fn (mixed $input, array $case): mixed where $input is $case['input'] pre-unwrapped and $case is the full case array. See {@see \\EvalSuite::subject()} for accepted subject shapes. Run an entire EvalSuite orchestrating its lifecycle. Invokes $suite->setUp(), resolves the subject once, then iterates the dataset asking the suite for per-case assertions via {@see \\EvalSuite::assertionsFor()}. tearDown runs in a finally block so it triggers even if subject or assertions throw; it is skipped when setUp itself throws, matching classic xUnit semantics. ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "EvalSuite",
+    "sectionId": "evalsuite",
+    "body": "- **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Suite - **Source:** src/Suite/EvalSuite.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Returns the subject under evaluation. Can be one of: - A {@see \\Closure} / callable — invoked as fn (mixed $input, array $case): mixed where $input is $case['input'] pre-unwrapped and $case is the full case array (including expected, meta, etc.). - A class-string FQCN of a class implementing {@see \\Agent} — resolved from the container and invoked with the case input as the prompt. - An instance of an Agent — invoked as above. For callables with multiple named inputs, have each case's input be an associative array and unwrap inside the closure: Type validation is performed by the runner, not by the suite. Returns the assertions to run against a specific case. Override to read per-case metadata (e.g. $case['meta']['expected_count']) and compose assertions that vary per case. The default delegates to the shared assertions() list. Invoked once per case at run time. The CLI header no longer invokes this method — override detection is performed via reflection to preserve single-pass execution. Implementations should still be cheap: avoid container-heavy work or I/O here; construct lightweight assertion objects and defer expensive wiring to the assertion's own run() method. Lifecycle hook invoked before dataset/subject/assertions are read. Override to set up database state, tenant context, or other prerequisites that the suite's data depends on. Lifecycle hook invoked after the suite finishes running. Called in a finally block so it runs even if the subject throws. ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "LaravelConcurrencyDriver",
+    "sectionId": "laravelconcurrencydriver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/LaravelConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "MultiSubjectEvalSuite",
+    "sectionId": "multisubjectevalsuite",
+    "body": "- **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Suite - **Source:** src/Suite/MultiSubjectEvalSuite.php - **Extends:** Mosaiqo\\Proofread\\Suite\\EvalSuite Abstract base for suites that evaluate the same dataset against multiple subjects (typically different models, providers, or prompt variations). Implementers override subjects() returning a map of label -> subject. Labels become column headers in comparison reports. Subjects follow the same contract as EvalSuite::subject() -- callables, Agent FQCNs, or Agent instances. When run through a legacy single-subject runner, behaves as a regular EvalSuite by returning the first subject from subjects()."
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Returns the first subject from subjects() for backward compatibility with runners that only understand single-subject suites. ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "SubjectInvocation",
+    "sectionId": "subjectinvocation",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/SubjectInvocation.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly mixed $output - readonly array $metadata ---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "SubjectResolver",
+    "sectionId": "subjectresolver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner - **Source:** src/Runner/SubjectResolver.php"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "SyncConcurrencyDriver",
+    "sectionId": "syncconcurrencydriver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/SyncConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order."
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/runner",
+    "title": "Runner & suites",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- int $invocations - array $taskCountPerInvocation"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Persisted eval runs, results, datasets, comparisons, and shadow captures. Only members declared on each class are shown — inherited Eloquent members are omitted. | Class | Kind | Description | |---|---|---| | EvalComparison | Class | — | | EvalDataset | Class | — | | EvalDatasetVersion | Class | — | | EvalResult | Class | Persisted Eloquent representation of a single case result within a run. | | EvalRun | Class | Persisted Eloquent representation of an eval run. | | ShadowCapture | Class | Persisted Eloquent representation of a shadow capture: a real production agent invocation (sampled + sanitized) stored for asynchronous evaluation. | | ShadowEval | Class | Persisted Eloquent representation of a single shadow evaluation: the result of running a set of assertions against a previously-captured production agent invocation (ShadowCapture). | --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalComparison.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Returns the run with the highest pass rate. Falls back to the fastest run as tiebreaker. Returns null when the comparison has no runs. Returns the run with the lowest total_cost_usd, ignoring runs where the cost is null. Returns null if every run has a null cost. Returns the run with the lowest duration. Returns null when the comparison has no runs. Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalDataset.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalDatasetVersion.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalResult.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a single case result within a run. Not to be confused with the in-memory value object Mosaiqo\\Proofread\\Support\\EvalResult. Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. - $timestamps --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalRun.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of an eval run. Not to be confused with the in-memory value object Mosaiqo\\Proofread\\Support\\EvalRun, which is what the runner returns. Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/ShadowCapture.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a shadow capture: a real production agent invocation (sampled + sanitized) stored for asynchronous evaluation. Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. --- - **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/ShadowEval.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a single shadow evaluation: the result of running a set of assertions against a previously-captured production agent invocation (ShadowCapture). Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | EvalComparison | Class | — | | EvalDataset | Class | — | | EvalDatasetVersion | Class | — | | EvalResult | Class | Persisted Eloquent representation of a single case result within a run. | | EvalRun | Class | Persisted Eloquent representation of an eval run. | | ShadowCapture | Class | Persisted Eloquent representation of a shadow capture: a real production agent invocation (sampled + sanitized) stored for asynchronous evaluation. | | ShadowEval | Class | Persisted Eloquent representation of a single shadow evaluation: the result of running a set of assertions against a previously-captured production agent invocation (ShadowCapture). | ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "EvalComparison",
+    "sectionId": "evalcomparison",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalComparison.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Returns the run with the highest pass rate. Falls back to the fastest run as tiebreaker. Returns null when the comparison has no runs. Returns the run with the lowest total_cost_usd, ignoring runs where the cost is null. Returns null if every run has a null cost. Returns the run with the lowest duration. Returns null when the comparison has no runs. Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "EvalDataset",
+    "sectionId": "evaldataset",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalDataset.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "EvalDatasetVersion",
+    "sectionId": "evaldatasetversion",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalDatasetVersion.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "EvalResult",
+    "sectionId": "evalresult",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalResult.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a single case result within a run. Not to be confused with the in-memory value object Mosaiqo\\Proofread\\Support\\EvalResult."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- $timestamps ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "EvalRun",
+    "sectionId": "evalrun",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/EvalRun.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of an eval run. Not to be confused with the in-memory value object Mosaiqo\\Proofread\\Support\\EvalRun, which is what the runner returns."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "ShadowCapture",
+    "sectionId": "shadowcapture",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/ShadowCapture.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a shadow capture: a real production agent invocation (sampled + sanitized) stored for asynchronous evaluation."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait. ---"
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "ShadowEval",
+    "sectionId": "shadoweval",
+    "body": "- **Kind:** Class - **Namespace:** Mosaiqo\\Proofread\\Models - **Source:** src/Models/ShadowEval.php - **Extends:** Illuminate\\Database\\Eloquent\\Model - **Implements:** Illuminate\\Contracts\\Routing\\UrlRoutable, Stringable, Illuminate\\Contracts\\Queue\\QueueableEntity, JsonSerializable, Illuminate\\Contracts\\Support\\Jsonable, Illuminate\\Contracts\\Broadcasting\\HasBroadcastChannel, Illuminate\\Contracts\\Support\\CanBeEscapedWhenCastToString, ArrayAccess, Illuminate\\Contracts\\Support\\Arrayable Persisted Eloquent representation of a single shadow evaluation: the result of running a set of assertions against a previously-captured production agent invocation (ShadowCapture)."
+  },
+  {
+    "slug": "api-reference/models",
+    "title": "Eloquent models",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Get the auto-incrementing key type. Get the value indicating whether the IDs are incrementing. Retrieve the model for a bound value. **Throws:** \\Illuminate\\Database\\Eloquent\\ModelNotFoundException Generate a new unique key for the model. Get the columns that should receive a unique identifier. Initialize the trait."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Immutable value objects and helper types used throughout the runner, lint, coverage, CLI subjects, and diff subsystems. | Class | Kind | Description | |---|---|---| | AmbiguityRule | Final class | — | | CaseCoverage | Final class | Per-dataset-case coverage statistics: how many shadow captures landed nearest to this case and the average cosine similarity of those matches. | | CaseDelta | Final class | — | | ClaudeCodeCliSubject | Final class | — | | CliExecutionException | Final class | — | | CliInvocation | Final class | — | | CliResponse | Final class | — | | CliSubject | Abstract class | — | | CliTimeoutException | Final class | — | | ComparisonResolver | Final class | Resolve a textual reference into a persisted EvalComparison model. | | ContradictionRule | Final class | Conservative heuristic for detecting \"always X\" vs \"never X\" contradictions. | | CostProjection | Final class | Projected cost for a single model computed from a set of shadow captures. | | CostSimulationReport | Final class | Aggregate cost-simulation report for one agent over a time window: the current model's projected cost plus projections for alternative models. | | CostSimulator | Final class | Simulate the cost of running an agent's historical traffic under different models. Takes the persisted ShadowCapture rows within a window, computes the cost under the captures' actual model (the \"current\" projection) and under a set of alternative models using the configured PricingTable. | | CoverageAnalyzer | Final class | Measure how well a dataset reflects production traffic by comparing the embeddings of the dataset's case inputs against the embeddings of the agent's recent shadow captures. | | CoverageReport | Final class | Aggregate coverage report: for one agent, over a time window, it answers \"which dataset cases reflect production traffic and which captures have no dataset analogue?\". | | Dataset | Final class | — | | DatasetGenerator | Final class | — | | DatasetGeneratorAgent | Final class | — | | DatasetGeneratorException | Final class | — | | EvalComparison | Final class | — | | EvalResult | Final class | — | | EvalRun | Final class | — | | EvalRunDelta | Final class | — | | EvalRunDiff | Final class | Computes a structured diff between two persisted EvalRun models. | | FailureClusterer | Final class | Group failure signals into clusters of semantically similar items using threshold-based single-pass clustering over embedding cosine similarity. | | JudgeResult | Final class | — | | LengthRule | Final class | — | | LintIssue | Final class | — | | LintReport | Final class | — | | LintRule | Interface | — | | MissingOutputFormatRule | Final class | — | | MissingRoleRule | Final class | — | | PromptLinter | Final class | — | | RunResolver | Final class | Resolve a textual reference into a persisted EvalRun model. | | SemanticQualityRule | Final class | LLM-based semantic analysis of an Agent's instructions. | | UncoveredCapture | Final class | A shadow capture that is not covered by any dataset case: its max cosine similarity against every case is below the configured threshold. | --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/AmbiguityRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CaseCoverage.php Per-dataset-case coverage statistics: how many shadow captures landed nearest to this case and the average cosine similarity of those matches. - readonly int $caseIndex - readonly ?string $caseName - readonly int $matchedCaptures - readonly float $avgSimilarity --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/CaseDelta.php Canonical JSON-friendly array shape shared by the MCP tool, evals:compare CLI, and regression webhook generic payload. - readonly int $caseIndex - readonly ?string $caseName - readonly bool $basePassed - readonly bool $headPassed - readonly string $status - readonly ?float $baseCostUsd - readonly ?float $headCostUsd - readonly ?float $baseDurationMs - readonly ?float $headDurationMs - readonly array $newFailures - readonly array $fixedFailures --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli\\Subjects - **Source:** src/Cli/Subjects/ClaudeCodeCliSubject.php - **Extends:** Mosaiqo\\Proofread\\Cli\\CliSubject --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliExecutionException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliInvocation.php - readonly string $output - readonly string $stdout - readonly string $stderr - readonly int $exitCode - readonly float $durationMs - readonly array $metadata --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliResponse.php - readonly string $output - readonly array $metadata --- - **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliSubject.php Absolute path or name (resolvable via PATH) of the CLI binary. Arguments to pass to the binary. Returned as array of strings for shell-safe execution (no shell interpolation). Parse stdout + stderr into the assistant's response and optional metadata. Invoked regardless of exit code — implementations decide whether a non-zero exit is a failure or part of normal output. Process timeout in seconds. Default 120s. Working directory for the subprocess. Default null = current. Extra environment variables for the subprocess. Whether to pass the prompt via stdin instead of args. Default false. Estimate token count from a string. Default heuristic: word count / 0.75. Override when the CLI provides real counts. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliTimeoutException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/ComparisonResolver.php Resolve a textual reference into a persisted EvalComparison model. Accepted reference forms: - Full ULID (26 chars) — matched exactly against the comparison id. - Commit SHA prefix (4-40 hex chars) — matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" — the most recently created comparison in the database. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/ContradictionRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule Conservative heuristic for detecting \"always X\" vs \"never X\" contradictions. Implementation extracts short phrases following \"always\" or \"never\" and compares their lowercased content-word sets. When the shorter phrase's content words are largely contained in the longer one (ratio above 0.5), the rule flags a contradiction. Shorter-phrase containment is used rather than symmetric Jaccard overlap because scoped exceptions (\"never X when Y\") still contradict the unconditional rule (\"always X\"). --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostProjection.php Projected cost for a single model computed from a set of shadow captures. Covered captures are the ones that had usable token data and produced a cost via the pricing table. Skipped captures either lacked tokens entirely or the model was not present in the pricing table, so they do not contribute to the total. - readonly string $model - readonly float $totalCost - readonly float $perCaptureCost - readonly int $coveredCaptures - readonly int $skippedCaptures --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostSimulationReport.php Aggregate cost-simulation report for one agent over a time window: the current model's projected cost plus projections for alternative models. - readonly string $agentClass - readonly CostProjection $current - readonly array $projections - readonly int $totalCaptures - readonly DateTimeImmutable $from - readonly DateTimeImmutable $to --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostSimulator.php Simulate the cost of running an agent's historical traffic under different models. Takes the persisted ShadowCapture rows within a window, computes the cost under the captures' actual model (the \"current\" projection) and under a set of alternative models using the configured PricingTable. The current model is chosen as the mode (most frequent model_used value) across the matched captures. Ties are broken by the most recently captured occurrence, which matches the intuition that a recent model migration is the one to reason about when asking \"what if I switch?\". Captures that are missing both tokens_in and tokens_out are considered unusable and counted as skipped for every projection. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CoverageAnalyzer.php Measure how well a dataset reflects production traffic by comparing the embeddings of the dataset's case inputs against the embeddings of the agent's recent shadow captures. Each capture is attached to its nearest case by cosine similarity. If the max similarity meets the threshold, the capture is \"covered\"; otherwise it is an uncovered data point that suggests a gap the dataset should grow to include. Uncovered captures are clustered so operators see the patterns behind the gap instead of a flat list of stragglers. Cost caveat: embedding N cases plus M captures costs tokens. With OpenAI text-embedding-3-small at roughly $0.02 per 1M tokens this is cheap for typical sizes, but not free. The maxCaptures cap prevents accidentally running this against tens of thousands of captures. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CoverageReport.php Aggregate coverage report: for one agent, over a time window, it answers \"which dataset cases reflect production traffic and which captures have no dataset analogue?\". - readonly string $agentClass - readonly string $datasetName - readonly int $totalCaptures - readonly int $coveredCount - readonly int $uncoveredCount - readonly int $skippedCount - readonly float $threshold - readonly array $caseCoverage - readonly array $uncovered - readonly array $uncoveredClusters - readonly DateTimeImmutable $from - readonly DateTimeImmutable $to --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/Dataset.php - readonly string $name - readonly array $cases --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGenerator.php Generate synthetic test cases using an LLM. **Throws:** \\DatasetGeneratorException --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGeneratorAgent.php - **Implements:** Laravel\\Ai\\Contracts\\Agent Create a new instance of the agent. Fake the responses returned by the agent. Assert that a prompt was received matching a given truth test. Assert that a prompt was not received matching a given truth test. Assert that no prompts were received. Assert that a queued prompt was received matching a given truth test. Assert that a queued prompt was not received matching a given truth test. Assert that no queued prompts were received. Determine if the agent is currently faked. Invoke the agent with a given prompt. Invoke the agent with a given prompt and return a streamable response. Invoke the agent in a queued job. Invoke the agent with a given prompt and broadcast the streamed events. Invoke the agent with a given prompt and broadcast the streamed events immediately. Invoke the agent with a given prompt and broadcast the streamed events. Restore the model from the model identifier instance. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGeneratorException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable - readonly string $lastRawResponse - readonly int $attempts --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalComparison.php - readonly string $name - readonly Dataset $dataset - readonly array $runs - readonly float $durationMs --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalResult.php - readonly array $case - readonly mixed $output - readonly array $assertionResults - readonly float $durationMs - readonly ?Throwable $error --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalRun.php - readonly Dataset $dataset - readonly array $results - readonly float $durationMs --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/EvalRunDelta.php Canonical JSON-friendly array shape shared by the MCP tool, evals:compare CLI, and regression webhook generic payload. - readonly string $baseRunId - readonly string $headRunId - readonly string $datasetName - readonly int $totalCases - readonly int $regressions - readonly int $improvements - readonly int $stableFailures - readonly int $stablePasses - readonly float $costDeltaUsd - readonly float $durationDeltaMs - readonly array $cases --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/EvalRunDiff.php Computes a structured diff between two persisted EvalRun models. Both runs must target the same dataset (matched by name). The returned EvalRunDelta classifies each case as regression, improvement, stable pass, stable fail, base-only, or head-only, and aggregates cost and duration differences across the run. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Clustering - **Source:** src/Clustering/FailureClusterer.php Group failure signals into clusters of semantically similar items using threshold-based single-pass clustering over embedding cosine similarity. The algorithm scans signals in their original order. For each signal it compares against the representative of every existing cluster: if the similarity meets the threshold, the signal joins that cluster; otherwise a new cluster is seeded. Deterministic, linear in |signals| * |clusters|, and does not require a target cluster count. Cluster failure signals using embedding-based cosine similarity. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/JudgeResult.php - **Extends:** Mosaiqo\\Proofread\\Support\\AssertionResult Build a passing judge result. Note: parameter order follows AssertionResult::pass() for LSP compliance, with judge-specific fields appended after metadata. Build a failing judge result. Score may be null (e.g., when the judge itself errored out and never produced a score). - readonly string $judgeModel - readonly int $retryCount --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/LengthRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/LintIssue.php - readonly string $ruleName - readonly string $severity - readonly string $message - readonly ?string $suggestion - readonly ?int $lineNumber --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/LintReport.php - readonly string $agentClass - readonly string $instructions - readonly array $issues --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Lint\\Contracts - **Source:** src/Lint/Contracts/LintRule.php --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/MissingOutputFormatRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/MissingRoleRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/PromptLinter.php --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/RunResolver.php Resolve a textual reference into a persisted EvalRun model. Accepted reference forms: - Full ULID (26 chars) — matched exactly against the run id. - Commit SHA prefix (4-40 hex chars) — matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" — the most recently created run in the database. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/SemanticQualityRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule LLM-based semantic analysis of an Agent's instructions. Calls the Judge agent with a custom prompt that asks for a structured critique (passed, score, reason, issues[]) and converts the response into LintIssues. Designed to be opt-in via the lint command's flag. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/UncoveredCapture.php A shadow capture that is not covered by any dataset case: its max cosine similarity against every case is below the configured threshold. - readonly string $captureId - readonly string $inputSnippet - readonly float $maxSimilarity - readonly int $nearestCaseIndex"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | AmbiguityRule | Final class | — | | CaseCoverage | Final class | Per-dataset-case coverage statistics: how many shadow captures landed nearest to this case and the average cosine similarity of those matches. | | CaseDelta | Final class | — | | ClaudeCodeCliSubject | Final class | — | | CliExecutionException | Final class | — | | CliInvocation | Final class | — | | CliResponse | Final class | — | | CliSubject | Abstract class | — | | CliTimeoutException | Final class | — | | ComparisonResolver | Final class | Resolve a textual reference into a persisted EvalComparison model. | | ContradictionRule | Final class | Conservative heuristic for detecting \"always X\" vs \"never X\" contradictions. | | CostProjection | Final class | Projected cost for a single model computed from a set of shadow captures. | | CostSimulationReport | Final class | Aggregate cost-simulation report for one agent over a time window: the current model's projected cost plus projections for alternative models. | | CostSimulator | Final class | Simulate the cost of running an agent's historical traffic under different models. Takes the persisted ShadowCapture rows within a window, computes the cost under the captures' actual model (the \"current\" projection) and under a set of alternative models using the configured PricingTable. | | CoverageAnalyzer | Final class | Measure how well a dataset reflects production traffic by comparing the embeddings of the dataset's case inputs against the embeddings of the agent's recent shadow captures. | | CoverageReport | Final class | Aggregate coverage report: for one agent, over a time window, it answers \"which dataset cases reflect production traffic and which captures have no dataset analogue?\". | | Dataset | Final class | — | | DatasetGenerator | Final class | — | | DatasetGeneratorAgent | Final class | — | | DatasetGeneratorException | Final class | — | | EvalComparison | Final class | — | | EvalResult | Final class | — | | EvalRun | Final class | — | | EvalRunDelta | Final class | — | | EvalRunDiff | Final class | Computes a structured diff between two persisted EvalRun models. | | FailureClusterer | Final class | Group failure signals into clusters of semantically similar items using threshold-based single-pass clustering over embedding cosine similarity. | | JudgeResult | Final class | — | | LengthRule | Final class | — | | LintIssue | Final class | — | | LintReport | Final class | — | | LintRule | Interface | — | | MissingOutputFormatRule | Final class | — | | MissingRoleRule | Final class | — | | PromptLinter | Final class | — | | RunResolver | Final class | Resolve a textual reference into a persisted EvalRun model. | | SemanticQualityRule | Final class | LLM-based semantic analysis of an Agent's instructions. | | UncoveredCapture | Final class | A shadow capture that is not covered by any dataset case: its max cosine similarity against every case is below the configured threshold. | ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "AmbiguityRule",
+    "sectionId": "ambiguityrule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/AmbiguityRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CaseCoverage",
+    "sectionId": "casecoverage",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CaseCoverage.php Per-dataset-case coverage statistics: how many shadow captures landed nearest to this case and the average cosine similarity of those matches."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly int $caseIndex - readonly ?string $caseName - readonly int $matchedCaptures - readonly float $avgSimilarity ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CaseDelta",
+    "sectionId": "casedelta",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/CaseDelta.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Canonical JSON-friendly array shape shared by the MCP tool, evals:compare CLI, and regression webhook generic payload."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly int $caseIndex - readonly ?string $caseName - readonly bool $basePassed - readonly bool $headPassed - readonly string $status - readonly ?float $baseCostUsd - readonly ?float $headCostUsd - readonly ?float $baseDurationMs - readonly ?float $headDurationMs - readonly array $newFailures - readonly array $fixedFailures ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "ClaudeCodeCliSubject",
+    "sectionId": "claudecodeclisubject",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli\\Subjects - **Source:** src/Cli/Subjects/ClaudeCodeCliSubject.php - **Extends:** Mosaiqo\\Proofread\\Cli\\CliSubject"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CliExecutionException",
+    "sectionId": "cliexecutionexception",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliExecutionException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CliInvocation",
+    "sectionId": "cliinvocation",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliInvocation.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $output - readonly string $stdout - readonly string $stderr - readonly int $exitCode - readonly float $durationMs - readonly array $metadata ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CliResponse",
+    "sectionId": "cliresponse",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliResponse.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $output - readonly array $metadata ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CliSubject",
+    "sectionId": "clisubject",
+    "body": "- **Kind:** Abstract class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliSubject.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Absolute path or name (resolvable via PATH) of the CLI binary. Arguments to pass to the binary. Returned as array of strings for shell-safe execution (no shell interpolation). Parse stdout + stderr into the assistant's response and optional metadata. Invoked regardless of exit code — implementations decide whether a non-zero exit is a failure or part of normal output. Process timeout in seconds. Default 120s. Working directory for the subprocess. Default null = current. Extra environment variables for the subprocess. Whether to pass the prompt via stdin instead of args. Default false. Estimate token count from a string. Default heuristic: word count / 0.75. Override when the CLI provides real counts. ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CliTimeoutException",
+    "sectionId": "clitimeoutexception",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Cli - **Source:** src/Cli/CliTimeoutException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "ComparisonResolver",
+    "sectionId": "comparisonresolver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/ComparisonResolver.php Resolve a textual reference into a persisted EvalComparison model. Accepted reference forms: - Full ULID (26 chars) — matched exactly against the comparison id. - Commit SHA prefix (4-40 hex chars) — matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" — the most recently created comparison in the database."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "ContradictionRule",
+    "sectionId": "contradictionrule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/ContradictionRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule Conservative heuristic for detecting \"always X\" vs \"never X\" contradictions. Implementation extracts short phrases following \"always\" or \"never\" and compares their lowercased content-word sets. When the shorter phrase's content words are largely contained in the longer one (ratio above 0.5), the rule flags a contradiction. Shorter-phrase containment is used rather than symmetric Jaccard overlap because scoped exceptions (\"never X when Y\") still contradict the unconditional rule (\"always X\")."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CostProjection",
+    "sectionId": "costprojection",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostProjection.php Projected cost for a single model computed from a set of shadow captures. Covered captures are the ones that had usable token data and produced a cost via the pricing table. Skipped captures either lacked tokens entirely or the model was not present in the pricing table, so they do not contribute to the total."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $model - readonly float $totalCost - readonly float $perCaptureCost - readonly int $coveredCaptures - readonly int $skippedCaptures ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CostSimulationReport",
+    "sectionId": "costsimulationreport",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostSimulationReport.php Aggregate cost-simulation report for one agent over a time window: the current model's projected cost plus projections for alternative models."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $agentClass - readonly CostProjection $current - readonly array $projections - readonly int $totalCaptures - readonly DateTimeImmutable $from - readonly DateTimeImmutable $to ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CostSimulator",
+    "sectionId": "costsimulator",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Simulation - **Source:** src/Simulation/CostSimulator.php Simulate the cost of running an agent's historical traffic under different models. Takes the persisted ShadowCapture rows within a window, computes the cost under the captures' actual model (the \"current\" projection) and under a set of alternative models using the configured PricingTable. The current model is chosen as the mode (most frequent model_used value) across the matched captures. Ties are broken by the most recently captured occurrence, which matches the intuition that a recent model migration is the one to reason about when asking \"what if I switch?\". Captures that are missing both tokens_in and tokens_out are considered unusable and counted as skipped for every projection."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CoverageAnalyzer",
+    "sectionId": "coverageanalyzer",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CoverageAnalyzer.php Measure how well a dataset reflects production traffic by comparing the embeddings of the dataset's case inputs against the embeddings of the agent's recent shadow captures. Each capture is attached to its nearest case by cosine similarity. If the max similarity meets the threshold, the capture is \"covered\"; otherwise it is an uncovered data point that suggests a gap the dataset should grow to include. Uncovered captures are clustered so operators see the patterns behind the gap instead of a flat list of stragglers. Cost caveat: embedding N cases plus M captures costs tokens. With OpenAI text-embedding-3-small at roughly $0.02 per 1M tokens this is cheap for typical sizes, but not free. The maxCaptures cap prevents accidentally running this against tens of thousands of captures."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "CoverageReport",
+    "sectionId": "coveragereport",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/CoverageReport.php Aggregate coverage report: for one agent, over a time window, it answers \"which dataset cases reflect production traffic and which captures have no dataset analogue?\"."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $agentClass - readonly string $datasetName - readonly int $totalCaptures - readonly int $coveredCount - readonly int $uncoveredCount - readonly int $skippedCount - readonly float $threshold - readonly array $caseCoverage - readonly array $uncovered - readonly array $uncoveredClusters - readonly DateTimeImmutable $from - readonly DateTimeImmutable $to ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Dataset",
+    "sectionId": "dataset",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/Dataset.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $name - readonly array $cases ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "DatasetGenerator",
+    "sectionId": "datasetgenerator",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGenerator.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Generate synthetic test cases using an LLM. **Throws:** \\DatasetGeneratorException ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "DatasetGeneratorAgent",
+    "sectionId": "datasetgeneratoragent",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGeneratorAgent.php - **Implements:** Laravel\\Ai\\Contracts\\Agent"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": "Create a new instance of the agent. Fake the responses returned by the agent. Assert that a prompt was received matching a given truth test. Assert that a prompt was not received matching a given truth test. Assert that no prompts were received. Assert that a queued prompt was received matching a given truth test. Assert that a queued prompt was not received matching a given truth test. Assert that no queued prompts were received. Determine if the agent is currently faked."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Invoke the agent with a given prompt. Invoke the agent with a given prompt and return a streamable response. Invoke the agent in a queued job. Invoke the agent with a given prompt and broadcast the streamed events. Invoke the agent with a given prompt and broadcast the streamed events immediately. Invoke the agent with a given prompt and broadcast the streamed events. Restore the model from the model identifier instance. ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "DatasetGeneratorException",
+    "sectionId": "datasetgeneratorexception",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Generator - **Source:** src/Generator/DatasetGeneratorException.php - **Extends:** RuntimeException - **Implements:** Stringable, Throwable"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $lastRawResponse - readonly int $attempts ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "EvalComparison",
+    "sectionId": "evalcomparison",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalComparison.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $name - readonly Dataset $dataset - readonly array $runs - readonly float $durationMs ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "EvalResult",
+    "sectionId": "evalresult",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalResult.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly array $case - readonly mixed $output - readonly array $assertionResults - readonly float $durationMs - readonly ?Throwable $error ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "EvalRun",
+    "sectionId": "evalrun",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/EvalRun.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly Dataset $dataset - readonly array $results - readonly float $durationMs ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "EvalRunDelta",
+    "sectionId": "evalrundelta",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/EvalRunDelta.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Canonical JSON-friendly array shape shared by the MCP tool, evals:compare CLI, and regression webhook generic payload."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $baseRunId - readonly string $headRunId - readonly string $datasetName - readonly int $totalCases - readonly int $regressions - readonly int $improvements - readonly int $stableFailures - readonly int $stablePasses - readonly float $costDeltaUsd - readonly float $durationDeltaMs - readonly array $cases ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "EvalRunDiff",
+    "sectionId": "evalrundiff",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Diff - **Source:** src/Diff/EvalRunDiff.php Computes a structured diff between two persisted EvalRun models. Both runs must target the same dataset (matched by name). The returned EvalRunDelta classifies each case as regression, improvement, stable pass, stable fail, base-only, or head-only, and aggregates cost and duration differences across the run."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "FailureClusterer",
+    "sectionId": "failureclusterer",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Clustering - **Source:** src/Clustering/FailureClusterer.php Group failure signals into clusters of semantically similar items using threshold-based single-pass clustering over embedding cosine similarity. The algorithm scans signals in their original order. For each signal it compares against the representative of every existing cluster: if the similarity meets the threshold, the signal joins that cluster; otherwise a new cluster is seeded. Deterministic, linear in |signals| * |clusters|, and does not require a target cluster count."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Cluster failure signals using embedding-based cosine similarity. ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "JudgeResult",
+    "sectionId": "judgeresult",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/JudgeResult.php - **Extends:** Mosaiqo\\Proofread\\Support\\AssertionResult"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": "Build a passing judge result. Note: parameter order follows AssertionResult::pass() for LSP compliance, with judge-specific fields appended after metadata. Build a failing judge result. Score may be null (e.g., when the judge itself errored out and never produced a score)."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $judgeModel - readonly int $retryCount ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "LengthRule",
+    "sectionId": "lengthrule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/LengthRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "LintIssue",
+    "sectionId": "lintissue",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/LintIssue.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Named constructors & static methods",
+    "sectionId": "named-constructors-static-methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $ruleName - readonly string $severity - readonly string $message - readonly ?string $suggestion - readonly ?int $lineNumber ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "LintReport",
+    "sectionId": "lintreport",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/LintReport.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $agentClass - readonly string $instructions - readonly array $issues ---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "LintRule",
+    "sectionId": "lintrule",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Lint\\Contracts - **Source:** src/Lint/Contracts/LintRule.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "MissingOutputFormatRule",
+    "sectionId": "missingoutputformatrule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/MissingOutputFormatRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "MissingRoleRule",
+    "sectionId": "missingrolerule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/MissingRoleRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "PromptLinter",
+    "sectionId": "promptlinter",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint - **Source:** src/Lint/PromptLinter.php"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "RunResolver",
+    "sectionId": "runresolver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Support - **Source:** src/Support/RunResolver.php Resolve a textual reference into a persisted EvalRun model. Accepted reference forms: - Full ULID (26 chars) — matched exactly against the run id. - Commit SHA prefix (4-40 hex chars) — matched via prefix against the commit_sha column, most recent first. - Literal \"latest\" — the most recently created run in the database."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "SemanticQualityRule",
+    "sectionId": "semanticqualityrule",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Lint\\Rules - **Source:** src/Lint/Rules/SemanticQualityRule.php - **Implements:** Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule LLM-based semantic analysis of an Agent's instructions. Calls the Judge agent with a custom prompt that asks for a structured critique (passed, score, reason, issues[]) and converts the response into LintIssues. Designed to be opt-in via the lint command's flag."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "UncoveredCapture",
+    "sectionId": "uncoveredcapture",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Coverage - **Source:** src/Coverage/UncoveredCapture.php A shadow capture that is not covered by any dataset case: its max cosine similarity against every case is below the configured threshold."
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/value-objects",
+    "title": "Value objects & helpers",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- readonly string $captureId - readonly string $inputSnippet - readonly float $maxSimilarity - readonly int $nearestCaseIndex"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "body": "> **[info]** This page is auto-generated from PHP docblocks. > Regenerate with composer docs:api after editing any docblock. Interfaces and contracts implemented by Proofread internals and by user code that plugs into the eval runtime. | Class | Kind | Description | |---|---|---| | Assertion | Interface | — | | ConcurrencyDriver | Interface | Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. | | LaravelConcurrencyDriver | Final class | — | | LintRule | Interface | — | | RandomNumberProvider | Interface | — | | SyncConcurrencyDriver | Final class | Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. | --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Contracts - **Source:** src/Contracts/Assertion.php --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/ConcurrencyDriver.php Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. Run the given closures in parallel and return an array of their results, preserving the input key order. --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/LaravelConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Lint\\Contracts - **Source:** src/Lint/Contracts/LintRule.php --- - **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Shadow\\Contracts - **Source:** src/Shadow/Contracts/RandomNumberProvider.php Returns a float in 0.0, 1.0). --- - **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** [src/Runner/Concurrency/SyncConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. - int $invocations - array $taskCountPerInvocation"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Summary",
+    "sectionId": "summary",
+    "body": "| Class | Kind | Description | |---|---|---| | Assertion | Interface | — | | ConcurrencyDriver | Interface | Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites. | | LaravelConcurrencyDriver | Final class | — | | LintRule | Interface | — | | RandomNumberProvider | Interface | — | | SyncConcurrencyDriver | Final class | Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order. | ---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Assertion",
+    "sectionId": "assertion",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Contracts - **Source:** src/Contracts/Assertion.php"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "ConcurrencyDriver",
+    "sectionId": "concurrencydriver",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/ConcurrencyDriver.php Minimal indirection over Laravel's Concurrency facade so that EvalRunner can be tested without forking processes and so we can swap drivers without touching call sites."
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Run the given closures in parallel and return an array of their results, preserving the input key order. ---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "LaravelConcurrencyDriver",
+    "sectionId": "laravelconcurrencydriver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/LaravelConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "LintRule",
+    "sectionId": "lintrule",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Lint\\Contracts - **Source:** src/Lint/Contracts/LintRule.php"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "RandomNumberProvider",
+    "sectionId": "randomnumberprovider",
+    "body": "- **Kind:** Interface - **Namespace:** Mosaiqo\\Proofread\\Shadow\\Contracts - **Source:** src/Shadow/Contracts/RandomNumberProvider.php"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": "Returns a float in [0.0, 1.0). ---"
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "SyncConcurrencyDriver",
+    "sectionId": "syncconcurrencydriver",
+    "body": "- **Kind:** Final class - **Namespace:** Mosaiqo\\Proofread\\Runner\\Concurrency - **Source:** src/Runner/Concurrency/SyncConcurrencyDriver.php - **Implements:** Mosaiqo\\Proofread\\Runner\\Concurrency\\ConcurrencyDriver Executes tasks sequentially in-process. Useful for tests and as a safe fallback when real concurrency drivers are unavailable. Preserves insertion order."
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Methods",
+    "sectionId": "methods",
+    "body": ""
+  },
+  {
+    "slug": "api-reference/contracts",
+    "title": "Contracts & interfaces",
+    "section": "Public properties",
+    "sectionId": "public-properties",
+    "body": "- int $invocations - array $taskCountPerInvocation"
+  },
+  {
     "slug": "guides/assertions-deep-dive",
     "title": "Assertions deep dive",
     "body": "Assertions are the unit of evaluation in Proofread. Each one inspects a subject's output (and optionally the runtime context) and returns an AssertionResult — a sealed value object carrying a boolean verdict, a human-readable reason, an optional score, and a metadata bag. This guide covers every assertion shipped with the package, when to reach for each one, and the edge cases that trip people up in practice. Every concrete assertion implements Mosaiqo\\Proofread\\Contracts\\Assertion: $output is whatever the subject returned — usually a string for text agents, but could be an array, object, or even null. The runner does not coerce; defensive is_string() / gettype() checks live inside each assertion. $context is a standard bag populated by the runner before run() is called. Assertions read from it opportunistically: | Key | Populated when | Notes | | ------------------- | ----------------------------------------------- | ----------------------------------- | | input | Always. | The case's input value. | | meta | When the case declares meta. | Arbitrary case annotations. | | case_index | Always. | Zero-based index in the dataset. | | subject_label | Multi-provider runs. | The label from subjects(). | | tokens_in | Agent subjects with usage. | Integer, may be null. | | tokens_out | Agent subjects with usage. | Integer, may be null. | | tokens_total | Agent subjects with usage. | Integer, may be null. | | cost_usd | Agent subjects with a pricing table match. | Float, may be null. | | latency_ms | Always. | Float, populated by the runner. | | raw | Agent subjects. | The raw TextResponse. | AssertionResult::pass() and AssertionResult::fail() are the only ways to build a result. Both accept a reason, an optional score, and a metadata array that surfaces in the dashboard drawer and exports. > **[info]** The sealed hierarchy allows exactly one subclass: > JudgeResult. Judge-backed assertions (Rubric, Hallucination, > Language) return that richer type so the dashboard can display the > judge model and retry count alongside the verdict. Fast, offline, zero-dependency. Reach for these first. Plain substring match. The cheapest guard there is — good for sanity checks (\"the answer must mention the customer's name\") and boilerplate presence (\"the email must include a signature\"). Minimal: Case-insensitive, multibyte-aware: **Edge cases.** - Empty-string needle is treated as always present (it passes). This matches str_contains semantics and prevents false failures when a case has no mandatory substring. - Non-string output fails with Expected string output, got <type>. - Case-insensitive comparison uses mb_strtolower, so accented characters compare correctly. **Reason format.** Output contains \"<needle>\" on pass, Output does not contain \"<needle>\" on fail. PCRE matching. Use it when a substring match is too loose and a full JSON schema is too strict — structured identifiers, ISO dates, allow- lists. The pattern must include delimiters (/.../, #...#, etc.) and is validated at construction time: an invalid pattern throws InvalidArgumentException rather than failing at run time. Minimal: Complex — allow-list with case-insensitive and Unicode flags: **Edge cases.** - Non-string output fails immediately. - Runtime regex errors (backtrack limits, catastrophic patterns) are caught and surfaced as Regex error while matching <pattern>: <preg_last_error_msg>. - Use \\A / \\z instead of ^ / $ when matching multi-line output and you need end-of-string (not end-of-line) anchoring. **Reason format.** Output matches <pattern> or Output does not match <pattern>. Character count bounds. mb_strlen under the hood, so it counts user- perceived characters, not bytes. Minimal: Complex — bound a summary: **Edge cases.** - Negative bounds throw at construction. - min > max throws at construction. - Non-string output fails. **Reason format.** Output length <n> is within bounds, Output length <n> is below minimum <m>, or Output length <n> exceeds maximum <m>. Element count bounds for array / Countable output. Pair it with subjects that return lists (extractors, taggers, search tools). Minimal: Complex — enforce an exact number of extracted entities: **Edge cases.** - Non-array, non-Countable output fails; Countable::count() is used when applicable. - Negative bounds throw. **Reason format.** Count <n> is within bounds, Count <n> is below minimum <m>, or Count <n> exceeds maximum <m>. Validates JSON-shaped output against an Opis JSON Schema. The assertion accepts strings (parsed with JSON_THROW_ON_ERROR), arrays, and objects; lists and nested associative arrays are normalized into stdClass trees before validation. Minimal: Complex — derive the schema straight from an Agent implementing HasStructuredOutput: **Edge cases.** - Top-level list schemas throw at construction; the validator expects an object. - Malformed JSON input fails with the decoder message rather than a cryptic schema error. - fromAgent instantiates the agent via the container to read its schema — side effects in the constructor are unsafe. **Reason format.** Output conforms to schema on pass; Schema violation at <JSON pointer>: <opis message> on fail. The assertion dives into sub-errors and reports the deepest leaf so you see the actual field that diverged rather than the root anyOf umbrella error. Guard cost, speed, and token usage. These read values populated by the runner and fail closed when data is missing — a subject that can't report tokens cannot be budgeted, and silence shouldn't look like a pass. Minimal: Complex — cap input and output separately: **Edge cases.** - Missing context keys (tokens_in, tokens_out, tokens_total) fail with an explicit diagnostic. - maxTotal falls back to tokens_in + tokens_out when the runner provides only the parts. - Closure subjects don't produce usage data; TokenBudget will always fail for them unless you synthesize usage yourself. Reads cost_usd from the context. The runner computes it from the pricing table configured in config/proofread.php, including cache- read/write rates and reasoning-token pricing when present. Minimal: Complex — combine with a token guard for belt-and-braces: **Edge cases.** - A model missing from the pricing table returns null cost; the assertion fails closed with a clear reason. Add the model to proofread.pricing.models to enable the check. - maxUsd <= 0 throws at construction. **Reason format.** Dollar amounts are rendered with four decimal places: Cost $0.0043 is within limit of $0.0100. Reads latency_ms from the context (always populated by the runner). Minimal: **Edge cases.** - Non-numeric latency_ms (should never happen via the runner) fails closed. - Latency is end-to-end from subject invocation to return, including network round-trips. It does not separate first-byte from total duration. LLM-as-judge and embedding-based. These call external services. All three LLM-as-judge variants go through the shared Judge service, so they share configuration (proofread.judge.default_model, retry count) and testing ergonomics. Scores output against a natural-language criteria string. The judge returns {passed, score, reason}; the assertion layers a numeric threshold on top. Minimal: Complex — pin a specific model and lower the threshold for a more permissive pass: **Edge cases.** - Judge failures (schema drift, network errors) exhaust retries and come back as JudgeResult::fail with retryCount reflecting the attempts made. The raw response from the last attempt is preserved in metadata under judge_raw_response for debugging. - A judge verdict of passed: true still fails if score < minScore. The reason reads Judge approved but score <x> is below threshold <y>. - minScore outside [0.0, 1.0] throws at construction. **Reason format.** The judge's own reason field on pass; either the judge's rejection reason or the threshold diagnostic on fail. **Metadata.** judge_model, judge_tokens_in, judge_tokens_out, judge_cost_usd, judge_raw_response (on failure), retry_count. > **[info]** Test Rubric-backed suites without real LLM calls by faking > the JudgeAgent: > > Embedding-based cosine similarity to a reference string. Use it when the expected output is semantically fixed but verbally flexible. Minimal: Complex — tune the threshold and embedding model: **Edge cases.** - Cosine similarity ranges from -1.0 (opposite) to 1.0 (identical). Scores are usually positive for natural language but negative scores are valid and allowed. - Default threshold is 0.8, which is a reasonable starting point for text-embedding-3-small. Bump it when switching to a larger model. - Non-string output fails fast with a type diagnostic. - Embedding-service errors become a fail with metadata keys embedding_model, embedding_cost_usd, embedding_tokens set to null so downstream reporting doesn't crash on missing values. **Reason format.** Similarity <score> meets threshold <t> on pass; Similarity <score> below threshold <t> on fail. Judge-backed check that every claim in the output is supported by the ground truth. Internally composes a fixed criteria string that instructs the judge to treat the ground truth as authoritative. Minimal: Complex — allow a slight deviation score: **Edge cases.** - Defaults to minScore(1.0) — any hallucination fails. Loosen it deliberately. - Ground truth is truncation-free: large strings are forwarded as-is to the judge. Watch token costs when the source is a long KB article. **Reason format.** The judge verdict; metadata matches Rubric. Judge-backed language detector. Prefer it to a regex for genuine natural-language output, which rarely has clean ASCII signals. Minimal: Complex — use a full name and a cheaper judge: **Edge cases.** - Input is normalized via strtolower(trim(...)); 'EN', 'en', and ' en ' all resolve identically. - \"Primarily in\" means >80% of meaningful content per the internal prompt — mixed-language outputs with a short quote in another language still pass. Validates how an Agent reached its answer, not just the answer itself. Requires an Agent subject (closures don't produce step data). Reads the TextResponse from $context['raw'] and inspects steps and toolCalls. Minimal: Complex — enforce a required tool chain: **Edge cases.** - Non-agent subjects produce Trajectory requires an Agent subject — got <type>. - callsTools accepts any observed order. callsToolsInOrder allows interleaved extra calls as long as the required subsequence appears in order. - Empty tool lists throw at construction. **Reason format.** Always includes the observed tools on failure so you can diagnose immediately without opening the drawer: Trajectory did not call required tool \"lookup_order\" (observed: search, explain). Captures a reference output on first run, then compares subsequent runs against it. Use it for prompts whose output should remain byte-stable across refactors (templates, deterministic pipelines). Minimal: Complex — derive the key from meta.name or case_index: **Edge cases.** - On first run the snapshot is written and the assertion passes with Snapshot '<key>' created and metadata snapshot_created: true. - When the environment variable PROOFREAD_UPDATE_SNAPSHOTS=true is set, a mismatched snapshot is overwritten instead of failing; the result carries snapshot_updated: true so CI can detect accidental rebaselines. - Diffs are line-based with - / + prefixes and are truncated to 30 lines (15 head + \"… N more lines\"). Lines over 120 chars are also truncated. The full diff is never persisted — only the rendered excerpt. - fromContext() looks up meta.snapshot_key, then meta.name, then falls back to case_<index>; none of the three being present fails with a clear diagnostic. - Snapshots live under config('proofread.snapshots.path'), which defaults to tests/Snapshots/proofread. Commit the directory so the baseline is shared. **Reason format.** Snapshot '<key>' matches on pass; Snapshot '<key>' does not match:\\n<diff> on fail. Metadata always includes snapshot_key and snapshot_path; on fail, snapshot_diff carries the rendered excerpt. Opinionated counterpart to JsonSchemaAssertion::fromAgent(). Derives the schema from an Agent implementing HasStructuredOutput and produces LLM-tailored error messages. Also stores the parsed output under the parsed_data metadata key so downstream tooling (clusterers, dataset generators) can read structured values without reparsing. Minimal: **Edge cases.** - The agent class must exist and implement HasStructuredOutput; both conditions throw at construction when unmet. - Failure metadata includes both parsed_data and violation_path (JSON pointer), which the dashboard uses to highlight the offending field in the drawer. **Reason format.** Output conforms to structured schema of <ShortName> on pass; Structured output violation at <path>: <message> on fail. Runs the configured PiiSanitizer over the output and fails if any placeholder was inserted. Use it to catch the reverse of sanitization: the model leaking PII into a response it shouldn't. Minimal (uses the container-resolved sanitizer, which reads proofread.shadow.sanitize): Complex — bespoke patterns scoped to this suite: **Edge cases.** - Only string output is supported. Nested array leakage belongs on the input side (handled by the shadow capture path), not the assertion. - The assertion considers the output \"leaked\" as soon as at least one placeholder ends up in the sanitized string. Metadata lists every placeholder found so the drawer can tell you which PII classes appeared. **Reason format.** No PII patterns detected on pass; PII detected in output: [EMAIL], [CARD] on fail. **Metadata.** placeholders_found, sanitized_output. The Assertion contract is tiny. A bespoke assertion is often fewer than 30 lines. Scaffolded: The generator drops a stub into app/Evals/Assertions/ wired up with strict types, a final readonly declaration, named constructors, and a Pest test file mirroring the class path. > **[info]** Design custom assertions as readonly value objects with > named constructors. The runner invokes run() repeatedly and may > serialize the assertion (via name()) into persistence — immutable > objects make this trivial. - Assertions overview — quick reference matrix. - Eval suites — wiring assertions into cases. - Shadow evals — running assertions against production traffic. - Multi-provider comparison — branching assertions per subject."
