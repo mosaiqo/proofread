@@ -1,5 +1,6 @@
 import MarkdownIt from 'markdown-it'
 import anchor from 'markdown-it-anchor'
+import matter from 'gray-matter'
 import { getHighlighter, type SupportedLang } from '@/lib/shiki'
 import type { TocEntry } from '@/types/docs'
 
@@ -49,6 +50,114 @@ export interface RenderedMarkdown {
 
 let mdInstance: MarkdownIt | null = null
 
+type CalloutVariant = 'info' | 'warn' | 'danger' | 'success'
+
+const calloutTitle: Record<CalloutVariant, string> = {
+  info: 'Note',
+  warn: 'Warning',
+  danger: 'Danger',
+  success: 'Tip',
+}
+
+const calloutIcon: Record<CalloutVariant, string> = {
+  info: 'i',
+  warn: '!',
+  danger: '!',
+  success: '✓',
+}
+
+function calloutPlugin(md: MarkdownIt): void {
+  md.core.ruler.after('block', 'callout_transform', (state) => {
+    const tokens = state.tokens
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]
+      if (token.type !== 'blockquote_open') continue
+
+      let closeIdx = -1
+      let depth = 1
+      for (let j = i + 1; j < tokens.length; j++) {
+        if (tokens[j].type === 'blockquote_open') depth++
+        else if (tokens[j].type === 'blockquote_close') {
+          depth--
+          if (depth === 0) {
+            closeIdx = j
+            break
+          }
+        }
+      }
+      if (closeIdx === -1) continue
+
+      const firstInline = tokens
+        .slice(i + 1, closeIdx)
+        .find((t) => t.type === 'inline')
+      if (!firstInline) continue
+
+      const variantMatch = /^\s*\*\*\[(info|warn|danger|success)\]\*\*\s*/i.exec(
+        firstInline.content,
+      )
+      if (!variantMatch) continue
+
+      const variant = variantMatch[1].toLowerCase() as CalloutVariant
+      firstInline.content = firstInline.content.replace(variantMatch[0], '')
+      if (firstInline.children && firstInline.children.length > 0) {
+        const first = firstInline.children[0]
+        if (first.type === 'text') {
+          const stripped = first.content.replace(
+            /^\s*\*\*\[(info|warn|danger|success)\]\*\*\s*/i,
+            '',
+          )
+          first.content = stripped
+        } else {
+          const dropCount: number[] = []
+          for (let k = 0; k < Math.min(firstInline.children.length, 4); k++) {
+            const ch = firstInline.children[k]
+            if (ch.type === 'strong_open' || ch.type === 'strong_close') {
+              dropCount.push(k)
+            } else if (ch.type === 'text') {
+              const m = /^\s*\[(info|warn|danger|success)\]\s*/i.exec(ch.content)
+              if (m) {
+                ch.content = ch.content.replace(m[0], '')
+                dropCount.push(k)
+              }
+            }
+            if (dropCount.length >= 3) break
+          }
+          for (const idx of dropCount.reverse()) {
+            firstInline.children.splice(idx, 1)
+          }
+        }
+      }
+
+      const openToken = tokens[i]
+      const closeToken = tokens[closeIdx]
+      openToken.type = 'html_block'
+      openToken.tag = ''
+      openToken.nesting = 0
+      openToken.content = renderCalloutOpen(variant)
+      openToken.block = true
+
+      closeToken.type = 'html_block'
+      closeToken.tag = ''
+      closeToken.nesting = 0
+      closeToken.content = '</div></aside>\n'
+      closeToken.block = true
+    }
+    return false
+  })
+}
+
+function renderCalloutOpen(variant: CalloutVariant): string {
+  const title = calloutTitle[variant]
+  const icon = calloutIcon[variant]
+  return (
+    `<aside class="docs-callout docs-callout--${variant}" role="note">` +
+    `<span class="docs-callout__icon" aria-hidden="true">${icon}</span>` +
+    `<div class="docs-callout__body">` +
+    `<p class="docs-callout__title">${title}</p>` +
+    `<div class="docs-callout__content">`
+  )
+}
+
 async function getRenderer(): Promise<MarkdownIt> {
   if (mdInstance) return mdInstance
 
@@ -85,8 +194,15 @@ async function getRenderer(): Promise<MarkdownIt> {
     }),
   })
 
+  md.use(calloutPlugin)
+
   mdInstance = md
   return md
+}
+
+function stripFrontmatter(source: string): string {
+  const parsed = matter(source)
+  return parsed.content
 }
 
 function extractToc(source: string): TocEntry[] {
@@ -116,11 +232,14 @@ function extractTitle(source: string): string {
 
 export async function renderMarkdown(source: string): Promise<RenderedMarkdown> {
   const md = await getRenderer()
-  const html = md.render(source)
+  const body = stripFrontmatter(source)
+  const html = md.render(body)
+  const parsed = matter(source)
+  const fmTitle = (parsed.data as { title?: string }).title
   return {
     html,
-    toc: extractToc(source),
-    title: extractTitle(source),
+    toc: extractToc(body),
+    title: fmTitle ?? extractTitle(body),
   }
 }
 

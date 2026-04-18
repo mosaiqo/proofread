@@ -41,7 +41,33 @@ async function walk(dir) {
 
 function toSlug(path) {
   const rel = relative(contentRoot, path).replace(/\\/g, '/')
-  return rel.replace(/\.md$/, '').replace(/\/index$/, '')
+  const trimmed = rel.replace(/\.md$/, '').replace(/\/index$/, '')
+  return trimmed
+    .split('/')
+    .map((segment) => segment.replace(/^\d+[-_]/, ''))
+    .join('/')
+}
+
+function stripFrontmatter(source) {
+  if (!source.startsWith('---')) return { data: {}, content: source }
+  const end = source.indexOf('\n---', 3)
+  if (end === -1) return { data: {}, content: source }
+  const fmBlock = source.slice(3, end).trim()
+  const data = {}
+  for (const line of fmBlock.split('\n')) {
+    const m = /^([A-Za-z0-9_-]+)\s*:\s*(.+?)\s*$/.exec(line)
+    if (!m) continue
+    let value = m[2]
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+    data[m[1]] = value
+  }
+  const rest = source.slice(end + 4)
+  return { data, content: rest.replace(/^\n/, '') }
 }
 
 function parseSections(source) {
@@ -94,10 +120,11 @@ async function build() {
   const entries = []
 
   for (const file of files) {
-    const source = await readFile(file, 'utf8')
+    const raw = await readFile(file, 'utf8')
+    const { data: fm, content: source } = stripFrontmatter(raw)
     const slug = toSlug(file)
     const { title, sections } = parseSections(source)
-    const resolvedTitle = title || slug
+    const resolvedTitle = fm.title || title || slug
 
     const body = cleanBody(sections.flatMap((s) => s.buffer))
     entries.push({ slug, title: resolvedTitle, body })

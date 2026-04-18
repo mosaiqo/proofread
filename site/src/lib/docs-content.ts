@@ -1,3 +1,4 @@
+import matter from 'gray-matter'
 import type { NavItem, NavSection } from '@/types/docs'
 
 const modules = import.meta.glob('@/content/docs/**/*.md', {
@@ -6,10 +7,25 @@ const modules = import.meta.glob('@/content/docs/**/*.md', {
   eager: false,
 }) as Record<string, () => Promise<string>>
 
-function slugFromPath(path: string): string {
+const ORDER_PREFIX = /^\d+[-_]/
+
+function stripOrderPrefix(segment: string): string {
+  return segment.replace(ORDER_PREFIX, '')
+}
+
+function rawSlugFromPath(path: string): string {
   const match = /\/content\/docs\/(.+)\.md$/.exec(path)
   if (!match) return ''
   return match[1].replace(/\/index$/, '').replace(/\/_/g, '/')
+}
+
+function publicSlugFromPath(path: string): string {
+  const raw = rawSlugFromPath(path)
+  if (!raw) return ''
+  return raw
+    .split('/')
+    .map((segment) => stripOrderPrefix(segment))
+    .join('/')
 }
 
 function titleFromSource(source: string, fallback: string): string {
@@ -17,8 +33,23 @@ function titleFromSource(source: string, fallback: string): string {
   return match ? match[1].trim() : fallback
 }
 
+interface Frontmatter {
+  title?: string
+  section?: string
+  order?: number
+}
+
+function parseFrontmatter(source: string): { data: Frontmatter; content: string } {
+  const parsed = matter(source)
+  return {
+    data: parsed.data as Frontmatter,
+    content: parsed.content,
+  }
+}
+
 export interface DocEntry {
   slug: string
+  rawSlug: string
   path: string
   load: () => Promise<string>
 }
@@ -26,11 +57,12 @@ export interface DocEntry {
 export function listDocs(): DocEntry[] {
   const out: DocEntry[] = []
   for (const [path, load] of Object.entries(modules)) {
-    const slug = slugFromPath(path)
+    const rawSlug = rawSlugFromPath(path)
+    const slug = publicSlugFromPath(path)
     if (!slug) continue
-    out.push({ slug, path, load })
+    out.push({ slug, rawSlug, path, load })
   }
-  return out.sort((a, b) => a.slug.localeCompare(b.slug))
+  return out.sort((a, b) => a.rawSlug.localeCompare(b.rawSlug))
 }
 
 export async function loadDoc(slug: string): Promise<string | null> {
@@ -42,21 +74,42 @@ export async function loadDoc(slug: string): Promise<string | null> {
 
 export async function buildNavSections(): Promise<NavSection[]> {
   const docs = listDocs()
-  const items: NavItem[] = []
+  const buckets = new Map<string, NavItem[]>()
+  const unsectioned: NavItem[] = []
+  const sectionOrder: string[] = []
+
   for (const doc of docs) {
     const source = await doc.load()
+    const { data, content } = parseFrontmatter(source)
     const slugFallback = doc.slug
       .split('/')
       .pop()!
       .replace(/-/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase())
-    items.push({
-      slug: doc.slug,
-      title: titleFromSource(source, slugFallback),
-    })
+    const title = data.title ?? titleFromSource(content, slugFallback)
+    const item: NavItem = { slug: doc.slug, title }
+    const section = data.section ?? ''
+
+    if (!section) {
+      unsectioned.push(item)
+      continue
+    }
+
+    if (!buckets.has(section)) {
+      buckets.set(section, [])
+      sectionOrder.push(section)
+    }
+    buckets.get(section)!.push(item)
   }
-  if (items.length === 0) return []
-  return [{ title: 'Documentation', items }]
+
+  const out: NavSection[] = []
+  for (const title of sectionOrder) {
+    out.push({ title, items: buckets.get(title)! })
+  }
+  if (unsectioned.length > 0) {
+    out.push({ title: 'Documentation', items: unsectioned })
+  }
+  return out
 }
 
 export function docExists(slug: string): boolean {

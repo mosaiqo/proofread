@@ -146,4 +146,85 @@ function goHome(): void {
   color: var(--shiki-dark, inherit) !important;
   background-color: var(--shiki-dark-bg, var(--color-bg-elevated)) !important;
 }
+
+.docs-article .docs-callout {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.docs-article .docs-callout__icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.25rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.docs-article .docs-callout__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.docs-article .docs-callout__title {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.docs-article .docs-callout__content > *:first-child {
+  margin-top: 0.25rem;
+}
+
+.docs-article .docs-callout__content > *:last-child {
+  margin-bottom: 0;
+}
+
+.docs-article .docs-callout--info {
+  border-color: color-mix(in srgb, var(--color-info, #3b82f6) 30%, transparent);
+  background: color-mix(in srgb, var(--color-info, #3b82f6) 10%, transparent);
+}
+
+.docs-article .docs-callout--info .docs-callout__icon {
+  background: var(--color-info, #3b82f6);
+}
+
+.docs-article .docs-callout--warn {
+  border-color: color-mix(in srgb, var(--color-warning, #f59e0b) 40%, transparent);
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 10%, transparent);
+}
+
+.docs-article .docs-callout--warn .docs-callout__icon {
+  background: var(--color-warning, #f59e0b);
+}
+
+.docs-article .docs-callout--danger {
+  border-color: color-mix(in srgb, var(--color-destructive, #ef4444) 40%, transparent);
+  background: color-mix(in srgb, var(--color-destructive, #ef4444) 10%, transparent);
+}
+
+.docs-article .docs-callout--danger .docs-callout__icon {
+  background: var(--color-destructive, #ef4444);
+}
+
+.docs-article .docs-callout--success {
+  border-color: color-mix(in srgb, var(--color-success, #10b981) 40%, transparent);
+  background: color-mix(in srgb, var(--color-success, #10b981) 10%, transparent);
+}
+
+.docs-article .docs-callout--success .docs-callout__icon {
+  background: var(--color-success, #10b981);
+}
 </style>

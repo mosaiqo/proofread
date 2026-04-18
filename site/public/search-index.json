@@ -1,21 +1,488 @@
 [
   {
-    "slug": "hello",
-    "title": "Hello from docs",
-    "body": "This is a placeholder page to verify that the docs layout, sidebar, TOC, code highlighting, and search index all work. Content para TOC y search index."
+    "slug": "getting-started",
+    "title": "Getting started",
+    "body": "Proofread is the only eval package native to the official Laravel AI stack. It measures whether your agents, prompts, and MCP tools actually do what you think they do — from Pest, from CI, and from production traffic — without asking you to leave Laravel. Modern Laravel apps increasingly ship AI features straight to production. The laravel/ai SDK makes them easy to build; Proofread makes them safe to change. - **Pest-native expectations.** Write evals as expect($agent)->toPassEval(...) instead of learning a new YAML DSL. - **Agent class-string FQCN as subject.** Point an eval at an FQCN, an instance, or a callable — SubjectResolver normalizes all of them, and laravel/ai fakes plug in automatically. - **Shadow evals in production.** Capture real traffic, evaluate it asynchronously, alert on pass-rate drops, and promote failing captures into regression datasets. - **CLI subjects.** Evaluate subscription-based providers (Claude Code, Codex, etc.) over their CLI, not an API — something API-only eval tools cannot do. 1. Installation — get Proofread into your Laravel app. 2. Quick start — a first eval in 5 minutes. 3. Core concepts — the vocabulary you will use daily. > **[info]** Proofread is pre-1.0 and the API is still evolving. Pin a specific > version in composer.json if you want stability across days."
   },
   {
-    "slug": "hello",
-    "title": "Hello from docs",
-    "section": "Code example",
-    "sectionId": "code-example",
+    "slug": "getting-started",
+    "title": "Getting started",
+    "section": "Why Proofread",
+    "sectionId": "why-proofread",
+    "body": "- **Pest-native expectations.** Write evals as expect($agent)->toPassEval(...) instead of learning a new YAML DSL. - **Agent class-string FQCN as subject.** Point an eval at an FQCN, an instance, or a callable — SubjectResolver normalizes all of them, and laravel/ai fakes plug in automatically. - **Shadow evals in production.** Capture real traffic, evaluate it asynchronously, alert on pass-rate drops, and promote failing captures into regression datasets. - **CLI subjects.** Evaluate subscription-based providers (Claude Code, Codex, etc.) over their CLI, not an API — something API-only eval tools cannot do."
+  },
+  {
+    "slug": "getting-started",
+    "title": "Getting started",
+    "section": "What to read next",
+    "sectionId": "what-to-read-next",
+    "body": "1. Installation — get Proofread into your Laravel app. 2. Quick start — a first eval in 5 minutes. 3. Core concepts — the vocabulary you will use daily. > **[info]** Proofread is pre-1.0 and the API is still evolving. Pin a specific > version in composer.json if you want stability across days."
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "body": "- PHP 8.4 - Laravel 13.x - Pest v4 (for the Pest expectations; optional if you only use the CLI) If you want Proofread to expose eval tools over Model Context Protocol (Claude Code, Cursor, and other MCP-compatible editors): The migrations create the eval_datasets, eval_dataset_versions, eval_runs, and eval_results tables used by --persist. Only needed if you want to override defaults like the judge model, PII sanitizer patterns, or shadow capture settings. This writes config/proofread.php to your app. Drops a ready-made GitHub Actions workflow into .github/workflows/. > **[info]** Proofread uses the central database in multi-tenant setups. > Tenant-scoped eval tables are not supported yet. > **[warn]** If upgrading from a pre-0.3 version, see > UPGRADING.md > for the migration rename. Head to the Quick start to write your first eval."
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Requirements",
+    "sectionId": "requirements",
+    "body": "- PHP 8.4 - Laravel 13.x - Pest v4 (for the Pest expectations; optional if you only use the CLI)"
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Install the package",
+    "sectionId": "install-the-package",
     "body": ""
   },
   {
-    "slug": "hello",
-    "title": "Hello from docs",
-    "section": "Another heading",
-    "sectionId": "another-heading",
-    "body": "Content para TOC y search index."
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Optional: MCP integration",
+    "sectionId": "optional-mcp-integration",
+    "body": "If you want Proofread to expose eval tools over Model Context Protocol (Claude Code, Cursor, and other MCP-compatible editors):"
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Publish migrations",
+    "sectionId": "publish-migrations",
+    "body": "The migrations create the eval_datasets, eval_dataset_versions, eval_runs, and eval_results tables used by --persist."
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Publish the config (opt-in)",
+    "sectionId": "publish-the-config-opt-in",
+    "body": "Only needed if you want to override defaults like the judge model, PII sanitizer patterns, or shadow capture settings. This writes config/proofread.php to your app."
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "CI workflow scaffolding (optional)",
+    "sectionId": "ci-workflow-scaffolding-optional",
+    "body": "Drops a ready-made GitHub Actions workflow into .github/workflows/. > **[info]** Proofread uses the central database in multi-tenant setups. > Tenant-scoped eval tables are not supported yet. > **[warn]** If upgrading from a pre-0.3 version, see > UPGRADING.md > for the migration rename."
+  },
+  {
+    "slug": "installation",
+    "title": "Installation",
+    "section": "Next step",
+    "sectionId": "next-step",
+    "body": "Head to the Quick start to write your first eval."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "body": "In 5 minutes, you will write your first eval suite against a plain PHP callable — no API keys, no agent classes, no external services. This gets the mechanics into your fingers before you wire up a real laravel/ai agent. A \"subject\" is whatever gets evaluated. The simplest shape is a closure: Datasets are immutable collections of cases. Each case has an input and (optionally) an expected value plus arbitrary meta. Assertions verify the subject's output. You compose as many as you need per case. You have two entry points. Pick whichever fits your workflow. See Running evals for the full CLI, including --persist, --junit, --gate-pass-rate, and concurrency. - Core concepts — the 5 building blocks. - Eval suites — turn the snippets above into a reusable suite class. - Assertions — the 15+ built-in assertions you can mix and match. > **[success]** You have just run a deterministic eval. The same shape scales > up to LLM-as-judge rubrics, embedding similarity, token budgets, and > golden snapshots without changing the mental model."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "1. Define a callable subject",
+    "sectionId": "1-define-a-callable-subject",
+    "body": "A \"subject\" is whatever gets evaluated. The simplest shape is a closure:"
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "2. Create a dataset",
+    "sectionId": "2-create-a-dataset",
+    "body": "Datasets are immutable collections of cases. Each case has an input and (optionally) an expected value plus arbitrary meta."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "3. Pick assertions",
+    "sectionId": "3-pick-assertions",
+    "body": "Assertions verify the subject's output. You compose as many as you need per case."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "4. Run the eval",
+    "sectionId": "4-run-the-eval",
+    "body": "You have two entry points. Pick whichever fits your workflow."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "From Pest",
+    "sectionId": "from-pest",
+    "body": ""
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "From Artisan (using an EvalSuite class)",
+    "sectionId": "from-artisan-using-an-evalsuite-class",
+    "body": "See Running evals for the full CLI, including --persist, --junit, --gate-pass-rate, and concurrency."
+  },
+  {
+    "slug": "quick-start",
+    "title": "Quick start",
+    "section": "5. Next steps",
+    "sectionId": "5-next-steps",
+    "body": "- Core concepts — the 5 building blocks. - Eval suites — turn the snippets above into a reusable suite class. - Assertions — the 15+ built-in assertions you can mix and match. > **[success]** You have just run a deterministic eval. The same shape scales > up to LLM-as-judge rubrics, embedding similarity, token budgets, and > golden snapshots without changing the mental model."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "body": "Five building blocks power everything in Proofread. Internalize these and the rest of the API reads as a thin layer on top. A class with three abstract methods — dataset(), subject(), and assertions() — plus optional lifecycle hooks. Suites are the unit of reusability: one suite per thing you want to evaluate. See Eval suites for the full contract. An immutable, named list of cases. Each case is an array with an input, an optional expected, and arbitrary meta. Datasets are content-addressed: the same name with different cases produces a new \"version\" on persist, so you can diff and compare runs across time. What gets evaluated. Proofread accepts four shapes interchangeably: - A **callable** (closure or invokable). - An **Agent class-string FQCN** — any class implementing Laravel\\Ai\\Contracts\\Agent; resolved from the container. - An **Agent instance**. - A **CliSubject** — wraps a subscription-based CLI provider (Claude Code, Codex, etc.) as if it were an agent. The SubjectResolver normalizes all four. Tests swap between them without changing assertion code. The unit of verification. Implements a single run(mixed $output, array $context): AssertionResult method. Proofread ships 15+ assertions across deterministic, operational, semantic, trajectory, snapshot, structured, and safety categories. Compose as many per case as you need. See Assertions. The result of running a suite. Aggregates one EvalResult per case, plus overall pass/fail, pass count, pass rate, total cost, total latency, and any JUnit/export output. When persisted, becomes a row in eval_runs that you can compare with evals:compare or query via the Eloquent model. See Persistence. EvalRunner iterates the dataset, invokes the subject, runs every assertion against the output, and aggregates results into an EvalRun. Everything else in Proofread — Pest expectations, the evals:run command, shadow evaluation, provider comparison — is a wrapper around this core loop. > **[info]** The EvalRun returned by the runner is a value object. The > EvalRun Eloquent model (same name, different namespace) is the persisted > representation written when you pass --persist."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "EvalSuite",
+    "sectionId": "evalsuite",
+    "body": "A class with three abstract methods — dataset(), subject(), and assertions() — plus optional lifecycle hooks. Suites are the unit of reusability: one suite per thing you want to evaluate. See Eval suites for the full contract."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "Dataset",
+    "sectionId": "dataset",
+    "body": "An immutable, named list of cases. Each case is an array with an input, an optional expected, and arbitrary meta. Datasets are content-addressed: the same name with different cases produces a new \"version\" on persist, so you can diff and compare runs across time."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "Subject",
+    "sectionId": "subject",
+    "body": "What gets evaluated. Proofread accepts four shapes interchangeably: - A **callable** (closure or invokable). - An **Agent class-string FQCN** — any class implementing Laravel\\Ai\\Contracts\\Agent; resolved from the container. - An **Agent instance**. - A **CliSubject** — wraps a subscription-based CLI provider (Claude Code, Codex, etc.) as if it were an agent. The SubjectResolver normalizes all four. Tests swap between them without changing assertion code."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "Assertion",
+    "sectionId": "assertion",
+    "body": "The unit of verification. Implements a single run(mixed $output, array $context): AssertionResult method. Proofread ships 15+ assertions across deterministic, operational, semantic, trajectory, snapshot, structured, and safety categories. Compose as many per case as you need. See Assertions."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "EvalRun",
+    "sectionId": "evalrun",
+    "body": "The result of running a suite. Aggregates one EvalResult per case, plus overall pass/fail, pass count, pass rate, total cost, total latency, and any JUnit/export output. When persisted, becomes a row in eval_runs that you can compare with evals:compare or query via the Eloquent model. See Persistence."
+  },
+  {
+    "slug": "core-concepts",
+    "title": "Core concepts",
+    "section": "The flow",
+    "sectionId": "the-flow",
+    "body": "EvalRunner iterates the dataset, invokes the subject, runs every assertion against the output, and aggregates results into an EvalRun. Everything else in Proofread — Pest expectations, the evals:run command, shadow evaluation, provider comparison — is a wrapper around this core loop. > **[info]** The EvalRun returned by the runner is a value object. The > EvalRun Eloquent model (same name, different namespace) is the persisted > representation written when you pass --persist."
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "body": "An EvalSuite is a class that bundles a dataset, a subject, and a list of assertions. It is the unit of reuse: one suite per thing you want to evaluate over time. Mosaiqo\\Proofread\\Suite\\EvalSuite is abstract and exposes three required methods: - dataset() returns a Mosaiqo\\Proofread\\Support\\Dataset. - subject() returns a callable, an Agent FQCN (class-string), or an Agent instance. The SubjectResolver decides how to invoke it. - assertions() returns a list<Mosaiqo\\Proofread\\Contracts\\Assertion> applied to every case. Override name(): string if you want a stable label for logs, persistence, and CLI output. Defaults to the class FQCN. - setUp(): void — runs before the dataset, subject, and assertions are read. Use it to seed state, set tenant context, or Agent::fake() in tests. - tearDown(): void — runs in a finally block, even if the subject throws. - assertionsFor(array $case): array — per-case assertion composition. Read $case['meta'] to branch on case metadata and vary assertions by case. Defaults to assertions(). Generate a suite file with the make command: For a multi-subject (provider comparison) suite: Extends EvalSuite to evaluate the same dataset against multiple subjects (typically different models or prompt variants). The labels become column headers in comparison reports. Run it with: > **[info]** Suite name() is used for persistence, logs, and CLI output. > Keep it stable — renaming a suite breaks historical comparisons."
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "The contract",
+    "sectionId": "the-contract",
+    "body": "Mosaiqo\\Proofread\\Suite\\EvalSuite is abstract and exposes three required methods: - dataset() returns a Mosaiqo\\Proofread\\Support\\Dataset. - subject() returns a callable, an Agent FQCN (class-string), or an Agent instance. The SubjectResolver decides how to invoke it. - assertions() returns a list<Mosaiqo\\Proofread\\Contracts\\Assertion> applied to every case."
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "Suite name",
+    "sectionId": "suite-name",
+    "body": "Override name(): string if you want a stable label for logs, persistence, and CLI output. Defaults to the class FQCN."
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "Lifecycle hooks",
+    "sectionId": "lifecycle-hooks",
+    "body": "- setUp(): void — runs before the dataset, subject, and assertions are read. Use it to seed state, set tenant context, or Agent::fake() in tests. - tearDown(): void — runs in a finally block, even if the subject throws. - assertionsFor(array $case): array — per-case assertion composition. Read $case['meta'] to branch on case metadata and vary assertions by case. Defaults to assertions()."
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "Scaffolding",
+    "sectionId": "scaffolding",
+    "body": "Generate a suite file with the make command: For a multi-subject (provider comparison) suite:"
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "Example: single-subject suite",
+    "sectionId": "example-single-subject-suite",
+    "body": ""
+  },
+  {
+    "slug": "eval-suites",
+    "title": "Eval suites",
+    "section": "MultiSubjectEvalSuite",
+    "sectionId": "multisubjectevalsuite",
+    "body": "Extends EvalSuite to evaluate the same dataset against multiple subjects (typically different models or prompt variants). The labels become column headers in comparison reports. Run it with: > **[info]** Suite name() is used for persistence, logs, and CLI output. > Keep it stable — renaming a suite breaks historical comparisons."
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "body": "Proofread ships 15+ assertions across 7 categories. All implement the Mosaiqo\\Proofread\\Contracts\\Assertion interface and return an AssertionResult. Mix and match them per case. Zero-dependency, no LLM calls. Fast and cheap. | Assertion | Example | Description | | -------------------------- | ----------------------------------------------------------- | ------------------------------------------------ | | ContainsAssertion | ContainsAssertion::make('positive') | Substring match (case-sensitive by default). | | RegexAssertion | RegexAssertion::make('/^\\w+$/') | PCRE pattern match. | | LengthAssertion | LengthAssertion::between(1, 200) | String length within [min, max]. | | CountAssertion | CountAssertion::equals(3) | Element count of an array/iterable output. | | JsonSchemaAssertion | JsonSchemaAssertion::fromAgent(MyStructuredAgent::class) | Validate JSON output against a JSON Schema. | Cost, speed, and token guards. | Assertion | Example | Description | | --------------- | --------------------------------------- | ------------------------------------- | | TokenBudget | TokenBudget::maxTotal(2_000) | Cap input/output/total tokens. | | CostLimit | CostLimit::under(0.01) | Cap cost per case in USD. | | LatencyLimit | LatencyLimit::under(1_500) | Cap latency per case in milliseconds. | LLM-as-judge and embedding-based. Require a judge agent configured in config/proofread.php. | Assertion | Example | Description | | ------------------------- | ----------------------------------------------- | ---------------------------------------------------- | | Rubric | Rubric::make('is polite and concise') | LLM-as-judge. Pass/fail per a criteria string. | | Similar | Similar::to('expected text') | Embedding cosine similarity to a reference. | | HallucinationAssertion | HallucinationAssertion::against($groundTruth) | Detects claims unsupported by ground truth. | | LanguageAssertion | LanguageAssertion::matches('en') | Verifies output language matches an ISO 639-1 code. | Verifies how an agent reached its answer, not just the answer. | Assertion | Example | Description | | ------------- | ------------------------------------------------ | -------------------------------------------- | | Trajectory | Trajectory::callsToolsInOrder(['search','summarize']) | Step count and tool-call sequence checks. | Golden-file regression testing. | Assertion | Example | Description | | ---------------- | ----------------------------- | --------------------------------------------------------- | | GoldenSnapshot | GoldenSnapshot::fromContext() | Compares output against a stored snapshot. Auto-updates on first run. | | Assertion | Example | Description | | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- | | StructuredOutputAssertion | StructuredOutputAssertion::conformsTo(MyAgent::class) | Validates that output conforms to an agent's HasStructuredOutput declaration. | | Assertion | Example | Description | | ---------------------- | ---------------------------- | ----------------------------------------------- | | PiiLeakageAssertion | PiiLeakageAssertion::make() | Flags outputs containing PII (emails, phones, SSNs, credit cards). | > **[info]** **Per-case assertions:** override assertionsFor(array $case): > array in your suite to vary assertions based on case metadata (for > example, run a stricter latency cap on cases tagged meta.tier => 'critical'). Each assertion has edge cases and configuration details worth their own guide. Those guides ship alongside the runtime guides; start here for the overview and reach for them when you hit a specific need."
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Deterministic",
+    "sectionId": "deterministic",
+    "body": "Zero-dependency, no LLM calls. Fast and cheap. | Assertion | Example | Description | | -------------------------- | ----------------------------------------------------------- | ------------------------------------------------ | | ContainsAssertion | ContainsAssertion::make('positive') | Substring match (case-sensitive by default). | | RegexAssertion | RegexAssertion::make('/^\\w+$/') | PCRE pattern match. | | LengthAssertion | LengthAssertion::between(1, 200) | String length within [min, max]. | | CountAssertion | CountAssertion::equals(3) | Element count of an array/iterable output. | | JsonSchemaAssertion | JsonSchemaAssertion::fromAgent(MyStructuredAgent::class) | Validate JSON output against a JSON Schema. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Operational",
+    "sectionId": "operational",
+    "body": "Cost, speed, and token guards. | Assertion | Example | Description | | --------------- | --------------------------------------- | ------------------------------------- | | TokenBudget | TokenBudget::maxTotal(2_000) | Cap input/output/total tokens. | | CostLimit | CostLimit::under(0.01) | Cap cost per case in USD. | | LatencyLimit | LatencyLimit::under(1_500) | Cap latency per case in milliseconds. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Semantic",
+    "sectionId": "semantic",
+    "body": "LLM-as-judge and embedding-based. Require a judge agent configured in config/proofread.php. | Assertion | Example | Description | | ------------------------- | ----------------------------------------------- | ---------------------------------------------------- | | Rubric | Rubric::make('is polite and concise') | LLM-as-judge. Pass/fail per a criteria string. | | Similar | Similar::to('expected text') | Embedding cosine similarity to a reference. | | HallucinationAssertion | HallucinationAssertion::against($groundTruth) | Detects claims unsupported by ground truth. | | LanguageAssertion | LanguageAssertion::matches('en') | Verifies output language matches an ISO 639-1 code. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Trajectory",
+    "sectionId": "trajectory",
+    "body": "Verifies how an agent reached its answer, not just the answer. | Assertion | Example | Description | | ------------- | ------------------------------------------------ | -------------------------------------------- | | Trajectory | Trajectory::callsToolsInOrder(['search','summarize']) | Step count and tool-call sequence checks. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Snapshot",
+    "sectionId": "snapshot",
+    "body": "Golden-file regression testing. | Assertion | Example | Description | | ---------------- | ----------------------------- | --------------------------------------------------------- | | GoldenSnapshot | GoldenSnapshot::fromContext() | Compares output against a stored snapshot. Auto-updates on first run. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Structured",
+    "sectionId": "structured",
+    "body": "| Assertion | Example | Description | | ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- | | StructuredOutputAssertion | StructuredOutputAssertion::conformsTo(MyAgent::class) | Validates that output conforms to an agent's HasStructuredOutput declaration. |"
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Safety",
+    "sectionId": "safety",
+    "body": "| Assertion | Example | Description | | ---------------------- | ---------------------------- | ----------------------------------------------- | | PiiLeakageAssertion | PiiLeakageAssertion::make() | Flags outputs containing PII (emails, phones, SSNs, credit cards). | > **[info]** **Per-case assertions:** override assertionsFor(array $case): > array in your suite to vary assertions based on case metadata (for > example, run a stricter latency cap on cases tagged meta.tier => 'critical')."
+  },
+  {
+    "slug": "assertions",
+    "title": "Assertions",
+    "section": "Deep dives",
+    "sectionId": "deep-dives",
+    "body": "Each assertion has edge cases and configuration details worth their own guide. Those guides ship alongside the runtime guides; start here for the overview and reach for them when you hit a specific need."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "body": "Three entry points. Pick whichever matches where the eval lives: inside a Pest test, in CI via Artisan, or programmatically. Register the expectations once per test suite (usually in Pest.php or a beforeAll): You then get: Run a dataset against the current subject with a list of assertions. Run a full EvalSuite. After success, the expectation's value becomes the EvalRun, so you can chain further expectations on the result. Run a single assertion against the expectation's subject. Shorthand for a Rubric assertion. Asserts the subject (an EvalRun) cost stayed below $maxUsd. Validates a JSON output (string or array) against a JSON Schema (array or path). Compares output against a stored snapshot. Auto-creates the snapshot on first run. The primary CI entry point: | Flag | Purpose | | --------------------- | ----------------------------------------------------------------------- | | --junit=PATH | Write JUnit XML (one file per suite when multiple suites are passed). | | --fail-fast | Stop at the first suite that fails or errors. | | --filter=TEXT | Case-insensitive substring filter on meta.name or stringified input. | | --persist | Persist each run to the database via EvalPersister. | | --queue | Dispatch each suite to the queue instead of running inline. | | --commit-sha=SHA | Commit SHA attached to the persisted run (use with --queue). | | --concurrency=N | Run up to N cases in parallel. Default 1 (sequential). | | --fake-judge=SPEC | Fake the judge agent: pass, fail, or a JSON file path. | | --gate-pass-rate=R | Exit 1 if overall pass rate is below R (0.0 - 1.0). | | --gate-cost-max=USD | Exit 1 if total observed cost exceeds this USD value. | CI gate on a minimum pass rate: Fast feedback while iterating: Parallel run for I/O-bound subjects: For programmatic use (background jobs, custom commands, internal tooling): Or, for lower-level control when you already have the pieces: Reach for run() when you need to compose dataset/subject/assertions at runtime. Use runSuite() for anything that should be reusable — tests, scheduled jobs, CI. Publish a ready-made workflow: Resulting .github/workflows/evals.yml (excerpt): > **[warn]** --concurrency > 1 is unsafe for subjects that write to SQLite. > Use it for LLM/HTTP-bound subjects only."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "Pest expectations",
+    "sectionId": "pest-expectations",
+    "body": "Register the expectations once per test suite (usually in Pest.php or a beforeAll): You then get:"
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toPassEval($dataset, $assertions)",
+    "sectionId": "topassevaldataset-assertions",
+    "body": "Run a dataset against the current subject with a list of assertions."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toPassSuite()",
+    "sectionId": "topasssuite",
+    "body": "Run a full EvalSuite. After success, the expectation's value becomes the EvalRun, so you can chain further expectations on the result."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toPassAssertion($assertion)",
+    "sectionId": "topassassertionassertion",
+    "body": "Run a single assertion against the expectation's subject."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toPassRubric($criteria, $options = [])",
+    "sectionId": "topassrubriccriteria-options",
+    "body": "Shorthand for a Rubric assertion."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toCostUnder($maxUsd)",
+    "sectionId": "tocostundermaxusd",
+    "body": "Asserts the subject (an EvalRun) cost stayed below $maxUsd."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toMatchSchema($schema)",
+    "sectionId": "tomatchschemaschema",
+    "body": "Validates a JSON output (string or array) against a JSON Schema (array or path)."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "toMatchGoldenSnapshot($key = null)",
+    "sectionId": "tomatchgoldensnapshotkey-null",
+    "body": "Compares output against a stored snapshot. Auto-creates the snapshot on first run."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "Artisan CLI",
+    "sectionId": "artisan-cli",
+    "body": "The primary CI entry point:"
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "All flags",
+    "sectionId": "all-flags",
+    "body": "| Flag | Purpose | | --------------------- | ----------------------------------------------------------------------- | | --junit=PATH | Write JUnit XML (one file per suite when multiple suites are passed). | | --fail-fast | Stop at the first suite that fails or errors. | | --filter=TEXT | Case-insensitive substring filter on meta.name or stringified input. | | --persist | Persist each run to the database via EvalPersister. | | --queue | Dispatch each suite to the queue instead of running inline. | | --commit-sha=SHA | Commit SHA attached to the persisted run (use with --queue). | | --concurrency=N | Run up to N cases in parallel. Default 1 (sequential). | | --fake-judge=SPEC | Fake the judge agent: pass, fail, or a JSON file path. | | --gate-pass-rate=R | Exit 1 if overall pass rate is below R (0.0 - 1.0). | | --gate-cost-max=USD | Exit 1 if total observed cost exceeds this USD value. |"
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "Common recipes",
+    "sectionId": "common-recipes",
+    "body": "CI gate on a minimum pass rate: Fast feedback while iterating: Parallel run for I/O-bound subjects:"
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "Direct runner",
+    "sectionId": "direct-runner",
+    "body": "For programmatic use (background jobs, custom commands, internal tooling): Or, for lower-level control when you already have the pieces: Reach for run() when you need to compose dataset/subject/assertions at runtime. Use runSuite() for anything that should be reusable — tests, scheduled jobs, CI."
+  },
+  {
+    "slug": "running-evals",
+    "title": "Running evals",
+    "section": "CI workflow",
+    "sectionId": "ci-workflow",
+    "body": "Publish a ready-made workflow: Resulting .github/workflows/evals.yml (excerpt): > **[warn]** --concurrency > 1 is unsafe for subjects that write to SQLite. > Use it for LLM/HTTP-bound subjects only."
+  },
+  {
+    "slug": "persistence",
+    "title": "Persistence",
+    "body": "Persisting runs unlocks comparison across commits, dataset versioning, pass- rate trends, and the EvalRun Eloquent model for querying historical data. Pass --persist to evals:run: Each run writes to four tables (created by the published migrations): - eval_datasets — one row per dataset name. - eval_dataset_versions — one row per unique content checksum. - eval_runs — one row per suite execution. - eval_results — one row per case within a run. Mosaiqo\\Proofread\\Models\\EvalRun exposes the persisted run: Dataset versions are content-addressed: Proofread hashes each dataset's cases and stores one eval_dataset_versions row per unique checksum. Renaming a case or tweaking an input produces a new version automatically. Inspect what changed between versions: Both arguments accept: - A numeric run id: 42 - A commit SHA: abc1234 - The literal latest Typical CI use: compare the PR's run against the main branch's most recent run. > **[info]** latest resolves to the most recent run for both > evals:compare and evals:dataset:diff. Combine with --commit-sha on > evals:run --queue to make PR-vs-main comparisons deterministic."
+  },
+  {
+    "slug": "persistence",
+    "title": "Persistence",
+    "section": "Enabling persistence",
+    "sectionId": "enabling-persistence",
+    "body": "Pass --persist to evals:run: Each run writes to four tables (created by the published migrations): - eval_datasets — one row per dataset name. - eval_dataset_versions — one row per unique content checksum. - eval_runs — one row per suite execution. - eval_results — one row per case within a run."
+  },
+  {
+    "slug": "persistence",
+    "title": "Persistence",
+    "section": "The EvalRun Eloquent model",
+    "sectionId": "the-evalrun-eloquent-model",
+    "body": "Mosaiqo\\Proofread\\Models\\EvalRun exposes the persisted run:"
+  },
+  {
+    "slug": "persistence",
+    "title": "Persistence",
+    "section": "Dataset versioning",
+    "sectionId": "dataset-versioning",
+    "body": "Dataset versions are content-addressed: Proofread hashes each dataset's cases and stores one eval_dataset_versions row per unique checksum. Renaming a case or tweaking an input produces a new version automatically. Inspect what changed between versions:"
+  },
+  {
+    "slug": "persistence",
+    "title": "Persistence",
+    "section": "Comparing runs",
+    "sectionId": "comparing-runs",
+    "body": "Both arguments accept: - A numeric run id: 42 - A commit SHA: abc1234 - The literal latest Typical CI use: compare the PR's run against the main branch's most recent run. > **[info]** latest resolves to the most recent run for both > evals:compare and evals:dataset:diff. Combine with --commit-sha on > evals:run --queue to make PR-vs-main comparisons deterministic."
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "body": "Single-page copy-paste reference. 80% of what you will reach for, day-to-day. | Command | Notable flags | | ------------------------------------------- | ------------------------------------------------------------------------ | | evals:run {suites*} | --persist, --junit, --fail-fast, --filter, --queue, --concurrency, --fake-judge, --gate-pass-rate, --gate-cost-max, --commit-sha | | evals:compare {base} {head} | latest keyword supported. | | evals:dataset:diff {name} | Diff consecutive dataset versions. | | evals:providers {suite} | Run a MultiSubjectEvalSuite. | | evals:benchmark | Performance benchmarking. | | evals:cluster | Failure clustering. | | evals:coverage | Coverage report. | | evals:export | Export a run. | | evals:cost-simulate | Dry-run cost projection. | | dataset:generate | LLM-assisted dataset generation. | | dataset:import | Import from JSON / CSV / Promptfoo. | | dataset:export | Export to JSON / CSV. | | shadow:evaluate | Evaluate captured shadow traffic. | | shadow:alert | Alert on shadow pass-rate drops. | | proofread:lint {agents*} | Static checks on Agent classes. | | proofread:make-suite | Scaffold an EvalSuite. --multi for MultiSubjectEvalSuite. | | proofread:make-dataset | Scaffold a Dataset provider. | | proofread:make-assertion | Scaffold a custom Assertion. | Register a resolver and attach the middleware: Attach the capture middleware to the route that invokes the agent, then evaluate asynchronously: For subscription-based providers that only ship a CLI, not an API:"
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "Install",
+    "sectionId": "install",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "A complete eval suite",
+    "sectionId": "a-complete-eval-suite",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "All assertions",
+    "sectionId": "all-assertions",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "All Pest expectations",
+    "sectionId": "all-pest-expectations",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "All Artisan commands",
+    "sectionId": "all-artisan-commands",
+    "body": "| Command | Notable flags | | ------------------------------------------- | ------------------------------------------------------------------------ | | evals:run {suites*} | --persist, --junit, --fail-fast, --filter, --queue, --concurrency, --fake-judge, --gate-pass-rate, --gate-cost-max, --commit-sha | | evals:compare {base} {head} | latest keyword supported. | | evals:dataset:diff {name} | Diff consecutive dataset versions. | | evals:providers {suite} | Run a MultiSubjectEvalSuite. | | evals:benchmark | Performance benchmarking. | | evals:cluster | Failure clustering. | | evals:coverage | Coverage report. | | evals:export | Export a run. | | evals:cost-simulate | Dry-run cost projection. | | dataset:generate | LLM-assisted dataset generation. | | dataset:import | Import from JSON / CSV / Promptfoo. | | dataset:export | Export to JSON / CSV. | | shadow:evaluate | Evaluate captured shadow traffic. | | shadow:alert | Alert on shadow pass-rate drops. | | proofread:lint {agents*} | Static checks on Agent classes. | | proofread:make-suite | Scaffold an EvalSuite. --multi for MultiSubjectEvalSuite. | | proofread:make-dataset | Scaffold a Dataset provider. | | proofread:make-assertion | Scaffold a custom Assertion. |"
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "CI workflow",
+    "sectionId": "ci-workflow",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "Shadow capture",
+    "sectionId": "shadow-capture",
+    "body": "Register a resolver and attach the middleware: Attach the capture middleware to the route that invokes the agent, then evaluate asynchronously:"
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "Multi-provider comparison",
+    "sectionId": "multi-provider-comparison",
+    "body": ""
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "CLI subject (Claude Code)",
+    "sectionId": "cli-subject-claude-code",
+    "body": "For subscription-based providers that only ship a CLI, not an API:"
+  },
+  {
+    "slug": "cheatsheet",
+    "title": "Cheatsheet",
+    "section": "Fake the judge in tests",
+    "sectionId": "fake-the-judge-in-tests",
+    "body": ""
   }
 ]
