@@ -7,12 +7,6 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mosaiqo.github.io/proofread/primitives</loc>
-    <lastmod>2026-04-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
     <loc>https://mosaiqo.github.io/proofread/docs/getting-started</loc>
     <lastmod>2026-04-18</lastmod>
     <changefreq>weekly</changefreq>

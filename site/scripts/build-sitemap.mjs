@@ -89,13 +89,6 @@ async function build() {
     priority: '1.0',
   })
 
-  urls.push({
-    loc: `${SITE_URL}/primitives`,
-    lastmod: today,
-    changefreq: 'monthly',
-    priority: '0.4',
-  })
-
   const files = await walk(contentRoot)
   files.sort()
   for (const file of files) {

@@ -12,8 +12,8 @@ theming works without JavaScript: toggling the `dark` class on
 `<html>` is all that's needed.
 
 `src/design/tokens.ts` re-exports the same primitives as typed
-arrays so Vue components (notably the `/primitives` page) can
-introspect the catalog without re-declaring values.
+arrays so Vue components can introspect the catalog without
+re-declaring values.
 
 ## Primitive categories
 
@@ -40,8 +40,3 @@ introspect the catalog without re-declaring values.
 (`bg-brand-500`, `text-muted-foreground`, `shadow-lg`, etc.)
 resolves to the same custom property used by shadcn-vue components.
 
-## Live preview
-
-Visit `/primitives` in the running site to see every primitive
-rendered with its variable name and value. That route doubles as
-the authoritative visual reference.

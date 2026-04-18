@@ -3,8 +3,7 @@
  *
  * The CSS custom properties remain the source of truth at runtime
  * (so theming works without JS). This module provides a compile-time
- * mirror that components can import for things like token catalogs
- * and the /primitives showcase.
+ * mirror that components can import for things like token catalogs.
  */
 
 export interface TokenEntry {

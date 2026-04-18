@@ -8,12 +8,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Proofread — Laravel-native AI evals', layout: 'default' },
   },
   {
-    path: '/primitives',
-    name: 'primitives',
-    component: () => import('@/views/Primitives.vue'),
-    meta: { title: 'Primitives — Proofread', layout: 'default' },
-  },
-  {
     path: '/docs',
     name: 'docs-index',
     component: () => import('@/pages/DocsRedirect.vue'),

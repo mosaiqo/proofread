@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, Github, Palette } from 'lucide-vue-next'
+import { BookOpen, Github } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import ColorSchemeToggle from '@/components/layout/ColorSchemeToggle.vue'
 </script>
@@ -32,15 +32,6 @@ import ColorSchemeToggle from '@/components/layout/ColorSchemeToggle.vue'
         >
           <BookOpen class="h-4 w-4" aria-hidden="true" />
           <span>Docs</span>
-        </RouterLink>
-
-        <RouterLink
-          to="/primitives"
-          class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
-          active-class="bg-muted text-foreground"
-        >
-          <Palette class="h-4 w-4" aria-hidden="true" />
-          <span>Primitives</span>
         </RouterLink>
 
         <a
