@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { BookOpen, Github, Moon, Sun, Palette } from 'lucide-vue-next'
+import { BookOpen, Github, Palette } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
-import { Button } from '@/components/ui/button'
-import { useTheme } from '@/composables/useTheme'
-
-const { theme, toggle } = useTheme()
+import ColorSchemeToggle from '@/components/layout/ColorSchemeToggle.vue'
 </script>
 
 <template>
+  <a
+    href="#main-content"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-modal focus:rounded-md focus:bg-brand-500 focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-brand-foreground"
+  >
+    Skip to main content
+  </a>
+
   <header
     class="sticky top-0 z-sticky border-b border-border bg-surface-page/85 backdrop-blur"
   >
@@ -20,13 +24,13 @@ const { theme, toggle } = useTheme()
         <span class="text-base">Proofread</span>
       </RouterLink>
 
-      <nav class="flex items-center gap-1 text-sm">
+      <nav class="flex items-center gap-1 text-sm" aria-label="Primary">
         <RouterLink
           to="/docs"
           class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
           active-class="bg-muted text-foreground"
         >
-          <BookOpen class="h-4 w-4" />
+          <BookOpen class="h-4 w-4" aria-hidden="true" />
           <span>Docs</span>
         </RouterLink>
 
@@ -35,7 +39,7 @@ const { theme, toggle } = useTheme()
           class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
           active-class="bg-muted text-foreground"
         >
-          <Palette class="h-4 w-4" />
+          <Palette class="h-4 w-4" aria-hidden="true" />
           <span>Primitives</span>
         </RouterLink>
 
@@ -44,15 +48,13 @@ const { theme, toggle } = useTheme()
           target="_blank"
           rel="noopener"
           class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
+          aria-label="Proofread on GitHub (opens in a new tab)"
         >
-          <Github class="h-4 w-4" />
+          <Github class="h-4 w-4" aria-hidden="true" />
           <span class="hidden sm:inline">GitHub</span>
         </a>
 
-        <Button variant="ghost" size="icon" aria-label="Toggle theme" @click="toggle">
-          <Sun v-if="theme === 'dark'" class="h-4 w-4" />
-          <Moon v-else class="h-4 w-4" />
-        </Button>
+        <ColorSchemeToggle />
       </nav>
     </div>
   </header>

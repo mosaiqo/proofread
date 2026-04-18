@@ -27,7 +27,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/',
+    name: 'not-found',
+    component: () => import('@/pages/NotFoundPage.vue'),
+    meta: { title: 'Page not found — Proofread', layout: 'default' },
   },
 ]
 
@@ -41,7 +43,3 @@ export const router = createRouter({
   },
 })
 
-router.afterEach((to) => {
-  const title = (to.meta.title as string | undefined) ?? 'Proofread'
-  document.title = title
-})

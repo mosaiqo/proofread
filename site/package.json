@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/build-search-index.mjs",
+    "prebuild": "node scripts/build-search-index.mjs && node scripts/build-sitemap.mjs",
     "build": "vue-tsc --noEmit && vite build && node scripts/spa-fallback.mjs",
     "preview": "vite preview"
   },
@@ -13,6 +13,7 @@
     "@fontsource/instrument-sans": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.2",
     "@tailwindcss/typography": "^0.5.19",
+    "@unhead/vue": "^3.0.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "flexsearch": "^0.8.212",

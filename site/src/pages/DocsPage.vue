@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import DocsLayout from '@/layouts/DocsLayout.vue'
 import Pagination from '@/components/docs/Pagination.vue'
 import { renderMarkdown } from '@/lib/markdown'
 import { buildNavSections, loadDoc } from '@/lib/docs-content'
+import { extractDescription, OG_IMAGE, SITE_DESCRIPTION, SITE_URL } from '@/lib/seo'
 import type { NavItem, TocEntry } from '@/types/docs'
 
 const route = useRoute()
@@ -13,9 +15,32 @@ const router = useRouter()
 const html = ref<string>('')
 const toc = ref<TocEntry[]>([])
 const title = ref<string>('')
+const description = ref<string>(SITE_DESCRIPTION)
 const prev = ref<NavItem | null>(null)
 const next = ref<NavItem | null>(null)
 const notFound = ref(false)
+
+const pageTitle = computed(() =>
+  title.value ? `${title.value} — Proofread` : 'Documentation — Proofread',
+)
+const canonical = computed(() => `${SITE_URL}/docs/${slug.value}`)
+
+useHead({
+  title: pageTitle,
+  link: [{ rel: 'canonical', href: canonical }],
+  meta: [
+    { name: 'description', content: description },
+    { property: 'og:title', content: pageTitle },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'article' },
+    { property: 'og:url', content: canonical },
+    { property: 'og:image', content: OG_IMAGE },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: pageTitle },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: OG_IMAGE },
+  ],
+})
 
 const slug = computed(() => {
   const raw = route.params.slug
@@ -40,6 +65,7 @@ async function load(): Promise<void> {
   if (!source) {
     notFound.value = true
     title.value = 'Page not found'
+    description.value = SITE_DESCRIPTION
     return
   }
 
@@ -47,7 +73,7 @@ async function load(): Promise<void> {
   html.value = rendered.html
   toc.value = rendered.toc
   title.value = rendered.title || current
-  document.title = `${title.value} — Proofread`
+  description.value = extractDescription(source) || SITE_DESCRIPTION
 
   const sections = await buildNavSections()
   const items: NavItem[] = sections.flatMap((s) => s.items)

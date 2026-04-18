@@ -5,10 +5,40 @@
     <link rel="icon" type="image/svg+xml" href="/proofread/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="The only eval package native to the official Laravel AI stack. Evaluate agents, prompts, and MCP tools from Pest, CI, and production." />
+    <link rel="canonical" href="https://mosaiqo.github.io/proofread/" />
+
+    <meta property="og:site_name" content="Proofread" />
     <meta property="og:title" content="Proofread — Laravel-native AI evals" />
     <meta property="og:description" content="Evaluate agents, prompts, and MCP tools from Pest, CI, and production." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mosaiqo.github.io/proofread/" />
+    <meta property="og:image" content="https://mosaiqo.github.io/proofread/og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Proofread — Laravel-native AI evals" />
+    <meta name="twitter:description" content="Evaluate agents, prompts, and MCP tools from Pest, CI, and production." />
+    <meta name="twitter:image" content="https://mosaiqo.github.io/proofread/og-image.png" />
+
     <title>Proofread — Laravel-native AI evals</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('proofread:color-scheme');
+          if (stored !== 'light' && stored !== 'dark' && stored !== 'system') {
+            var legacy = localStorage.getItem('proofread-theme');
+            if (legacy === 'light' || legacy === 'dark') stored = legacy;
+          }
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored === 'dark' || ((stored === 'system' || !stored) && prefersDark);
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="antialiased">
     <div id="app"></div>

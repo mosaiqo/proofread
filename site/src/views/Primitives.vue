@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
+import { SITE_DESCRIPTION, SITE_URL } from '@/lib/seo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +27,23 @@ import {
 function copy(token: TokenEntry): void {
   navigator.clipboard.writeText(`var(${token.var})`).catch(() => {})
 }
+
+const title = 'Primitives — Proofread'
+const description =
+  'The design primitives, tokens, and components that power the Proofread docs site. ' +
+  SITE_DESCRIPTION
+
+useHead({
+  title,
+  link: [{ rel: 'canonical', href: `${SITE_URL}/primitives` }],
+  meta: [
+    { name: 'description', content: description },
+    { property: 'og:title', content: title },
+    { property: 'og:description', content: description },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${SITE_URL}/primitives` },
+  ],
+})
 </script>
 
 <template>

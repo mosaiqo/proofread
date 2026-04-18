@@ -1,46 +1,22 @@
-import { onMounted, ref, watchEffect } from 'vue'
+import { computed } from 'vue'
+import { useColorScheme } from '@/composables/useColorScheme'
 
-type Theme = 'light' | 'dark'
-
-const STORAGE_KEY = 'proofread-theme'
-
-const theme = ref<Theme>('light')
-
-function applyTheme(next: Theme): void {
-  const root = document.documentElement
-  root.classList.toggle('dark', next === 'dark')
-  root.style.colorScheme = next
-}
-
+/**
+ * Legacy compatibility shim for components that only care about the
+ * resolved light/dark value. Prefer `useColorScheme` for new code.
+ */
 export function useTheme() {
-  onMounted(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
-    if (stored === 'light' || stored === 'dark') {
-      theme.value = stored
-    } else {
-      theme.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-    }
-  })
+  const { effective, mode, setMode, cycle } = useColorScheme()
 
-  watchEffect(() => {
-    if (typeof document === 'undefined') return
-    applyTheme(theme.value)
-    try {
-      localStorage.setItem(STORAGE_KEY, theme.value)
-    } catch {
-      // Ignore quota / privacy-mode errors; the class is already applied.
-    }
-  })
+  const theme = computed(() => effective.value)
 
   function toggle(): void {
-    theme.value = theme.value === 'dark' ? 'light' : 'dark'
+    setMode(effective.value === 'dark' ? 'light' : 'dark')
   }
 
-  function setTheme(next: Theme): void {
-    theme.value = next
+  function setTheme(next: 'light' | 'dark'): void {
+    setMode(next)
   }
 
-  return { theme, toggle, setTheme }
+  return { theme, toggle, setTheme, mode, cycle }
 }
