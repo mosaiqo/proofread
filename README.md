@@ -2,9 +2,9 @@
 
 > The only eval package native to the official Laravel AI stack.
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/mosaiqo/proofread.svg?style=flat-square)](https://packagist.org/packages/mosaiqo/proofread)
+[![Latest Release](https://img.shields.io/github/v/release/mosaiqo/proofread?style=flat-square&label=release)](https://github.com/mosaiqo/proofread/releases)
 [![Tests](https://img.shields.io/github/actions/workflow/status/mosaiqo/proofread/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mosaiqo/proofread/actions/workflows/tests.yml)
-[![License](https://img.shields.io/packagist/l/mosaiqo/proofread.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/mosaiqo/proofread?style=flat-square&color=blue)](LICENSE)
 [![PHP](https://img.shields.io/badge/php-8.4-blue.svg?style=flat-square)](https://www.php.net)
 [![Laravel](https://img.shields.io/badge/laravel-13.x-red.svg?style=flat-square)](https://laravel.com)
 
