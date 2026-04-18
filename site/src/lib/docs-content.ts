@@ -1,4 +1,4 @@
-import matter from 'gray-matter'
+import { parseFrontmatter as parseFm } from '@/lib/frontmatter'
 import type { NavItem, NavSection } from '@/types/docs'
 
 const modules = import.meta.glob('@/content/docs/**/*.md', {
@@ -33,18 +33,15 @@ function titleFromSource(source: string, fallback: string): string {
   return match ? match[1].trim() : fallback
 }
 
-interface Frontmatter {
+interface Frontmatter extends Record<string, unknown> {
   title?: string
   section?: string
   order?: number
 }
 
 function parseFrontmatter(source: string): { data: Frontmatter; content: string } {
-  const parsed = matter(source)
-  return {
-    data: parsed.data as Frontmatter,
-    content: parsed.content,
-  }
+  const parsed = parseFm<Frontmatter>(source)
+  return { data: parsed.data, content: parsed.content }
 }
 
 export interface DocEntry {

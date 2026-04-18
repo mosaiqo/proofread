@@ -1,6 +1,6 @@
 import MarkdownIt from 'markdown-it'
 import anchor from 'markdown-it-anchor'
-import matter from 'gray-matter'
+import { parseFrontmatter } from '@/lib/frontmatter'
 import { getHighlighter, type SupportedLang } from '@/lib/shiki'
 import type { TocEntry } from '@/types/docs'
 
@@ -200,10 +200,6 @@ async function getRenderer(): Promise<MarkdownIt> {
   return md
 }
 
-function stripFrontmatter(source: string): string {
-  const parsed = matter(source)
-  return parsed.content
-}
 
 function extractToc(source: string): TocEntry[] {
   const toc: TocEntry[] = []
@@ -232,14 +228,13 @@ function extractTitle(source: string): string {
 
 export async function renderMarkdown(source: string): Promise<RenderedMarkdown> {
   const md = await getRenderer()
-  const body = stripFrontmatter(source)
+  const parsed = parseFrontmatter<{ title?: string }>(source)
+  const body = parsed.content
   const html = md.render(body)
-  const parsed = matter(source)
-  const fmTitle = (parsed.data as { title?: string }).title
   return {
     html,
     toc: extractToc(body),
-    title: fmTitle ?? extractTitle(body),
+    title: parsed.data.title ?? extractTitle(body),
   }
 }
 
