@@ -61,30 +61,37 @@ async function load(): Promise<void> {
     return
   }
 
-  const source = await loadDoc(current)
-  if (!source) {
+  try {
+    const source = await loadDoc(current)
+    if (!source) {
+      console.warn(`[proofread/docs] No doc matches slug "${current}".`)
+      notFound.value = true
+      title.value = 'Page not found'
+      description.value = SITE_DESCRIPTION
+      return
+    }
+
+    const rendered = await renderMarkdown(source)
+    html.value = rendered.html
+    toc.value = rendered.toc
+    title.value = rendered.title || current
+    description.value = extractDescription(source) || SITE_DESCRIPTION
+
+    const sections = await buildNavSections()
+    const items: NavItem[] = sections.flatMap((s) => s.items)
+    const index = items.findIndex((i) => i.slug === current)
+    if (index > 0) prev.value = items[index - 1]
+    if (index >= 0 && index < items.length - 1) next.value = items[index + 1]
+
+    await nextTick()
+    if (route.hash) {
+      const el = document.querySelector(route.hash)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  } catch (err) {
+    console.error(`[proofread/docs] Failed to load doc "${current}":`, err)
     notFound.value = true
     title.value = 'Page not found'
-    description.value = SITE_DESCRIPTION
-    return
-  }
-
-  const rendered = await renderMarkdown(source)
-  html.value = rendered.html
-  toc.value = rendered.toc
-  title.value = rendered.title || current
-  description.value = extractDescription(source) || SITE_DESCRIPTION
-
-  const sections = await buildNavSections()
-  const items: NavItem[] = sections.flatMap((s) => s.items)
-  const index = items.findIndex((i) => i.slug === current)
-  if (index > 0) prev.value = items[index - 1]
-  if (index >= 0 && index < items.length - 1) next.value = items[index + 1]
-
-  await nextTick()
-  if (route.hash) {
-    const el = document.querySelector(route.hash)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
 

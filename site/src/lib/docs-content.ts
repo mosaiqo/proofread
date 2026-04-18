@@ -81,20 +81,41 @@ export async function buildNavSections(): Promise<NavSection[]> {
 
   navPromise = (async () => {
     const docs = listDocs()
+
+    if (docs.length === 0) {
+      console.warn(
+        '[proofread/docs] import.meta.glob returned no markdown files. ' +
+        'Module keys:',
+        Object.keys(modules),
+      )
+    }
+
     const sources = await Promise.all(
       docs.map(async (doc) => {
-        const source = await doc.load()
-        const { data, content } = parseFrontmatter(source)
-        const slugFallback = doc.slug
-          .split('/')
-          .pop()!
-          .replace(/-/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase())
-        const title = data.title ?? titleFromSource(content, slugFallback)
+        let title: string
+        let section = ''
+        try {
+          const source = await doc.load()
+          const { data, content } = parseFrontmatter(source)
+          section = data.section ?? ''
+          const slugFallback = doc.slug
+            .split('/')
+            .pop()!
+            .replace(/-/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+          title = data.title ?? titleFromSource(content, slugFallback)
+        } catch (err) {
+          console.error(`[proofread/docs] Failed to load ${doc.path}:`, err)
+          title = doc.slug
+            .split('/')
+            .pop()!
+            .replace(/-/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        }
         return {
           slug: doc.slug,
           title,
-          section: data.section ?? '',
+          section,
         }
       }),
     )
