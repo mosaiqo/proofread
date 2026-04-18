@@ -734,6 +734,367 @@
     "body": "- Assertions deep dive — picking the right assertions for a matrix. - Shadow evals — the other production signal feeding into model-migration decisions. - Eval suites — the single-subject base your MultiSubjectEvalSuite extends."
   },
   {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "body": "Prompts are production code with no compiler behind them. A contradiction that slips into a system instruction will not blow up in CI — it will quietly degrade the agent's behaviour until somebody notices an assertion flaking or a shadow eval alert firing. The linter is the cheap, fast, offline pass that lives one rung below assertions in the evaluation stack: static analysis for your instructions, with an optional LLM-backed semantic check for the subjective bits a regex will never catch. Code linters gained adoption because \"obviously wrong\" patterns are worth reporting automatically, even when they don't strictly break a build. The same holds for prompts: - **Ambiguity.** Hedging language (maybe, when appropriate) leaves the model to improvise and produces inconsistent outputs. - **Contradictions.** \"Always escalate tier-2 issues\" two paragraphs above \"Never escalate without explicit user consent\" is a bug the model will silently split the difference on. - **Missing role.** The first paragraph should anchor who the agent is. Without it the model picks its own persona per invocation. - **Missing output format.** Agents that declare a structured-output schema but never mention JSON in the prompt end up producing free text that fails parsing. The deterministic rules run in milliseconds. The optional SemanticQualityRule hits the judge agent for a subjective quality critique — slower, not free, opt-in. Single agent: Multiple agents in one invocation: Flags: | Flag | Values | Default | Purpose | | ---------------- | ---------------------------- | ------- | ---------------------------------------------------- | | --format | table, json, markdown | table | Output shape. Markdown is designed for PR comments. | | --severity | all, info, warning, error | all | Minimum severity to report. | | --with-judge | flag | off | Also apply SemanticQualityRule (LLM-based). | Exit codes: - 0 — no issues at error severity. - 1 — at least one agent had errors. Use this in CI gates. - 2 — invalid argument (class not found, not an Agent, bad flag value). Five rules ship with the package and are applied in order. Each produces zero or more LintIssue instances, which carry a severity (error, warning, info), a message, an optional suggestion, and an optional line number. Warns when instructions are shorter than 50 characters or longer than 10 000. Very short instructions rarely give the model enough context; very long ones often signal a god-agent that should be split into sub-agents. Both bounds produce a warning. Neither is an error — the rule exists to surface outliers, not to dictate style. Looks at the first paragraph of the instructions for one of four role markers: you are, act as, your role, as a/as an. If none is present, emits a warning suggesting the agent open with a role line. The rule is deliberately lenient: anything that reads like a role definition passes. False positives are possible when the first paragraph happens to contain one of the markers in a non-role sense; in practice this is rare, and the suggestion (\"start with 'You are a…'\") is a useful nudge even then. Scans every line for eight hedging phrases: Each match is reported as an info issue with the matching line number, so the CI output points directly at the offending line. Multiple hedges on the same line produce one issue each. Downgrading from warning to info is intentional: hedging is not always wrong (some agents genuinely operate in \"try X, fall back to Y\" territory), but every instance is worth eyeballing. Extracts phrases following always and never and flags potential contradictions between them. The heuristic compares content-word sets of the shorter phrase against the longer one: Ratio above 0.5 triggers an error. Shorter-phrase containment is used rather than symmetric Jaccard overlap because scoped exceptions (\"never X when Y\") still contradict the unconditional rule (\"always X\"). With Jaccard, the when Y dilutes the overlap and the contradiction slips through. Limitations: stop-word stripping is English-only, and phrases are delimited by ., ,, ;, :, newline. Multilingual instructions or contradictions expressed across multiple sentences can be missed. Only fires for agents implementing Laravel\\Ai\\Contracts\\HasStructuredOutput. It checks the lowercased instructions for any of five format tokens: json, schema, structured, format, shape. If none is present, emits a warning reminding you to tell the model about the expected shape — otherwise the structured-output enforcement can end up repairing free-text responses that weren't written with schema in mind. Running the linter against an agent with a role issue, a hedge, and a contradiction: --with-judge appends SemanticQualityRule to the default rule set. The rule sends the instructions to the configured judge agent with a structured-output prompt: The judge's response is parsed into issues: - Each entry in issues[] becomes a warning. - A score below 0.7 produces an error including the judge's reason. The rule retries once on malformed JSON before giving up. Any other failure (judge unreachable, provider 5xx, time-out) is caught and reported as a single \"Semantic analysis unavailable\" warning — the linter never crashes because the judge misbehaved. Cost caveat: every --with-judge run hits the judge agent once per linted agent class. For tight CI loops, keep this behind a --with-judge stage that only runs on prompt changes, not every commit. The markdown format is designed for PR comments or GitHub workflow step summaries: Pair with a job that fails on exit code 1: Severity warning suppresses info (mostly hedging noise) so the PR comment focuses on real findings without losing errors. A rule is any class implementing Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule: LintIssue has three named constructors — error, warning, info — each accepting ruleName, message, optional suggestion and optional lineNumber. Register the rule by extending the PromptLinter singleton in a service provider: > **[info]** The proofread:lint command resolves PromptLinter out > of the container with the five built-in rules. Extending the > singleton propagates custom rules to every consumer — the CLI, any > tests calling PromptLinter::lintClass(), and anything else that > injects the service. - Assertions deep dive — when lint output points at a structural issue, the fix is often a new assertion guarding the behaviour the prompt was supposed to enforce. - Multi-provider comparison — linting catches static issues; comparison tells you whether the prompt survives model migration."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Why lint prompts",
+    "sectionId": "why-lint-prompts",
+    "body": "Code linters gained adoption because \"obviously wrong\" patterns are worth reporting automatically, even when they don't strictly break a build. The same holds for prompts: - **Ambiguity.** Hedging language (maybe, when appropriate) leaves the model to improvise and produces inconsistent outputs. - **Contradictions.** \"Always escalate tier-2 issues\" two paragraphs above \"Never escalate without explicit user consent\" is a bug the model will silently split the difference on. - **Missing role.** The first paragraph should anchor who the agent is. Without it the model picks its own persona per invocation. - **Missing output format.** Agents that declare a structured-output schema but never mention JSON in the prompt end up producing free text that fails parsing. The deterministic rules run in milliseconds. The optional SemanticQualityRule hits the judge agent for a subjective quality critique — slower, not free, opt-in."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Running the linter",
+    "sectionId": "running-the-linter",
+    "body": "Single agent: Multiple agents in one invocation: Flags: | Flag | Values | Default | Purpose | | ---------------- | ---------------------------- | ------- | ---------------------------------------------------- | | --format | table, json, markdown | table | Output shape. Markdown is designed for PR comments. | | --severity | all, info, warning, error | all | Minimum severity to report. | | --with-judge | flag | off | Also apply SemanticQualityRule (LLM-based). | Exit codes: - 0 — no issues at error severity. - 1 — at least one agent had errors. Use this in CI gates. - 2 — invalid argument (class not found, not an Agent, bad flag value)."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Built-in deterministic rules",
+    "sectionId": "built-in-deterministic-rules",
+    "body": "Five rules ship with the package and are applied in order. Each produces zero or more LintIssue instances, which carry a severity (error, warning, info), a message, an optional suggestion, and an optional line number."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "LengthRule",
+    "sectionId": "lengthrule",
+    "body": "Warns when instructions are shorter than 50 characters or longer than 10 000. Very short instructions rarely give the model enough context; very long ones often signal a god-agent that should be split into sub-agents. Both bounds produce a warning. Neither is an error — the rule exists to surface outliers, not to dictate style."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "MissingRoleRule",
+    "sectionId": "missingrolerule",
+    "body": "Looks at the first paragraph of the instructions for one of four role markers: you are, act as, your role, as a/as an. If none is present, emits a warning suggesting the agent open with a role line. The rule is deliberately lenient: anything that reads like a role definition passes. False positives are possible when the first paragraph happens to contain one of the markers in a non-role sense; in practice this is rare, and the suggestion (\"start with 'You are a…'\") is a useful nudge even then."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "AmbiguityRule",
+    "sectionId": "ambiguityrule",
+    "body": "Scans every line for eight hedging phrases: Each match is reported as an info issue with the matching line number, so the CI output points directly at the offending line. Multiple hedges on the same line produce one issue each. Downgrading from warning to info is intentional: hedging is not always wrong (some agents genuinely operate in \"try X, fall back to Y\" territory), but every instance is worth eyeballing."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "ContradictionRule",
+    "sectionId": "contradictionrule",
+    "body": "Extracts phrases following always and never and flags potential contradictions between them. The heuristic compares content-word sets of the shorter phrase against the longer one: Ratio above 0.5 triggers an error. Shorter-phrase containment is used rather than symmetric Jaccard overlap because scoped exceptions (\"never X when Y\") still contradict the unconditional rule (\"always X\"). With Jaccard, the when Y dilutes the overlap and the contradiction slips through. Limitations: stop-word stripping is English-only, and phrases are delimited by ., ,, ;, :, newline. Multilingual instructions or contradictions expressed across multiple sentences can be missed."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "MissingOutputFormatRule",
+    "sectionId": "missingoutputformatrule",
+    "body": "Only fires for agents implementing Laravel\\Ai\\Contracts\\HasStructuredOutput. It checks the lowercased instructions for any of five format tokens: json, schema, structured, format, shape. If none is present, emits a warning reminding you to tell the model about the expected shape — otherwise the structured-output enforcement can end up repairing free-text responses that weren't written with schema in mind."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Sample output",
+    "sectionId": "sample-output",
+    "body": "Running the linter against an agent with a role issue, a hedge, and a contradiction:"
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Semantic quality rule (optional)",
+    "sectionId": "semantic-quality-rule-optional",
+    "body": "--with-judge appends SemanticQualityRule to the default rule set. The rule sends the instructions to the configured judge agent with a structured-output prompt: The judge's response is parsed into issues: - Each entry in issues[] becomes a warning. - A score below 0.7 produces an error including the judge's reason. The rule retries once on malformed JSON before giving up. Any other failure (judge unreachable, provider 5xx, time-out) is caught and reported as a single \"Semantic analysis unavailable\" warning — the linter never crashes because the judge misbehaved. Cost caveat: every --with-judge run hits the judge agent once per linted agent class. For tight CI loops, keep this behind a --with-judge stage that only runs on prompt changes, not every commit."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "CI integration",
+    "sectionId": "ci-integration",
+    "body": "The markdown format is designed for PR comments or GitHub workflow step summaries: Pair with a job that fails on exit code 1: Severity warning suppresses info (mostly hedging noise) so the PR comment focuses on real findings without losing errors."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Writing custom lint rules",
+    "sectionId": "writing-custom-lint-rules",
+    "body": "A rule is any class implementing Mosaiqo\\Proofread\\Lint\\Contracts\\LintRule: LintIssue has three named constructors — error, warning, info — each accepting ruleName, message, optional suggestion and optional lineNumber. Register the rule by extending the PromptLinter singleton in a service provider: > **[info]** The proofread:lint command resolves PromptLinter out > of the container with the five built-in rules. Extending the > singleton propagates custom rules to every consumer — the CLI, any > tests calling PromptLinter::lintClass(), and anything else that > injects the service."
+  },
+  {
+    "slug": "guides/prompt-linting",
+    "title": "Prompt linting",
+    "section": "Related",
+    "sectionId": "related",
+    "body": "- Assertions deep dive — when lint output points at a structural issue, the fix is often a new assertion guarding the behaviour the prompt was supposed to enforce. - Multi-provider comparison — linting catches static issues; comparison tells you whether the prompt survives model migration."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "body": "Most subjects in Proofread are Laravel AI agents invoking an HTTP provider API. CLI subjects swap that boundary for a subprocess: the eval runner spawns a headless LLM CLI, feeds it the case input, and parses the tool's output. The wire format changes, but the assertion layer on top does not. The concrete wins show up in three situations: - **Subscription pricing.** Developers running Anthropic Max or ChatGPT Plus are paying for a flat-rate seat. Invoking the same model through the API bills twice. Evaluating against the CLI reuses the subscription. - **Local developer workflow.** If you already drive your agent through a CLI (for example, claude -p during prompt iteration), running evals against the same binary guarantees the eval and your interactive session see the exact same behaviour, without introducing a new set of API keys. - **Offline-capable tools.** Some CLIs wrap local or self-hosted models. Treating them as subjects lets Proofread evaluate them without standing up an HTTP façade. CLI subjects have real costs. Subprocess spawning is ~100× slower than an HTTP call, most CLIs don't expose structured tool-call traces, and CI authentication adds friction that a headless API key does not. Use them where the savings or workflow benefits are concrete; don't default to them. ClaudeCodeCliSubject ships as the reference CLI subject, built on top of the shared CliSubject base class. It targets the claude binary in --output-format json mode so the runner can pull real token usage and cost data out of the response rather than estimate. The builder API is immutable — every withX returns a new instance — so subjects can be freely composed and shared. | Method | Purpose | | ------------------------ | -------------------------------------------------------------------- | | withBinary($path) | Absolute path or PATH-resolvable name. Default claude. | | withModel($model) | Passed as --model. Omit to let the CLI pick its own. | | withTimeout($seconds) | Process timeout. Default 120. | | skipPermissions($bool) | Adds --dangerously-skip-permissions. Off by default. | | withArgs($extraArgs) | List of extra arguments appended after the built-in ones. | | withEnv($vars) | Extra environment variables for the subprocess (merged, not replaced in host env). | When the runner invokes the subject, the parsed response populates a standard metadata bag on the resulting CliInvocation: | Key | Source | | ------------------------- | -------------------------------------------- | | tokens_in | usage.input_tokens | | tokens_out | usage.output_tokens | | tokens_total | sum of the two above when both are present | | cache_read_tokens | usage.cache_read_input_tokens | | cache_creation_tokens | usage.cache_creation_input_tokens | | cost_usd | total_cost_usd | | model | model, falling back to first modelUsage key | | session_id | session_id | | num_turns | num_turns | | api_duration_ms | duration_api_ms | Plus three fields added by the base class regardless of the concrete subject: cli_binary, cli_exit_code, cli_stderr (truncated to 500 characters). Every CLI subject extends Mosaiqo\\Proofread\\Cli\\CliSubject and implements three methods: Optional overrides the base class already implements: - workingDirectory(): ?string — cwd for the subprocess. Default null (inherit). - env(): array<string, string> — extra env vars. - usesStdin(): bool — when true the prompt is written to stdin instead of being passed as an argument. Default false. - estimateTokens(string $text): int — heuristic used when the CLI doesn't report usage (word_count / 0.75). parseOutput() decides what is and isn't an error: returning a CliResponse means \"normal output\", throwing from parseOutput() means \"failure\". Non-zero exit codes are not automatically fatal — some CLIs use exit codes for partial-success states — so the implementation makes the call. Each run goes through a fixed pipeline inside CliSubject::__invoke(): 1. args($prompt) builds the argv array. 2. A Symfony\\Component\\Process\\Process is constructed with that argv, the workingDirectory(), env(), and timeout(). If usesStdin() is true the prompt is piped to stdin instead. 3. The process runs. Time is measured with hrtime(true) and returned as durationMs. 4. parseOutput() converts (stdout, stderr) into a CliResponse. 5. The response's metadata is merged with the three cli_* fields and returned as a CliInvocation. SubjectResolver detects a CliSubject instance and wraps it so assertions receive the same context shape they do for agent subjects. Existing assertions — LatencyLimit, TokenBudget, CostLimit — work unchanged whenever the CLI exposes usage data. Two dedicated exceptions, both extending RuntimeException: - CliTimeoutException — the subprocess exceeded timeout(). The original ProcessTimedOutException is preserved as the previous. - CliExecutionException — parseOutput() threw. The parser exception is the previous, and the message includes the observed exit code so you can tell \"parser choked on bad JSON\" from \"CLI returned non-zero\". Both are unchecked — let them propagate to the runner, which records them as case errors. Process is constructed from an argv array, not from a shell string. Nothing is interpolated through /bin/sh, so prompts containing $, backticks, |, &&, newlines, or quotes are passed verbatim to the CLI without escape. > **[success]** Injection-safe by construction. No manual > escapeshellarg() is necessary — and adding it would corrupt > prompts that legitimately contain those characters. - **Throughput.** Spawning a process per case is ~100× slower than an HTTP call. Drop concurrency (--concurrency=1) for CLI-based runs and accept longer wall times. - **CI auth.** The CLI must be pre-installed and authenticated in the runner. For subscription-backed tools that typically means shipping a session token as a secret, which defeats much of the cost advantage. - **Structured subject output.** Most CLIs expose the final text only, not the intermediate tool calls or steps. Assertions that require the richer agent surface — Trajectory, StructuredOutputAssertion — may not work against a CLI subject. - **Judges and embeddings.** Rubric, Hallucination, Similar, and friends still call their respective providers via the API. Using CLI subjects does not eliminate API usage for judged assertions. - **Output-format drift.** The CLI's --output-format schema can change between releases. Pin the CLI version in CI and treat parser regressions as you would an SDK upgrade. - Running evals — the Pest toPassAssertion expectation and EvalRunner::run() accept a CliSubject anywhere a regular subject fits. - Cost simulation — once CLI captures are flowing, the simulator can compare their real cost against an API-based alternative."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "When to reach for a CLI subject",
+    "sectionId": "when-to-reach-for-a-cli-subject",
+    "body": "The concrete wins show up in three situations: - **Subscription pricing.** Developers running Anthropic Max or ChatGPT Plus are paying for a flat-rate seat. Invoking the same model through the API bills twice. Evaluating against the CLI reuses the subscription. - **Local developer workflow.** If you already drive your agent through a CLI (for example, claude -p during prompt iteration), running evals against the same binary guarantees the eval and your interactive session see the exact same behaviour, without introducing a new set of API keys. - **Offline-capable tools.** Some CLIs wrap local or self-hosted models. Treating them as subjects lets Proofread evaluate them without standing up an HTTP façade. CLI subjects have real costs. Subprocess spawning is ~100× slower than an HTTP call, most CLIs don't expose structured tool-call traces, and CI authentication adds friction that a headless API key does not. Use them where the savings or workflow benefits are concrete; don't default to them."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Claude Code reference implementation",
+    "sectionId": "claude-code-reference-implementation",
+    "body": "ClaudeCodeCliSubject ships as the reference CLI subject, built on top of the shared CliSubject base class. It targets the claude binary in --output-format json mode so the runner can pull real token usage and cost data out of the response rather than estimate. The builder API is immutable — every withX returns a new instance — so subjects can be freely composed and shared. | Method | Purpose | | ------------------------ | -------------------------------------------------------------------- | | withBinary($path) | Absolute path or PATH-resolvable name. Default claude. | | withModel($model) | Passed as --model. Omit to let the CLI pick its own. | | withTimeout($seconds) | Process timeout. Default 120. | | skipPermissions($bool) | Adds --dangerously-skip-permissions. Off by default. | | withArgs($extraArgs) | List of extra arguments appended after the built-in ones. | | withEnv($vars) | Extra environment variables for the subprocess (merged, not replaced in host env). | When the runner invokes the subject, the parsed response populates a standard metadata bag on the resulting CliInvocation: | Key | Source | | ------------------------- | -------------------------------------------- | | tokens_in | usage.input_tokens | | tokens_out | usage.output_tokens | | tokens_total | sum of the two above when both are present | | cache_read_tokens | usage.cache_read_input_tokens | | cache_creation_tokens | usage.cache_creation_input_tokens | | cost_usd | total_cost_usd | | model | model, falling back to first modelUsage key | | session_id | session_id | | num_turns | num_turns | | api_duration_ms | duration_api_ms | Plus three fields added by the base class regardless of the concrete subject: cli_binary, cli_exit_code, cli_stderr (truncated to 500 characters)."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Extending for other CLIs",
+    "sectionId": "extending-for-other-clis",
+    "body": "Every CLI subject extends Mosaiqo\\Proofread\\Cli\\CliSubject and implements three methods: Optional overrides the base class already implements: - workingDirectory(): ?string — cwd for the subprocess. Default null (inherit). - env(): array<string, string> — extra env vars. - usesStdin(): bool — when true the prompt is written to stdin instead of being passed as an argument. Default false. - estimateTokens(string $text): int — heuristic used when the CLI doesn't report usage (word_count / 0.75). parseOutput() decides what is and isn't an error: returning a CliResponse means \"normal output\", throwing from parseOutput() means \"failure\". Non-zero exit codes are not automatically fatal — some CLIs use exit codes for partial-success states — so the implementation makes the call."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Invocation flow",
+    "sectionId": "invocation-flow",
+    "body": "Each run goes through a fixed pipeline inside CliSubject::__invoke(): 1. args($prompt) builds the argv array. 2. A Symfony\\Component\\Process\\Process is constructed with that argv, the workingDirectory(), env(), and timeout(). If usesStdin() is true the prompt is piped to stdin instead. 3. The process runs. Time is measured with hrtime(true) and returned as durationMs. 4. parseOutput() converts (stdout, stderr) into a CliResponse. 5. The response's metadata is merged with the three cli_* fields and returned as a CliInvocation. SubjectResolver detects a CliSubject instance and wraps it so assertions receive the same context shape they do for agent subjects. Existing assertions — LatencyLimit, TokenBudget, CostLimit — work unchanged whenever the CLI exposes usage data."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Error handling",
+    "sectionId": "error-handling",
+    "body": "Two dedicated exceptions, both extending RuntimeException: - CliTimeoutException — the subprocess exceeded timeout(). The original ProcessTimedOutException is preserved as the previous. - CliExecutionException — parseOutput() threw. The parser exception is the previous, and the message includes the observed exit code so you can tell \"parser choked on bad JSON\" from \"CLI returned non-zero\". Both are unchecked — let them propagate to the runner, which records them as case errors."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Shell safety",
+    "sectionId": "shell-safety",
+    "body": "Process is constructed from an argv array, not from a shell string. Nothing is interpolated through /bin/sh, so prompts containing $, backticks, |, &&, newlines, or quotes are passed verbatim to the CLI without escape. > **[success]** Injection-safe by construction. No manual > escapeshellarg() is necessary — and adding it would corrupt > prompts that legitimately contain those characters."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Limitations",
+    "sectionId": "limitations",
+    "body": "- **Throughput.** Spawning a process per case is ~100× slower than an HTTP call. Drop concurrency (--concurrency=1) for CLI-based runs and accept longer wall times. - **CI auth.** The CLI must be pre-installed and authenticated in the runner. For subscription-backed tools that typically means shipping a session token as a secret, which defeats much of the cost advantage. - **Structured subject output.** Most CLIs expose the final text only, not the intermediate tool calls or steps. Assertions that require the richer agent surface — Trajectory, StructuredOutputAssertion — may not work against a CLI subject. - **Judges and embeddings.** Rubric, Hallucination, Similar, and friends still call their respective providers via the API. Using CLI subjects does not eliminate API usage for judged assertions. - **Output-format drift.** The CLI's --output-format schema can change between releases. Pin the CLI version in CI and treat parser regressions as you would an SDK upgrade."
+  },
+  {
+    "slug": "guides/cli-subjects",
+    "title": "CLI subjects",
+    "section": "Related",
+    "sectionId": "related",
+    "body": "- Running evals — the Pest toPassAssertion expectation and EvalRunner::run() accept a CliSubject anywhere a regular subject fits. - Cost simulation — once CLI captures are flowing, the simulator can compare their real cost against an API-based alternative."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "body": "A dataset is a set of claims about the shape of your production traffic. Coverage analysis checks those claims against the captures the shadow pipeline has been collecting and tells you two things: how much of real traffic your fixtures actually represent, and which patterns in the uncovered remainder deserve their own dataset cases. The typical lifecycle looks like this: 1. You write twenty dataset cases during feature development. 2. CI goes green. Production ships. 3. Real users hit the agent with variations nobody thought of during design: 2FA recovery, partial refunds, warranty-scope edge cases. 4. The dataset keeps passing. The product keeps regressing. The gap between \"cases I wrote\" and \"traffic I receive\" is the blind spot. Coverage analysis surfaces it by embedding every dataset case input and every recent shadow capture input, then attaching each capture to its nearest case by cosine similarity. If the max similarity meets a configurable threshold the capture is \"covered\"; otherwise it is a data point your dataset does not represent. Uncovered captures are clustered so the output is \"these three topics are missing\" rather than \"seventy-eight unrelated strings\". Positional arguments: - {agent} — FQCN of an agent that has shadow captures on file. - {dataset} — the EvalDataset name to compare against. The latest EvalDatasetVersion is used (the immutable snapshot, not whatever is currently in code). Flags: | Flag | Default | Purpose | | -------------------- | ------- | ------------------------------------------------------------- | | --days | 30 | Window size, in days, counting back from now. | | --threshold | 0.7 | Minimum cosine similarity to call a capture \"covered\". | | --max-captures | 500 | Hard cap on captures analysed. Protects against large bills. | | --embedding-model | config | Override proofread.similarity.default_model. | | --format | table | table or json. | Exit codes: 0 on success (including \"no captures to analyse\"), 2 on invalid arguments. 1. CoverageAnalyzer::analyze() loads the dataset and picks its latest version. If the version has no cases the report is empty. 2. Shadow captures for the agent within the window are fetched, newest first, capped at maxCaptures. Captures with an empty or missing input are counted as skipped. 3. Cases and captures are embedded in a single Similarity::embed() call — fewer round-trips, one batch. 4. For each capture vector, Similarity::cosineFromVectors() is run against every case vector. The highest score wins. 5. Captures with a best score at or above the threshold increment the matched-count and similarity-sum for their nearest case. Captures below the threshold land in the uncovered list with their max similarity and nearest-case index preserved. 6. The uncovered set is handed to FailureClusterer::cluster() using the same threshold and embedding model, producing representative snippets plus member counts. Everything else — the percentages, the recommendation line — is derived from those four aggregates: total, covered, uncovered, skipped. A typical table-format run: How to read each section: - **Covered ratio** is the primary signal. Below 70% usually means the dataset was written without seeing real traffic. Above 90% means either good dataset hygiene or a threshold that is too loose. - **Matched = 0** for a case means no capture in the window lands nearest to it. The case is either aspirational (a scenario users don't actually hit) or too narrowly worded to attract its own traffic. Consider rewording or removing. - **Average similarity** on a matched case below ~0.75 indicates captures are landing on the case only because nothing else was closer. The case is semantically the best-of-bad-fits rather than a tight cluster. - **Uncovered clusters** are the actionable output. Each cluster is a gap — ideally promoted to one or two new dataset cases before the next run. 0.70 is the default for text-embedding-3-small and works for most English-text agents. Move it down toward 0.60 to be more permissive (fewer uncovered captures, more noisy coverage claims), or up toward 0.80 for stricter grouping. Different embedding models produce different similarity distributions. text-embedding-3-large, for example, tends to score semantically related pairs a little higher than -small at the same prompt length. If you swap models, recalibrate the threshold against a handful of known pairs rather than assuming the number ports. Coverage analysis is not cheap. Every capture and every case gets embedded each run, and embedding API calls cost tokens. A 500-capture report against a 30-case dataset is ~530 embedding calls. The command is intended for ad-hoc use after a meaningful volume of traffic has accumulated, or as a weekly batch against a bounded capture count. Pinning --max-captures is the most important cost control; the default 500 is a sensible upper bound for most teams. - **Requires embeddings access.** The Similarity service calls an embeddings provider. Without credentials, the command fails fast. - **Skipped captures.** Counts captures with null or empty inputs after sanitization. A rising skipped count usually means your shadow middleware is stripping too much. - **Snippet length.** Uncovered captures carry only the first 200 characters of input as their snippet. Clusters operate on the snippet, not the full input. - **One dataset version.** The latest version is used. If you need coverage for a pinned version, run the command shortly after that version was promoted. Coverage is one step in a loop that makes datasets track real traffic rather than drift away from it: 1. Shadow capture collects sanitized production invocations. 2. evals:coverage surfaces uncovered clusters. 3. The dashboard's shadow panel lets you promote representative captures into dataset cases. 4. A new dataset version gets snapshotted and the suite re-runs. 5. Next coverage run shows the clusters are now covered, and any new gaps rise to the top. > **[info]** Pair the coverage command with the shadow panel's > promote-to-dataset flow (/evals/shadow in the dashboard) to close > the loop without manual plumbing. - Shadow evals — coverage depends on captures the shadow pipeline persisted. - Multi-provider comparison — once coverage is healthy, run the matrix against multiple models to see which one holds up across the whole traffic shape."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "The coverage problem",
+    "sectionId": "the-coverage-problem",
+    "body": "The typical lifecycle looks like this: 1. You write twenty dataset cases during feature development. 2. CI goes green. Production ships. 3. Real users hit the agent with variations nobody thought of during design: 2FA recovery, partial refunds, warranty-scope edge cases. 4. The dataset keeps passing. The product keeps regressing. The gap between \"cases I wrote\" and \"traffic I receive\" is the blind spot. Coverage analysis surfaces it by embedding every dataset case input and every recent shadow capture input, then attaching each capture to its nearest case by cosine similarity. If the max similarity meets a configurable threshold the capture is \"covered\"; otherwise it is a data point your dataset does not represent. Uncovered captures are clustered so the output is \"these three topics are missing\" rather than \"seventy-eight unrelated strings\"."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Running the command",
+    "sectionId": "running-the-command",
+    "body": "Positional arguments: - {agent} — FQCN of an agent that has shadow captures on file. - {dataset} — the EvalDataset name to compare against. The latest EvalDatasetVersion is used (the immutable snapshot, not whatever is currently in code). Flags: | Flag | Default | Purpose | | -------------------- | ------- | ------------------------------------------------------------- | | --days | 30 | Window size, in days, counting back from now. | | --threshold | 0.7 | Minimum cosine similarity to call a capture \"covered\". | | --max-captures | 500 | Hard cap on captures analysed. Protects against large bills. | | --embedding-model | config | Override proofread.similarity.default_model. | | --format | table | table or json. | Exit codes: 0 on success (including \"no captures to analyse\"), 2 on invalid arguments."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "How it works under the hood",
+    "sectionId": "how-it-works-under-the-hood",
+    "body": "1. CoverageAnalyzer::analyze() loads the dataset and picks its latest version. If the version has no cases the report is empty. 2. Shadow captures for the agent within the window are fetched, newest first, capped at maxCaptures. Captures with an empty or missing input are counted as skipped. 3. Cases and captures are embedded in a single Similarity::embed() call — fewer round-trips, one batch. 4. For each capture vector, Similarity::cosineFromVectors() is run against every case vector. The highest score wins. 5. Captures with a best score at or above the threshold increment the matched-count and similarity-sum for their nearest case. Captures below the threshold land in the uncovered list with their max similarity and nearest-case index preserved. 6. The uncovered set is handed to FailureClusterer::cluster() using the same threshold and embedding model, producing representative snippets plus member counts. Everything else — the percentages, the recommendation line — is derived from those four aggregates: total, covered, uncovered, skipped."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Output interpretation",
+    "sectionId": "output-interpretation",
+    "body": "A typical table-format run: How to read each section: - **Covered ratio** is the primary signal. Below 70% usually means the dataset was written without seeing real traffic. Above 90% means either good dataset hygiene or a threshold that is too loose. - **Matched = 0** for a case means no capture in the window lands nearest to it. The case is either aspirational (a scenario users don't actually hit) or too narrowly worded to attract its own traffic. Consider rewording or removing. - **Average similarity** on a matched case below ~0.75 indicates captures are landing on the case only because nothing else was closer. The case is semantically the best-of-bad-fits rather than a tight cluster. - **Uncovered clusters** are the actionable output. Each cluster is a gap — ideally promoted to one or two new dataset cases before the next run."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Thresholds",
+    "sectionId": "thresholds",
+    "body": "0.70 is the default for text-embedding-3-small and works for most English-text agents. Move it down toward 0.60 to be more permissive (fewer uncovered captures, more noisy coverage claims), or up toward 0.80 for stricter grouping. Different embedding models produce different similarity distributions. text-embedding-3-large, for example, tends to score semantically related pairs a little higher than -small at the same prompt length. If you swap models, recalibrate the threshold against a handful of known pairs rather than assuming the number ports."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Scheduling",
+    "sectionId": "scheduling",
+    "body": "Coverage analysis is not cheap. Every capture and every case gets embedded each run, and embedding API calls cost tokens. A 500-capture report against a 30-case dataset is ~530 embedding calls. The command is intended for ad-hoc use after a meaningful volume of traffic has accumulated, or as a weekly batch against a bounded capture count. Pinning --max-captures is the most important cost control; the default 500 is a sensible upper bound for most teams."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Caveats",
+    "sectionId": "caveats",
+    "body": "- **Requires embeddings access.** The Similarity service calls an embeddings provider. Without credentials, the command fails fast. - **Skipped captures.** Counts captures with null or empty inputs after sanitization. A rising skipped count usually means your shadow middleware is stripping too much. - **Snippet length.** Uncovered captures carry only the first 200 characters of input as their snippet. Clusters operate on the snippet, not the full input. - **One dataset version.** The latest version is used. If you need coverage for a pinned version, run the command shortly after that version was promoted."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "The closed-loop workflow",
+    "sectionId": "the-closed-loop-workflow",
+    "body": "Coverage is one step in a loop that makes datasets track real traffic rather than drift away from it: 1. Shadow capture collects sanitized production invocations. 2. evals:coverage surfaces uncovered clusters. 3. The dashboard's shadow panel lets you promote representative captures into dataset cases. 4. A new dataset version gets snapshotted and the suite re-runs. 5. Next coverage run shows the clusters are now covered, and any new gaps rise to the top. > **[info]** Pair the coverage command with the shadow panel's > promote-to-dataset flow (/evals/shadow in the dashboard) to close > the loop without manual plumbing."
+  },
+  {
+    "slug": "guides/dataset-coverage",
+    "title": "Dataset coverage analysis",
+    "section": "Related",
+    "sectionId": "related",
+    "body": "- Shadow evals — coverage depends on captures the shadow pipeline persisted. - Multi-provider comparison — once coverage is healthy, run the matrix against multiple models to see which one holds up across the whole traffic shape."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "body": "\"If I migrated from Sonnet to Haiku, what would that cost me?\" is one of the easier decisions to estimate and one of the hardest to estimate well. Back-of-envelope math tends to use averaged token counts, ignore cache-read pricing, and rely on the pricing page you happen to have open. Cost simulation replays the shadow captures you already have against alternative models in the configured pricing table, then hands you a side-by-side projection grounded in the traffic shape you actually serve. Token usage is not uniform. Long-context interactions, caching-heavy flows, and reasoning-model tokens each weight the total differently, and averaging hides those weights. Proofread's shadow pipeline already stores per-capture token counts and the model that served each request; the simulator is the component that turns those rows into a what-if report. Flags: | Flag | Default | Purpose | | ---------- | ------- | ------------------------------------------------------------------------------------------- | | --days | 30 | Window size, in days, counting back from now. | | --model | empty | Repeatable (or comma-separated) list of alternative models. Empty means \"everything in the pricing table except current\". | | --format | table | table or json. | Examples: The simulator does not ask you which model is \"current\" — it derives it from the captures. Every ShadowCapture::model_used in the window is counted and the mode wins. Ties break by the most recent captured_at, which matches the intuition that if a migration is in-flight, the newer model is the one you're reasoning about going forward. Captures with no recorded model contribute nothing to the tally. Table format (abridged): Reading the columns: - **Total** and **Per capture** are in USD, formatted to four decimal places. Per-capture is Total divided by the covered-capture count (so null token rows don't drag the average toward zero). - **Delta** is signed: - is savings against the current model, + is more expensive. The column is sorted ascending on total cost, so cheapest-first. - **Coverage** is covered / total captures. A projection skips a capture when both tokens_in and tokens_out are null, or when the pricing table has no entry for that model. - The **Cheapest** line only appears when some alternative beats current total cost. The JSON format exposes everything the table does plus the raw skipped_captures counts and a structured cheapest_alternative block with savings percentage — ideal for pipelines that gate migrations on a threshold. Cost on its own does not justify a migration. Every simulation should be paired with: - **Quality parity.** Run a multi-provider comparison on the same dataset to confirm the cheaper model does not collapse your pass rate. - **Prompt fit.** Lint the prompt against the target model's conventions. A prompt tuned for Sonnet may need tightening before Haiku can hit the same marks. A sensible cadence for most teams is a monthly simulation run. Traffic shape drifts, pricing changes, and models get deprecated — the answer to \"should we switch?\" is not static. The default pricing table in config/proofread.php ships approximate per-million-token rates for the Anthropic, OpenAI, and a handful of other model families. Every entry is a snapshot and will drift from live pricing. Override or extend the table in your own config: cache_read_per_1m, cache_write_per_1m, and reasoning_per_1m are optional — omit them for models that don't price those channels separately, and the simulator will treat the missing categories as zero rather than fail. Any model absent from the pricing table simply reports a null cost for each capture, which increments the skipped count on that projection. Missing pricing never crashes the command. - **Requires shadow captures.** The simulator runs entirely off persisted capture rows. Without the shadow pipeline, there is nothing to project against. - **Token counts are held constant.** The simulation assumes the new model would receive the same tokens_in / tokens_out shape as the current. For drop-in replacements this is fair; for migrations that change tooling or prompt structure it is optimistic. - **Pricing is static per run.** For long windows that straddle a price change, the current pricing is applied uniformly across all captures. If you need historical accuracy for an audit, shorten the window or split runs around the price-change date. - **Null-token captures are invisible.** Captures missing both token counts are skipped on every projection — they do not bias the totals, but they also do not contribute. - Shadow evals — the source of every capture the simulator reads. - Multi-provider comparison — confirms the quality side of a migration the simulator is tempting you toward on cost. - Dataset coverage analysis — before migrating, check the dataset represents the traffic the simulation is projected on."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "The cost question",
+    "sectionId": "the-cost-question",
+    "body": "Token usage is not uniform. Long-context interactions, caching-heavy flows, and reasoning-model tokens each weight the total differently, and averaging hides those weights. Proofread's shadow pipeline already stores per-capture token counts and the model that served each request; the simulator is the component that turns those rows into a what-if report."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Running the command",
+    "sectionId": "running-the-command",
+    "body": "Flags: | Flag | Default | Purpose | | ---------- | ------- | ------------------------------------------------------------------------------------------- | | --days | 30 | Window size, in days, counting back from now. | | --model | empty | Repeatable (or comma-separated) list of alternative models. Empty means \"everything in the pricing table except current\". | | --format | table | table or json. | Examples:"
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "How the current model is determined",
+    "sectionId": "how-the-current-model-is-determined",
+    "body": "The simulator does not ask you which model is \"current\" — it derives it from the captures. Every ShadowCapture::model_used in the window is counted and the mode wins. Ties break by the most recent captured_at, which matches the intuition that if a migration is in-flight, the newer model is the one you're reasoning about going forward. Captures with no recorded model contribute nothing to the tally."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Output",
+    "sectionId": "output",
+    "body": "Table format (abridged): Reading the columns: - **Total** and **Per capture** are in USD, formatted to four decimal places. Per-capture is Total divided by the covered-capture count (so null token rows don't drag the average toward zero). - **Delta** is signed: - is savings against the current model, + is more expensive. The column is sorted ascending on total cost, so cheapest-first. - **Coverage** is covered / total captures. A projection skips a capture when both tokens_in and tokens_out are null, or when the pricing table has no entry for that model. - The **Cheapest** line only appears when some alternative beats current total cost. The JSON format exposes everything the table does plus the raw skipped_captures counts and a structured cheapest_alternative block with savings percentage — ideal for pipelines that gate migrations on a threshold."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Decision-making",
+    "sectionId": "decision-making",
+    "body": "Cost on its own does not justify a migration. Every simulation should be paired with: - **Quality parity.** Run a multi-provider comparison on the same dataset to confirm the cheaper model does not collapse your pass rate. - **Prompt fit.** Lint the prompt against the target model's conventions. A prompt tuned for Sonnet may need tightening before Haiku can hit the same marks. A sensible cadence for most teams is a monthly simulation run. Traffic shape drifts, pricing changes, and models get deprecated — the answer to \"should we switch?\" is not static."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Extending the pricing table",
+    "sectionId": "extending-the-pricing-table",
+    "body": "The default pricing table in config/proofread.php ships approximate per-million-token rates for the Anthropic, OpenAI, and a handful of other model families. Every entry is a snapshot and will drift from live pricing. Override or extend the table in your own config: cache_read_per_1m, cache_write_per_1m, and reasoning_per_1m are optional — omit them for models that don't price those channels separately, and the simulator will treat the missing categories as zero rather than fail. Any model absent from the pricing table simply reports a null cost for each capture, which increments the skipped count on that projection. Missing pricing never crashes the command."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Limitations",
+    "sectionId": "limitations",
+    "body": "- **Requires shadow captures.** The simulator runs entirely off persisted capture rows. Without the shadow pipeline, there is nothing to project against. - **Token counts are held constant.** The simulation assumes the new model would receive the same tokens_in / tokens_out shape as the current. For drop-in replacements this is fair; for migrations that change tooling or prompt structure it is optimistic. - **Pricing is static per run.** For long windows that straddle a price change, the current pricing is applied uniformly across all captures. If you need historical accuracy for an audit, shorten the window or split runs around the price-change date. - **Null-token captures are invisible.** Captures missing both token counts are skipped on every projection — they do not bias the totals, but they also do not contribute."
+  },
+  {
+    "slug": "guides/cost-simulation",
+    "title": "Cost simulation",
+    "section": "Related",
+    "sectionId": "related",
+    "body": "- Shadow evals — the source of every capture the simulator reads. - Multi-provider comparison — confirms the quality side of a migration the simulator is tempting you toward on cost. - Dataset coverage analysis — before migrating, check the dataset represents the traffic the simulation is projected on."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "body": "The dashboard is the browser view onto everything the runtime persists: suites that have run, cases that failed, datasets that exist, comparisons you've published, costs accrued, and shadow captures waiting to be promoted. It is read-only — nothing in the UI triggers a new run — and lives under whatever path you configure, gated by whatever policy you define. The dashboard ships enabled by default and guarded by a Laravel gate that allows only the local environment out of the box. That is deliberately conservative: the UI surfaces production traffic, so the package refuses to expose it by accident. Relevant config keys in config/proofread.php: - enabled — when false, the DashboardEnabled middleware 404s every dashboard route. - path — URL prefix, defaulting to /evals. - middleware — the stack applied after DashboardEnabled. The shipped default combines Laravel's web group with the proofread.gate alias (registered by the service provider and backed by the ProofreadGate middleware). The default gate is defined only when the app has not already registered one: Override it in your AuthServiceProvider to ship the dashboard to production users: The route file registers everything under the configured prefix and names them proofread.*: | Route | Purpose | | -------------------------------------- | ---------------------------------------------------- | | GET /{path}/overview | Home with trend chart, failing datasets, regressions | | GET /{path}/runs | Paginated run list with filters | | GET /{path}/runs/{run} | Run detail with per-case drawer | | GET /{path}/runs/{run}/export | Download Markdown or HTML export | | GET /{path}/compare | Side-by-side diff of two runs | | GET /{path}/comparisons | Multi-provider comparisons list | | GET /{path}/comparisons/{comparison} | Matrix view with per-subject breakdown | | GET /{path}/comparisons/{comparison}/export | Download comparison export | | GET /{path}/datasets | Datasets grid with sparklines | | GET /{path}/costs | Breakdown by model + dataset + trend | | GET /{path}/shadow | Shadow captures browser + promote-to-dataset | Hitting /{path} with no sub-path redirects to /{path}/overview. Each run page has three parts: - **Header.** Dataset name, dataset version, run duration, total cost, overall status. - **Summary.** Counts for pass / fail / error, plus the usual assertion-level totals derived from the persisted result rows. - **Cases drawer.** Each case row is clickable; the drawer shows the input, the subject's output, per-assertion results, the metadata bag populated by the runner, and any error trace. The drawer has a \"Copy as failing test\" action that emits a Pest snippet matching the case. Paste it into a feature test to lock the regression. Multi-provider runs land on their own detail page. The layout is: - **Winner cards.** Best pass rate, cheapest, and fastest pinned at the top. - **Matrix.** Rows are cases, columns are subjects. Each cell shows pass / fail at a glance; clicking opens a drawer with per-subject output side by side. - **Footer.** Pass rate, total cost, and average latency per subject so you don't need to scroll the matrix to compare totals. The export endpoint renders the same matrix as self-contained HTML suitable for sharing with stakeholders who do not have dashboard access. /evals/shadow lists captures with filters for agent class, status (pending or evaluated), and free-text search. Clicking a row opens a drawer showing the sanitized input, the output, all evaluations already attached to the capture, and the raw metadata. The \"Promote to dataset\" action generates a copy-paste PHP snippet you add to your Dataset::make() block. Promotion is deliberately manual — the package never mutates your dataset files. Both run and comparison detail pages expose export buttons: - GET /evals/runs/{run}/export?format=md — Markdown, suitable for pasting into issue trackers. - GET /evals/runs/{run}/export?format=html — self-contained HTML with embedded styles. - GET /evals/comparisons/{comparison}/export?format=html — the matrix as an HTML document. The Content-Disposition is always attachment, so browsers download rather than render. Any other format value returns a 400. The trend-chart Blade component backs the SVG line charts on the overview and costs pages. The overview chart shows a 30-day pass-rate trend; the costs page shows a daily cost trend. The component supports two Y-axis formats — percentage and currency — which cover the two usages the package ships today. Production exposure is one-flag-on-one-policy-off: - PROOFREAD_DASHBOARD_ENABLED=true (the default). - Override viewEvals with your real authorization rule. The web middleware is sufficient for session-based authentication. If the dashboard sits behind an auth proxy, point the proxy at the configured path and the gate still applies. Storage is whatever the proofread connection resolves to — a central DB for single-app setups, or your multi-tenant landlord connection for split tenancies. Dashboard reads follow the same connection. > **[warn]** The dashboard is read-only. It does not trigger runs, > mutate datasets, or change configuration. Promote-to-dataset emits > a snippet for you to paste; nothing is written to disk on your > behalf. Views are registered under the proofread:: namespace and are publishable: Published files land under resources/views/vendor/proofread/ and take precedence over the package copies. Override a layout, swap the trend chart for a heavier charting lib, retheme — the package never reads your override, only the vendor copy, so changes stay local to your app. > **[info]** The Livewire components (Overview, RunsList, > RunDetail, ComparisonsList, ComparisonDetail, DatasetsList, > CompareRuns, CostsBreakdown, ShadowPanel) live in > Mosaiqo\\Proofread\\Http\\Livewire. View overrides are the > recommended customization surface; component overrides are > possible but land in internal territory. - Running evals — the runs surfaced in the dashboard are written by the same runner the Pest expectation drives. - Shadow evals — the shadow panel is the UI half of the pipeline described there. - Multi-provider comparison — the comparisons matrix is how you consume comparison runs without staring at JSON."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Enabling",
+    "sectionId": "enabling",
+    "body": "The dashboard ships enabled by default and guarded by a Laravel gate that allows only the local environment out of the box. That is deliberately conservative: the UI surfaces production traffic, so the package refuses to expose it by accident. Relevant config keys in config/proofread.php: - enabled — when false, the DashboardEnabled middleware 404s every dashboard route. - path — URL prefix, defaulting to /evals. - middleware — the stack applied after DashboardEnabled. The shipped default combines Laravel's web group with the proofread.gate alias (registered by the service provider and backed by the ProofreadGate middleware). The default gate is defined only when the app has not already registered one: Override it in your AuthServiceProvider to ship the dashboard to production users:"
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Routes",
+    "sectionId": "routes",
+    "body": "The route file registers everything under the configured prefix and names them proofread.*: | Route | Purpose | | -------------------------------------- | ---------------------------------------------------- | | GET /{path}/overview | Home with trend chart, failing datasets, regressions | | GET /{path}/runs | Paginated run list with filters | | GET /{path}/runs/{run} | Run detail with per-case drawer | | GET /{path}/runs/{run}/export | Download Markdown or HTML export | | GET /{path}/compare | Side-by-side diff of two runs | | GET /{path}/comparisons | Multi-provider comparisons list | | GET /{path}/comparisons/{comparison} | Matrix view with per-subject breakdown | | GET /{path}/comparisons/{comparison}/export | Download comparison export | | GET /{path}/datasets | Datasets grid with sparklines | | GET /{path}/costs | Breakdown by model + dataset + trend | | GET /{path}/shadow | Shadow captures browser + promote-to-dataset | Hitting /{path} with no sub-path redirects to /{path}/overview."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Runs detail",
+    "sectionId": "runs-detail",
+    "body": "Each run page has three parts: - **Header.** Dataset name, dataset version, run duration, total cost, overall status. - **Summary.** Counts for pass / fail / error, plus the usual assertion-level totals derived from the persisted result rows. - **Cases drawer.** Each case row is clickable; the drawer shows the input, the subject's output, per-assertion results, the metadata bag populated by the runner, and any error trace. The drawer has a \"Copy as failing test\" action that emits a Pest snippet matching the case. Paste it into a feature test to lock the regression."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Comparisons matrix",
+    "sectionId": "comparisons-matrix",
+    "body": "Multi-provider runs land on their own detail page. The layout is: - **Winner cards.** Best pass rate, cheapest, and fastest pinned at the top. - **Matrix.** Rows are cases, columns are subjects. Each cell shows pass / fail at a glance; clicking opens a drawer with per-subject output side by side. - **Footer.** Pass rate, total cost, and average latency per subject so you don't need to scroll the matrix to compare totals. The export endpoint renders the same matrix as self-contained HTML suitable for sharing with stakeholders who do not have dashboard access."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Shadow panel",
+    "sectionId": "shadow-panel",
+    "body": "/evals/shadow lists captures with filters for agent class, status (pending or evaluated), and free-text search. Clicking a row opens a drawer showing the sanitized input, the output, all evaluations already attached to the capture, and the raw metadata. The \"Promote to dataset\" action generates a copy-paste PHP snippet you add to your Dataset::make() block. Promotion is deliberately manual — the package never mutates your dataset files."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Exports",
+    "sectionId": "exports",
+    "body": "Both run and comparison detail pages expose export buttons: - GET /evals/runs/{run}/export?format=md — Markdown, suitable for pasting into issue trackers. - GET /evals/runs/{run}/export?format=html — self-contained HTML with embedded styles. - GET /evals/comparisons/{comparison}/export?format=html — the matrix as an HTML document. The Content-Disposition is always attachment, so browsers download rather than render. Any other format value returns a 400."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Trend chart",
+    "sectionId": "trend-chart",
+    "body": "The trend-chart Blade component backs the SVG line charts on the overview and costs pages. The overview chart shows a 30-day pass-rate trend; the costs page shows a daily cost trend. The component supports two Y-axis formats — percentage and currency — which cover the two usages the package ships today."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Production deployment",
+    "sectionId": "production-deployment",
+    "body": "Production exposure is one-flag-on-one-policy-off: - PROOFREAD_DASHBOARD_ENABLED=true (the default). - Override viewEvals with your real authorization rule. The web middleware is sufficient for session-based authentication. If the dashboard sits behind an auth proxy, point the proxy at the configured path and the gate still applies. Storage is whatever the proofread connection resolves to — a central DB for single-app setups, or your multi-tenant landlord connection for split tenancies. Dashboard reads follow the same connection. > **[warn]** The dashboard is read-only. It does not trigger runs, > mutate datasets, or change configuration. Promote-to-dataset emits > a snippet for you to paste; nothing is written to disk on your > behalf."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Customizing the UI",
+    "sectionId": "customizing-the-ui",
+    "body": "Views are registered under the proofread:: namespace and are publishable: Published files land under resources/views/vendor/proofread/ and take precedence over the package copies. Override a layout, swap the trend chart for a heavier charting lib, retheme — the package never reads your override, only the vendor copy, so changes stay local to your app. > **[info]** The Livewire components (Overview, RunsList, > RunDetail, ComparisonsList, ComparisonDetail, DatasetsList, > CompareRuns, CostsBreakdown, ShadowPanel) live in > Mosaiqo\\Proofread\\Http\\Livewire. View overrides are the > recommended customization surface; component overrides are > possible but land in internal territory."
+  },
+  {
+    "slug": "guides/dashboard",
+    "title": "Dashboard",
+    "section": "Related",
+    "sectionId": "related",
+    "body": "- Running evals — the runs surfaced in the dashboard are written by the same runner the Pest expectation drives. - Shadow evals — the shadow panel is the UI half of the pipeline described there. - Multi-provider comparison — the comparisons matrix is how you consume comparison runs without staring at JSON."
+  },
+  {
     "slug": "cheatsheet",
     "title": "Cheatsheet",
     "body": "Single-page copy-paste reference. 80% of what you will reach for, day-to-day. | Command | Notable flags | | ------------------------------------------- | ------------------------------------------------------------------------ | | evals:run {suites*} | --persist, --junit, --fail-fast, --filter, --queue, --concurrency, --fake-judge, --gate-pass-rate, --gate-cost-max, --commit-sha | | evals:compare {base} {head} | latest keyword supported. | | evals:dataset:diff {name} | Diff consecutive dataset versions. | | evals:providers {suite} | Run a MultiSubjectEvalSuite. | | evals:benchmark | Performance benchmarking. | | evals:cluster | Failure clustering. | | evals:coverage | Coverage report. | | evals:export | Export a run. | | evals:cost-simulate | Dry-run cost projection. | | dataset:generate | LLM-assisted dataset generation. | | dataset:import | Import from JSON / CSV / Promptfoo. | | dataset:export | Export to JSON / CSV. | | shadow:evaluate | Evaluate captured shadow traffic. | | shadow:alert | Alert on shadow pass-rate drops. | | proofread:lint {agents*} | Static checks on Agent classes. | | proofread:make-suite | Scaffold an EvalSuite. --multi for MultiSubjectEvalSuite. | | proofread:make-dataset | Scaffold a Dataset provider. | | proofread:make-assertion | Scaffold a custom Assertion. | Register a resolver and attach the middleware: Attach the capture middleware to the route that invokes the agent, then evaluate asynchronously: For subscription-based providers that only ship a CLI, not an API:"
