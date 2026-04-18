@@ -1,0 +1,1 @@
+import{d as t,k as o,o as n,y as s,N as r}from"./index-BQOcD0gC.js";const c={class:"container py-12 text-sm text-muted-foreground"},_=t({__name:"DocsRedirect",setup(a){const e=r();return o(()=>{e.replace("/docs/getting-started")}),(d,i)=>(n(),s("div",c,"Redirecting to documentation..."))}});export{_ as default};
