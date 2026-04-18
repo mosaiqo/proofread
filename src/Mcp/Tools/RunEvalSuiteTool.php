@@ -174,7 +174,7 @@ final class RunEvalSuiteTool extends Tool
             $reasons[] = sprintf(
                 '%s: %s',
                 $this->assertionName($assertion),
-                $assertion->reason ?? 'failed',
+                $assertion->reason !== '' ? $assertion->reason : 'failed',
             );
         }
 
