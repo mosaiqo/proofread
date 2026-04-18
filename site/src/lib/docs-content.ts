@@ -72,44 +72,63 @@ export async function loadDoc(slug: string): Promise<string | null> {
   return doc.load()
 }
 
+let navCache: NavSection[] | null = null
+let navPromise: Promise<NavSection[]> | null = null
+
 export async function buildNavSections(): Promise<NavSection[]> {
-  const docs = listDocs()
-  const buckets = new Map<string, NavItem[]>()
-  const unsectioned: NavItem[] = []
-  const sectionOrder: string[] = []
+  if (navCache) return navCache
+  if (navPromise) return navPromise
 
-  for (const doc of docs) {
-    const source = await doc.load()
-    const { data, content } = parseFrontmatter(source)
-    const slugFallback = doc.slug
-      .split('/')
-      .pop()!
-      .replace(/-/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-    const title = data.title ?? titleFromSource(content, slugFallback)
-    const item: NavItem = { slug: doc.slug, title }
-    const section = data.section ?? ''
+  navPromise = (async () => {
+    const docs = listDocs()
+    const sources = await Promise.all(
+      docs.map(async (doc) => {
+        const source = await doc.load()
+        const { data, content } = parseFrontmatter(source)
+        const slugFallback = doc.slug
+          .split('/')
+          .pop()!
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+        const title = data.title ?? titleFromSource(content, slugFallback)
+        return {
+          slug: doc.slug,
+          title,
+          section: data.section ?? '',
+        }
+      }),
+    )
 
-    if (!section) {
-      unsectioned.push(item)
-      continue
+    const buckets = new Map<string, NavItem[]>()
+    const unsectioned: NavItem[] = []
+    const sectionOrder: string[] = []
+
+    for (const { slug, title, section } of sources) {
+      const item: NavItem = { slug, title }
+      if (!section) {
+        unsectioned.push(item)
+        continue
+      }
+      if (!buckets.has(section)) {
+        buckets.set(section, [])
+        sectionOrder.push(section)
+      }
+      buckets.get(section)!.push(item)
     }
 
-    if (!buckets.has(section)) {
-      buckets.set(section, [])
-      sectionOrder.push(section)
+    const out: NavSection[] = []
+    for (const title of sectionOrder) {
+      out.push({ title, items: buckets.get(title)! })
     }
-    buckets.get(section)!.push(item)
-  }
+    if (unsectioned.length > 0) {
+      out.push({ title: 'Documentation', items: unsectioned })
+    }
 
-  const out: NavSection[] = []
-  for (const title of sectionOrder) {
-    out.push({ title, items: buckets.get(title)! })
-  }
-  if (unsectioned.length > 0) {
-    out.push({ title: 'Documentation', items: unsectioned })
-  }
-  return out
+    navCache = out
+    return out
+  })()
+
+  return navPromise
 }
 
 export function docExists(slug: string): boolean {

@@ -15,10 +15,15 @@ withDefaults(defineProps<Props>(), {
 })
 
 const sections = ref<NavSection[]>([])
+const navLoading = ref(true)
 const searchIndexUrl = `${import.meta.env.BASE_URL}search-index.json`
 
 onMounted(async () => {
-  sections.value = await buildNavSections()
+  try {
+    sections.value = await buildNavSections()
+  } finally {
+    navLoading.value = false
+  }
 })
 </script>
 
@@ -28,7 +33,7 @@ onMounted(async () => {
       <div class="mb-4 lg:mb-6">
         <DocsSearch :index-url="searchIndexUrl" />
       </div>
-      <SidebarNav :sections="sections" />
+      <SidebarNav :sections="sections" :loading="navLoading" />
     </div>
 
     <main id="docs-content" class="min-w-0">

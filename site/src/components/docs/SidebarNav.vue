@@ -7,9 +7,12 @@ import { cn } from '@/lib/utils'
 
 interface Props {
   sections: NavSection[]
+  loading?: boolean
 }
 
-defineProps<Props>()
+withDefaults(defineProps<Props>(), {
+  loading: false,
+})
 
 const mobileOpen = ref(false)
 
@@ -39,8 +42,20 @@ function close(): void {
         mobileOpen ? 'block' : 'hidden',
       )"
     >
-      <div v-if="sections.length === 0" class="text-sm text-muted-foreground">
-        No docs yet.
+      <div v-if="loading && sections.length === 0" class="space-y-6" aria-hidden="true">
+        <div v-for="group in 4" :key="group" class="space-y-2">
+          <div class="mx-2 h-3 w-20 animate-pulse rounded bg-muted" />
+          <div class="space-y-1.5">
+            <div v-for="row in 3" :key="row" class="mx-2 h-4 w-32 animate-pulse rounded bg-muted/60" />
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="!loading && sections.length === 0"
+        class="text-sm text-muted-foreground"
+      >
+        No documentation pages found.
       </div>
 
       <nav v-for="section in sections" :key="section.title" class="space-y-2">
