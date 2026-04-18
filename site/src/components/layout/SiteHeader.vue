@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Github, Moon, Sun, Palette } from 'lucide-vue-next'
+import { BookOpen, Github, Moon, Sun, Palette } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/composables/useTheme'
@@ -21,6 +21,15 @@ const { theme, toggle } = useTheme()
       </RouterLink>
 
       <nav class="flex items-center gap-1 text-sm">
+        <RouterLink
+          to="/docs"
+          class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
+          active-class="bg-muted text-foreground"
+        >
+          <BookOpen class="h-4 w-4" />
+          <span>Docs</span>
+        </RouterLink>
+
         <RouterLink
           to="/primitives"
           class="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"

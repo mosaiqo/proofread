@@ -5,13 +5,25 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('@/views/Home.vue'),
-    meta: { title: 'Proofread — Laravel-native AI evals' },
+    meta: { title: 'Proofread — Laravel-native AI evals', layout: 'default' },
   },
   {
     path: '/primitives',
     name: 'primitives',
     component: () => import('@/views/Primitives.vue'),
-    meta: { title: 'Primitives — Proofread' },
+    meta: { title: 'Primitives — Proofread', layout: 'default' },
+  },
+  {
+    path: '/docs',
+    name: 'docs-index',
+    component: () => import('@/pages/DocsRedirect.vue'),
+    meta: { title: 'Documentation — Proofread', layout: 'docs' },
+  },
+  {
+    path: '/docs/:slug(.*)+',
+    name: 'docs-page',
+    component: () => import('@/pages/DocsPage.vue'),
+    meta: { title: 'Documentation — Proofread', layout: 'docs' },
   },
   {
     path: '/:pathMatch(.*)*',

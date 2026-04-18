@@ -1,0 +1,149 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import DocsLayout from '@/layouts/DocsLayout.vue'
+import Pagination from '@/components/docs/Pagination.vue'
+import { renderMarkdown } from '@/lib/markdown'
+import { buildNavSections, loadDoc } from '@/lib/docs-content'
+import type { NavItem, TocEntry } from '@/types/docs'
+
+const route = useRoute()
+const router = useRouter()
+
+const html = ref<string>('')
+const toc = ref<TocEntry[]>([])
+const title = ref<string>('')
+const prev = ref<NavItem | null>(null)
+const next = ref<NavItem | null>(null)
+const notFound = ref(false)
+
+const slug = computed(() => {
+  const raw = route.params.slug
+  if (Array.isArray(raw)) return raw.join('/')
+  return (raw ?? '') as string
+})
+
+async function load(): Promise<void> {
+  notFound.value = false
+  html.value = ''
+  toc.value = []
+  prev.value = null
+  next.value = null
+
+  const current = slug.value
+  if (!current) {
+    notFound.value = true
+    return
+  }
+
+  const source = await loadDoc(current)
+  if (!source) {
+    notFound.value = true
+    title.value = 'Page not found'
+    return
+  }
+
+  const rendered = await renderMarkdown(source)
+  html.value = rendered.html
+  toc.value = rendered.toc
+  title.value = rendered.title || current
+  document.title = `${title.value} — Proofread`
+
+  const sections = await buildNavSections()
+  const items: NavItem[] = sections.flatMap((s) => s.items)
+  const index = items.findIndex((i) => i.slug === current)
+  if (index > 0) prev.value = items[index - 1]
+  if (index >= 0 && index < items.length - 1) next.value = items[index + 1]
+
+  await nextTick()
+  if (route.hash) {
+    const el = document.querySelector(route.hash)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.name === 'docs-page') load()
+  },
+  { immediate: true },
+)
+
+function goHome(): void {
+  router.push('/')
+}
+</script>
+
+<template>
+  <DocsLayout :toc="toc">
+    <article v-if="!notFound && html" class="prose prose-neutral max-w-none dark:prose-invert">
+      <div class="docs-article" v-html="html" />
+      <Pagination :prev="prev" :next="next" />
+    </article>
+
+    <div v-else-if="notFound" class="py-12">
+      <h1 class="text-2xl font-semibold">Page not found</h1>
+      <p class="mt-2 text-muted-foreground">
+        The docs page <code class="font-mono text-sm">{{ slug }}</code> does not exist yet.
+      </p>
+      <button
+        type="button"
+        class="mt-6 inline-flex h-9 items-center rounded-md bg-brand-500 px-4 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-600"
+        @click="goHome"
+      >
+        Back to home
+      </button>
+    </div>
+
+    <div v-else class="py-12 text-sm text-muted-foreground">Loading...</div>
+  </DocsLayout>
+</template>
+
+<style>
+.docs-article .heading-anchor {
+  color: var(--color-fg-muted);
+  text-decoration: none;
+  margin-right: 0.35rem;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.docs-article h2:hover .heading-anchor,
+.docs-article h3:hover .heading-anchor {
+  opacity: 1;
+}
+
+.docs-article pre.shiki {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated) !important;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.docs-article pre.shiki code {
+  font-family: var(--font-mono);
+  background: transparent;
+  padding: 0;
+}
+
+.docs-article :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-xs);
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.dark .docs-article pre.shiki,
+.dark .docs-article pre.shiki span {
+  color: var(--shiki-dark, inherit) !important;
+  background-color: var(--shiki-dark-bg, var(--color-bg-elevated)) !important;
+}
+</style>

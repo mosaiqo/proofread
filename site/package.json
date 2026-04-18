@@ -5,15 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/build-search-index.mjs",
     "build": "vue-tsc --noEmit && vite build && node scripts/spa-fallback.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "@fontsource/instrument-sans": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.2",
+    "@tailwindcss/typography": "^0.5.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "flexsearch": "^0.8.212",
     "lucide-vue-next": "^0.460.0",
+    "markdown-it": "^14.1.1",
+    "markdown-it-anchor": "^9.2.0",
     "reka-ui": "^1.0.0-alpha.5",
     "shiki": "^1.24.0",
     "tailwind-merge": "^2.5.4",
@@ -21,6 +26,8 @@
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
+    "@types/flexsearch": "^0.7.6",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^22.10.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "autoprefixer": "^10.4.20",

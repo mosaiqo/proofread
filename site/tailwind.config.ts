@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss'
 import animate from 'tailwindcss-animate'
+import typography from '@tailwindcss/typography'
 
 export default {
   darkMode: 'class',
@@ -129,6 +130,41 @@ export default {
         modal: 'var(--z-modal)',
         toast: 'var(--z-toast)',
       },
+      typography: () => ({
+        DEFAULT: {
+          css: {
+            '--tw-prose-body': 'var(--color-fg-default)',
+            '--tw-prose-headings': 'var(--color-fg-default)',
+            '--tw-prose-lead': 'var(--color-fg-muted)',
+            '--tw-prose-links': 'var(--color-brand-500)',
+            '--tw-prose-bold': 'var(--color-fg-default)',
+            '--tw-prose-counters': 'var(--color-fg-muted)',
+            '--tw-prose-bullets': 'var(--color-border)',
+            '--tw-prose-hr': 'var(--color-border)',
+            '--tw-prose-quotes': 'var(--color-fg-default)',
+            '--tw-prose-quote-borders': 'var(--color-border)',
+            '--tw-prose-captions': 'var(--color-fg-muted)',
+            '--tw-prose-code': 'var(--color-fg-default)',
+            '--tw-prose-pre-code': 'var(--color-fg-default)',
+            '--tw-prose-pre-bg': 'var(--color-bg-elevated)',
+            '--tw-prose-th-borders': 'var(--color-border)',
+            '--tw-prose-td-borders': 'var(--color-border-subtle)',
+            '--tw-prose-invert-body': 'var(--color-fg-default)',
+            '--tw-prose-invert-headings': 'var(--color-fg-default)',
+            '--tw-prose-invert-links': 'var(--color-brand-400)',
+            '--tw-prose-invert-bold': 'var(--color-fg-default)',
+            '--tw-prose-invert-code': 'var(--color-fg-default)',
+            '--tw-prose-invert-pre-code': 'var(--color-fg-default)',
+            '--tw-prose-invert-pre-bg': 'var(--color-bg-elevated)',
+            '--tw-prose-invert-th-borders': 'var(--color-border)',
+            '--tw-prose-invert-td-borders': 'var(--color-border-subtle)',
+            fontFamily: 'var(--font-sans)',
+            maxWidth: 'none',
+            'code::before': { content: '""' },
+            'code::after': { content: '""' },
+          },
+        },
+      }),
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
@@ -145,5 +181,5 @@ export default {
       },
     },
   },
-  plugins: [animate],
+  plugins: [animate, typography],
 } satisfies Config

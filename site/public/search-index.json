@@ -1,0 +1,21 @@
+[
+  {
+    "slug": "hello",
+    "title": "Hello from docs",
+    "body": "This is a placeholder page to verify that the docs layout, sidebar, TOC, code highlighting, and search index all work. Content para TOC y search index."
+  },
+  {
+    "slug": "hello",
+    "title": "Hello from docs",
+    "section": "Code example",
+    "sectionId": "code-example",
+    "body": ""
+  },
+  {
+    "slug": "hello",
+    "title": "Hello from docs",
+    "section": "Another heading",
+    "sectionId": "another-heading",
+    "body": "Content para TOC y search index."
+  }
+]
