@@ -20,6 +20,12 @@ const prev = ref<NavItem | null>(null)
 const next = ref<NavItem | null>(null)
 const notFound = ref(false)
 
+const slug = computed(() => {
+  const raw = route.params.slug
+  if (Array.isArray(raw)) return raw.join('/')
+  return (raw ?? '') as string
+})
+
 const pageTitle = computed(() =>
   title.value ? `${title.value} — Proofread` : 'Documentation — Proofread',
 )
@@ -40,12 +46,6 @@ useHead({
     { name: 'twitter:description', content: description },
     { name: 'twitter:image', content: OG_IMAGE },
   ],
-})
-
-const slug = computed(() => {
-  const raw = route.params.slug
-  if (Array.isArray(raw)) return raw.join('/')
-  return (raw ?? '') as string
 })
 
 async function load(): Promise<void> {
