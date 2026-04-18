@@ -28,7 +28,7 @@ it('passes when output matches a JSON string schema', function (): void {
 });
 
 it('passes when output matches a schema loaded from a file', function (): void {
-    $path = __DIR__.'/../../fixtures/sample-schema.json';
+    $path = __DIR__.'/../../Fixtures/sample-schema.json';
 
     expect(['name' => 'Boudy'])->toMatchSchema($path);
 });
@@ -115,7 +115,7 @@ it('supports negation', function (): void {
 });
 
 it('resolves file paths relative to cwd', function (): void {
-    $path = 'tests/fixtures/sample-schema.json';
+    $path = 'tests/Fixtures/sample-schema.json';
 
     expect(['name' => 'Boudy'])->toMatchSchema($path);
 });
