@@ -2296,6 +2296,311 @@
     "body": "- int $invocations - array $taskCountPerInvocation"
   },
   {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "body": "Run Proofread evals from your MCP-compatible editor. Four tools ship with the package; you plug them into your own Laravel\\Mcp\\Server subclass and route them however you prefer (web or stdio). The Model Context Protocol is a standard for exposing tools to LLM clients (Cursor, Claude Code, the MCP Inspector, and others). Laravel exposes it via the laravel/mcp package, which lets packages ship tool classes that consumers compose into their own MCP servers. Proofread ships four tools that wrap the same runtime the Artisan commands use: list_eval_suites, run_eval_suite, get_eval_run_diff and run_provider_comparison. Proofread's tools are only loaded when the Laravel\\Mcp\\Server\\Tool class exists. The Mosaiqo\\Proofread\\Mcp\\McpIntegration::available() helper reflects that check, so nothing in the core service provider breaks when the MCP SDK is not installed. Create your Server subclass and merge Proofread's tools with your own: Route it via HTTP: Or via stdio for CLI-style MCP clients: Only suites listed in config('proofread.mcp.suites') are considered discoverable by list_eval_suites. The other tools accept any fully-qualified suite class the consumer points at. - **Input:** none. - **Output:** {suites: [{name, class, dataset, case_count, subject}, ...]}. - **Use:** discover which suites are registered as MCP-visible. Only entries from config('proofread.mcp.suites') that extend Mosaiqo\\Proofread\\Suite\\EvalSuite and instantiate cleanly are returned. - **Input:** - suite_class (string, required) — FQCN of an EvalSuite. - persist (bool, default false) — write results through EvalPersister. - commit_sha (string, optional) — stamped onto the persisted run. - **Output:** {suite_class, dataset_name, passed, total_cases, passed_count, failed_count, duration_ms, total_cost_usd, persisted_run_id, failures[]}. Each failure entry has {case_index, case_name, assertions_failed[]}. The list is truncated at 10 entries; when overflow happens the response adds failures_truncated: true and failures_omitted: N. - **Input:** - base_run_id (string, required) — ULID of the base run. - head_run_id (string, required) — ULID of the head run. - **Output:** the serialized EvalRunDelta — {dataset_name, regressions, improvements, stable_passes, stable_failures, cost_delta_usd, duration_delta_ms, has_regressions, cases[]}. Both runs must share the same dataset_name. Case ordering prioritizes regression and improvement entries so they survive truncation. The list is capped at 50; overflow is signalled with cases_truncated: true and cases_omitted: N. - **Input:** - suite_class (string, required) — FQCN of a MultiSubjectEvalSuite. - persist (bool, default false) — writes through ComparisonPersister. - commit_sha (string, optional). - provider_concurrency (int, default 0) — 0 runs all subjects in parallel, 1 runs sequentially, any other positive value caps parallelism. - **Output:** {suite_class, name, dataset_name, passed, total_cases, duration_ms, persisted_comparison_id, subjects[], runs[]}. Each entry in runs[] carries {subject_label, passed, total_cases, passed_cases, failed_cases, pass_rate, cost_usd, duration_ms, avg_latency_ms}. The full cases × subjects matrix is intentionally omitted; use the dashboard or evals:export for that. See the multi-provider guide for how the underlying ComparisonRunner builds these stats, and running evals for the semantics shared with evals:run. MCP tools inherit the middleware stack of the Server that hosts them. For public deployments, layer Mcp::oauthRoutes() in front of Mcp::web(...) and your own auth gate — Proofread does not add its own gate beyond what the Laravel MCP package provides. The Laravel MCP package ships a fake transporter, so you can test the tools without spinning up a real MCP client: No Mcp::fake() setup is required; the FakeTransporter is wired in when you call the Server's ::tool() helper. > **[info]** MCP tool output is stateless. Persistence happens only > when persist: true is passed — otherwise the run is computed, > returned, and discarded."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "What is MCP",
+    "sectionId": "what-is-mcp",
+    "body": "The Model Context Protocol is a standard for exposing tools to LLM clients (Cursor, Claude Code, the MCP Inspector, and others). Laravel exposes it via the laravel/mcp package, which lets packages ship tool classes that consumers compose into their own MCP servers. Proofread ships four tools that wrap the same runtime the Artisan commands use: list_eval_suites, run_eval_suite, get_eval_run_diff and run_provider_comparison."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "Installation",
+    "sectionId": "installation",
+    "body": "Proofread's tools are only loaded when the Laravel\\Mcp\\Server\\Tool class exists. The Mosaiqo\\Proofread\\Mcp\\McpIntegration::available() helper reflects that check, so nothing in the core service provider breaks when the MCP SDK is not installed."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "Exposing Proofread tools in your Server",
+    "sectionId": "exposing-proofread-tools-in-your-server",
+    "body": "Create your Server subclass and merge Proofread's tools with your own: Route it via HTTP: Or via stdio for CLI-style MCP clients: Only suites listed in config('proofread.mcp.suites') are considered discoverable by list_eval_suites. The other tools accept any fully-qualified suite class the consumer points at."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "Shipped tools",
+    "sectionId": "shipped-tools",
+    "body": ""
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "list_eval_suites",
+    "sectionId": "listevalsuites",
+    "body": "- **Input:** none. - **Output:** {suites: [{name, class, dataset, case_count, subject}, ...]}. - **Use:** discover which suites are registered as MCP-visible. Only entries from config('proofread.mcp.suites') that extend Mosaiqo\\Proofread\\Suite\\EvalSuite and instantiate cleanly are returned."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "run_eval_suite",
+    "sectionId": "runevalsuite",
+    "body": "- **Input:** - suite_class (string, required) — FQCN of an EvalSuite. - persist (bool, default false) — write results through EvalPersister. - commit_sha (string, optional) — stamped onto the persisted run. - **Output:** {suite_class, dataset_name, passed, total_cases, passed_count, failed_count, duration_ms, total_cost_usd, persisted_run_id, failures[]}. Each failure entry has {case_index, case_name, assertions_failed[]}. The list is truncated at 10 entries; when overflow happens the response adds failures_truncated: true and failures_omitted: N."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "get_eval_run_diff",
+    "sectionId": "getevalrundiff",
+    "body": "- **Input:** - base_run_id (string, required) — ULID of the base run. - head_run_id (string, required) — ULID of the head run. - **Output:** the serialized EvalRunDelta — {dataset_name, regressions, improvements, stable_passes, stable_failures, cost_delta_usd, duration_delta_ms, has_regressions, cases[]}. Both runs must share the same dataset_name. Case ordering prioritizes regression and improvement entries so they survive truncation. The list is capped at 50; overflow is signalled with cases_truncated: true and cases_omitted: N."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "run_provider_comparison",
+    "sectionId": "runprovidercomparison",
+    "body": "- **Input:** - suite_class (string, required) — FQCN of a MultiSubjectEvalSuite. - persist (bool, default false) — writes through ComparisonPersister. - commit_sha (string, optional). - provider_concurrency (int, default 0) — 0 runs all subjects in parallel, 1 runs sequentially, any other positive value caps parallelism. - **Output:** {suite_class, name, dataset_name, passed, total_cases, duration_ms, persisted_comparison_id, subjects[], runs[]}. Each entry in runs[] carries {subject_label, passed, total_cases, passed_cases, failed_cases, pass_rate, cost_usd, duration_ms, avg_latency_ms}. The full cases × subjects matrix is intentionally omitted; use the dashboard or evals:export for that. See the multi-provider guide for how the underlying ComparisonRunner builds these stats, and running evals for the semantics shared with evals:run."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "Authentication",
+    "sectionId": "authentication",
+    "body": "MCP tools inherit the middleware stack of the Server that hosts them. For public deployments, layer Mcp::oauthRoutes() in front of Mcp::web(...) and your own auth gate — Proofread does not add its own gate beyond what the Laravel MCP package provides."
+  },
+  {
+    "slug": "integrations/mcp-tools",
+    "title": "MCP tools",
+    "section": "Testing",
+    "sectionId": "testing",
+    "body": "The Laravel MCP package ships a fake transporter, so you can test the tools without spinning up a real MCP client: No Mcp::fake() setup is required; the FakeTransporter is wired in when you call the Server's ::tool() helper. > **[info]** MCP tool output is stateless. Persistence happens only > when persist: true is passed — otherwise the run is computed, > returned, and discarded."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "body": "Persisted eval runs appear in Telescope alongside queries, jobs, and requests. No configuration beyond installing Telescope is required — the watcher is registered conditionally at boot. Proofread detects Telescope via class_exists(\\Laravel\\Telescope\\Telescope::class) inside ProofreadServiceProvider::packageBooted(). When the class is present, EvalRunWatcher is registered as a listener for the EvalRunPersisted event. When it is absent, the integration is a no-op. Every EvalRunPersisted event — fired by EvalPersister after a run is written to the database — triggers EvalRunWatcher::handle(), which records a custom Telescope entry. Transient runs that never persist do **not** appear in Telescope. The entry's name attribute is the fully-qualified Mosaiqo\\Proofread\\Events\\EvalRunPersisted class. Fields captured on each Telescope entry: - eval_run_id, dataset_name, suite_class. - subject_type, subject_class, subject_label. - passed, pass_count, fail_count, error_count, total_count. - duration_ms, total_cost_usd, total_tokens_in, total_tokens_out. - model, commit_sha. Tags attached to each entry: - proofread_eval (always). - dataset:{name} (always). - suite:{class} (when the run has a suite class). - commit:{sha} (when the run has a commit SHA). - status:passed or status:failed. Navigate to /telescope/events and filter by tag to slice the feed: - dataset:sentiment-classification — all runs of a single dataset. - status:failed — triage regressions. - suite:App\\Evals\\MyRubricSuite — a specific suite. - commit:abc123 — everything tied to a CI build. The watcher respects Telescope::isRecording(). When Telescope is globally paused (via Telescope::stopRecording() or the telescope:pause command), no entries are written. Resuming recording reactivates the watcher without any Proofread-side changes. Telescope stores entries in your main database. Schedule its pruning command to keep the table in check: Proofread does not enforce its own retention for Telescope entries — this is entirely Telescope's concern. Persisted EvalRun rows remain regardless of Telescope pruning; see the persistence page for details. > **[warn]** Telescope stores entries in your main DB. Heavy eval > traffic inflates telescope_entries quickly. Prune aggressively, > and consider Telescope's ignore filters if only regressions are > interesting. Telescope gives you a flat event log. For cross-run comparisons, regression detection, and cost breakdowns, use the Proofread dashboard instead — it reads from the same persisted tables but exposes run-oriented views."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Installation",
+    "sectionId": "installation",
+    "body": "Proofread detects Telescope via class_exists(\\Laravel\\Telescope\\Telescope::class) inside ProofreadServiceProvider::packageBooted(). When the class is present, EvalRunWatcher is registered as a listener for the EvalRunPersisted event. When it is absent, the integration is a no-op."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "What gets recorded",
+    "sectionId": "what-gets-recorded",
+    "body": "Every EvalRunPersisted event — fired by EvalPersister after a run is written to the database — triggers EvalRunWatcher::handle(), which records a custom Telescope entry. Transient runs that never persist do **not** appear in Telescope. The entry's name attribute is the fully-qualified Mosaiqo\\Proofread\\Events\\EvalRunPersisted class."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Entry content",
+    "sectionId": "entry-content",
+    "body": "Fields captured on each Telescope entry: - eval_run_id, dataset_name, suite_class. - subject_type, subject_class, subject_label. - passed, pass_count, fail_count, error_count, total_count. - duration_ms, total_cost_usd, total_tokens_in, total_tokens_out. - model, commit_sha. Tags attached to each entry: - proofread_eval (always). - dataset:{name} (always). - suite:{class} (when the run has a suite class). - commit:{sha} (when the run has a commit SHA). - status:passed or status:failed."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Filtering in Telescope UI",
+    "sectionId": "filtering-in-telescope-ui",
+    "body": "Navigate to /telescope/events and filter by tag to slice the feed: - dataset:sentiment-classification — all runs of a single dataset. - status:failed — triage regressions. - suite:App\\Evals\\MyRubricSuite — a specific suite. - commit:abc123 — everything tied to a CI build."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Telescope pause",
+    "sectionId": "telescope-pause",
+    "body": "The watcher respects Telescope::isRecording(). When Telescope is globally paused (via Telescope::stopRecording() or the telescope:pause command), no entries are written. Resuming recording reactivates the watcher without any Proofread-side changes."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Pruning",
+    "sectionId": "pruning",
+    "body": "Telescope stores entries in your main database. Schedule its pruning command to keep the table in check: Proofread does not enforce its own retention for Telescope entries — this is entirely Telescope's concern. Persisted EvalRun rows remain regardless of Telescope pruning; see the persistence page for details. > **[warn]** Telescope stores entries in your main DB. Heavy eval > traffic inflates telescope_entries quickly. Prune aggressively, > and consider Telescope's ignore filters if only regressions are > interesting."
+  },
+  {
+    "slug": "integrations/laravel-telescope",
+    "title": "Laravel Telescope",
+    "section": "Relationship to the dashboard",
+    "sectionId": "relationship-to-the-dashboard",
+    "body": "Telescope gives you a flat event log. For cross-run comparisons, regression detection, and cost breakdowns, use the Proofread dashboard instead — it reads from the same persisted tables but exposes run-oriented views."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "body": "Eval run metrics on the Pulse dashboard. Pass / fail counts, total cost, and duration land alongside queries, jobs, and slow requests — plus a publishable card that renders a Proofread-specific summary. The EvalPulseRecorder listener is registered conditionally in ProofreadServiceProvider::packageBooted() when both class_exists(\\Laravel\\Pulse\\Pulse::class) is true **and** the container has Pulse bound. Partial installs (package present, service provider disabled) cleanly skip the recorder. Every EvalRunPersisted event fans out into three Pulse entries: - proofread_eval — a count() aggregate keyed by {dataset_name}::passed or {dataset_name}::failed. - proofread_eval_duration — avg() and max() aggregates keyed by dataset_name, value in integer milliseconds. - proofread_eval_cost — sum() aggregate keyed by dataset_name, value in integer **micro-dollars** (see caveat below). Only recorded when the run has a non-null total_cost_usd. Each entry's timestamp is taken from the run's created_at, so back-dated persistence (via replay tooling, for instance) places the metrics in the correct historical window. Publish the card stub: It lands at resources/views/vendor/pulse/cards/proofread.blade.php. The card shows the 24-hour pass rate, total cost, average duration, and the five most recent runs. Edit resources/views/vendor/pulse/dashboard.blade.php and include the card: > **[info]** The card queries the EvalRun model directly — it does > not depend on the Pulse recorder. Even if you skip the recorder > integration entirely, the card still renders stats from persisted > runs. Pulse's value column is ?int. Proofread stores cost as cost_usd * 1_000_000 (integer micro-dollars) so sub-cent amounts are preserved. Reconstruct dollars in custom queries: If you need a Livewire card of your own, the same conversion applies when reading aggregates via Pulse::aggregate(). Pulse's default windows (1_hour, 6_hours, 24_hours, 7_days) apply. Example: Remember to divide by 1_000_000 for dollar values. Pulse shows what you've already spent. For *projected* spend under different dataset sizes or models, use the cost simulation guide instead."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Installation",
+    "sectionId": "installation",
+    "body": "The EvalPulseRecorder listener is registered conditionally in ProofreadServiceProvider::packageBooted() when both class_exists(\\Laravel\\Pulse\\Pulse::class) is true **and** the container has Pulse bound. Partial installs (package present, service provider disabled) cleanly skip the recorder."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "What gets recorded",
+    "sectionId": "what-gets-recorded",
+    "body": "Every EvalRunPersisted event fans out into three Pulse entries: - proofread_eval — a count() aggregate keyed by {dataset_name}::passed or {dataset_name}::failed. - proofread_eval_duration — avg() and max() aggregates keyed by dataset_name, value in integer milliseconds. - proofread_eval_cost — sum() aggregate keyed by dataset_name, value in integer **micro-dollars** (see caveat below). Only recorded when the run has a non-null total_cost_usd. Each entry's timestamp is taken from the run's created_at, so back-dated persistence (via replay tooling, for instance) places the metrics in the correct historical window."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Publishable Pulse card",
+    "sectionId": "publishable-pulse-card",
+    "body": "Publish the card stub: It lands at resources/views/vendor/pulse/cards/proofread.blade.php. The card shows the 24-hour pass rate, total cost, average duration, and the five most recent runs."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Adding the card to your dashboard",
+    "sectionId": "adding-the-card-to-your-dashboard",
+    "body": "Edit resources/views/vendor/pulse/dashboard.blade.php and include the card: > **[info]** The card queries the EvalRun model directly — it does > not depend on the Pulse recorder. Even if you skip the recorder > integration entirely, the card still renders stats from persisted > runs."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Cost caveat: micro-dollars",
+    "sectionId": "cost-caveat-micro-dollars",
+    "body": "Pulse's value column is ?int. Proofread stores cost as cost_usd * 1_000_000 (integer micro-dollars) so sub-cent amounts are preserved. Reconstruct dollars in custom queries: If you need a Livewire card of your own, the same conversion applies when reading aggregates via Pulse::aggregate()."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Aggregation windows",
+    "sectionId": "aggregation-windows",
+    "body": "Pulse's default windows (1_hour, 6_hours, 24_hours, 7_days) apply. Example: Remember to divide by 1_000_000 for dollar values."
+  },
+  {
+    "slug": "integrations/laravel-pulse",
+    "title": "Laravel Pulse",
+    "section": "Relationship to cost simulation",
+    "sectionId": "relationship-to-cost-simulation",
+    "body": "Pulse shows what you've already spent. For *projected* spend under different dataset sizes or models, use the cost simulation guide instead."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "body": "Persisted eval runs emit an OTel span tree to whatever TracerProvider the host app has configured. Pipe the spans to Jaeger, Grafana Tempo, Honeycomb, or any OTLP collector and get waterfall visualizations of every run, every case, and every assertion. For the API shim alone (the minimum Proofread needs to emit spans): For a full exporter pipeline: Proofread's EvalRunTracer is registered conditionally when interface_exists(\\OpenTelemetry\\API\\Trace\\TracerInterface::class) is true. The tracer is resolved from Globals::tracerProvider()->getTracer('mosaiqo/proofread', VERSION). Without a configured provider, spans are created against the no-op tracer and silently discarded. A minimal console-export setup in AppServiceProvider::boot(): Swap ConsoleSpanExporterFactory for an OTLP exporter in production. One root span per run, one child span per case, and one event per assertion result attached to its case span. Events carry name, passed, reason, and score when available (only scalar values are forwarded — arrays and objects in metadata are dropped). - proofread.run.id, proofread.dataset.name, proofread.suite.class, proofread.subject.class, proofread.run.subject_label. - proofread.run.passed, proofread.run.pass_count, proofread.run.fail_count, proofread.run.total_count. - proofread.run.total_cost_usd, proofread.run.total_tokens_in, proofread.run.total_tokens_out. - proofread.run.model, proofread.run.commit_sha, proofread.run.comparison_id (nullable). Null-valued attributes are filtered out before the span is emitted, so backends see a sparse but never ambiguous payload. - proofread.case.index, proofread.case.name, proofread.case.passed. - proofread.case.duration_ms, proofread.case.cost_usd, proofread.case.tokens_in, proofread.case.tokens_out, proofread.case.latency_ms. - proofread.case.model, proofread.case.error_class, proofread.case.error_message (truncated to 500 characters). - Root span: OK when the run passed, ERROR when it failed. - Case span: OK when the case passed, ERROR when it failed. When error_class is set the error message is attached as the status description as well. - Root span timestamps match the run's created_at + duration_ms. - Case spans are laid out **sequentially** within the root span — the tracer advances a cursor by each case's duration_ms. - The final case span is clamped to the root's end so the waterfall never overshoots the parent. > **[info]** If your runs use concurrency &gt; 1, case spans still > display sequentially in the trace. The total root duration is > accurate; individual case positions are illustrative rather than a > faithful reproduction of real parallel scheduling. OTLP over HTTP (Jaeger, Tempo, Honeycomb, most collectors): Wrap the exporter in a BatchSpanProcessor for production traffic rather than the SimpleSpanProcessor used in the quickstart. The tracer is retrospective: it fires on EvalRunPersisted, which means transient runs (those not written to the database) do not emit spans. See running evals for when persistence happens and persistence for how to opt in."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Installation",
+    "sectionId": "installation",
+    "body": "For the API shim alone (the minimum Proofread needs to emit spans): For a full exporter pipeline: Proofread's EvalRunTracer is registered conditionally when interface_exists(\\OpenTelemetry\\API\\Trace\\TracerInterface::class) is true. The tracer is resolved from Globals::tracerProvider()->getTracer('mosaiqo/proofread', VERSION). Without a configured provider, spans are created against the no-op tracer and silently discarded."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Configuring a TracerProvider",
+    "sectionId": "configuring-a-tracerprovider",
+    "body": "A minimal console-export setup in AppServiceProvider::boot(): Swap ConsoleSpanExporterFactory for an OTLP exporter in production."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Span structure",
+    "sectionId": "span-structure",
+    "body": "One root span per run, one child span per case, and one event per assertion result attached to its case span. Events carry name, passed, reason, and score when available (only scalar values are forwarded — arrays and objects in metadata are dropped)."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Attributes reference",
+    "sectionId": "attributes-reference",
+    "body": ""
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Root span: proofread.eval.run",
+    "sectionId": "root-span-proofreadevalrun",
+    "body": "- proofread.run.id, proofread.dataset.name, proofread.suite.class, proofread.subject.class, proofread.run.subject_label. - proofread.run.passed, proofread.run.pass_count, proofread.run.fail_count, proofread.run.total_count. - proofread.run.total_cost_usd, proofread.run.total_tokens_in, proofread.run.total_tokens_out. - proofread.run.model, proofread.run.commit_sha, proofread.run.comparison_id (nullable). Null-valued attributes are filtered out before the span is emitted, so backends see a sparse but never ambiguous payload."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Case span: proofread.eval.case",
+    "sectionId": "case-span-proofreadevalcase",
+    "body": "- proofread.case.index, proofread.case.name, proofread.case.passed. - proofread.case.duration_ms, proofread.case.cost_usd, proofread.case.tokens_in, proofread.case.tokens_out, proofread.case.latency_ms. - proofread.case.model, proofread.case.error_class, proofread.case.error_message (truncated to 500 characters)."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Status codes",
+    "sectionId": "status-codes",
+    "body": "- Root span: OK when the run passed, ERROR when it failed. - Case span: OK when the case passed, ERROR when it failed. When error_class is set the error message is attached as the status description as well."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Trace timing",
+    "sectionId": "trace-timing",
+    "body": "- Root span timestamps match the run's created_at + duration_ms. - Case spans are laid out **sequentially** within the root span — the tracer advances a cursor by each case's duration_ms. - The final case span is clamped to the root's end so the waterfall never overshoots the parent. > **[info]** If your runs use concurrency &gt; 1, case spans still > display sequentially in the trace. The total root duration is > accurate; individual case positions are illustrative rather than a > faithful reproduction of real parallel scheduling."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Exporting to real backends",
+    "sectionId": "exporting-to-real-backends",
+    "body": "OTLP over HTTP (Jaeger, Tempo, Honeycomb, most collectors): Wrap the exporter in a BatchSpanProcessor for production traffic rather than the SimpleSpanProcessor used in the quickstart."
+  },
+  {
+    "slug": "integrations/opentelemetry",
+    "title": "OpenTelemetry",
+    "section": "Relationship to run execution",
+    "sectionId": "relationship-to-run-execution",
+    "body": "The tracer is retrospective: it fires on EvalRunPersisted, which means transient runs (those not written to the database) do not emit spans. See running evals for when persistence happens and persistence for how to opt in."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "body": "Proofread ships AI guidelines for Laravel Boost-powered editors. Publish them into your repo, and Boost-aware assistants (Cursor, Claude Code, and similar) generate idiomatic Proofread suites, assertions, and datasets without tribal knowledge. Boost is an AI-first tooling layer for Laravel. Editors that consume Boost guidelines pick them up as contextual rules when writing or refactoring code in your project. The guidelines are plain Markdown files — nothing runtime-bound; a suggest-only dependency. The file lands at .ai/guidelines/proofread.md. That path matches the convention most Boost setups scan; adjust the destination if your setup expects another location. The stub source is stubs/boost/proofread-guidelines.md inside the package, so you can diff against upstream updates after a composer update. - **EvalSuite structure** — naming (PascalCase + Suite suffix), kebab-case name(), lifecycle hooks (setUp, tearDown, assertionsFor). - **Assertion selection** — when to reach for each category (string-based, regex, JSON, rubric, trajectory, similarity, etc.). - **Testing patterns** — using JudgeAgent::fake() for deterministic rubric tests, toPassSuite over manual runner invocation. - **CLI workflow** — evals:run, evals:benchmark, evals:compare, and the companion commands. - **Scaffolding** — the proofread:make-suite, proofread:make-assertion, and proofread:make-dataset generators. With the guidelines published, Boost-powered editors generate: - Suites in the correct namespace and file layout. - Named-constructor usage (Contains::make(), not new Contains()). - Proper setUp / tearDown / assertionsFor hooks when database state is required. - Pest expectations (toPassSuite, toPassEval) rather than hand-rolled runner invocations. See the scaffolding notes in the eval suites page for the patterns the guidelines enforce. The published file is yours to edit. Adjust it to reflect your stack's conventions — namespace roots, dataset directories, in-house assertion packages — while keeping the Proofread-specific parts intact so generation stays idiomatic. > **[info]** Guidelines are project-scoped. Each consumer customizes > their copy without affecting others. Proofread ships a neutral > baseline; your repo's copy is the source of truth for your team. The generators (proofread:make-*) produce canonical files from stubs. Boost guidelines teach the AI to produce code *equivalent to* those stubs when working in files outside the generator's reach. The two workflows are complementary: generators for new suites, guidelines for everything the assistant writes by hand."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "What is Laravel Boost",
+    "sectionId": "what-is-laravel-boost",
+    "body": "Boost is an AI-first tooling layer for Laravel. Editors that consume Boost guidelines pick them up as contextual rules when writing or refactoring code in your project. The guidelines are plain Markdown files — nothing runtime-bound; a suggest-only dependency."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "Publishing Proofread's guidelines",
+    "sectionId": "publishing-proofreads-guidelines",
+    "body": "The file lands at .ai/guidelines/proofread.md. That path matches the convention most Boost setups scan; adjust the destination if your setup expects another location. The stub source is stubs/boost/proofread-guidelines.md inside the package, so you can diff against upstream updates after a composer update."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "What the guidelines cover",
+    "sectionId": "what-the-guidelines-cover",
+    "body": "- **EvalSuite structure** — naming (PascalCase + Suite suffix), kebab-case name(), lifecycle hooks (setUp, tearDown, assertionsFor). - **Assertion selection** — when to reach for each category (string-based, regex, JSON, rubric, trajectory, similarity, etc.). - **Testing patterns** — using JudgeAgent::fake() for deterministic rubric tests, toPassSuite over manual runner invocation. - **CLI workflow** — evals:run, evals:benchmark, evals:compare, and the companion commands. - **Scaffolding** — the proofread:make-suite, proofread:make-assertion, and proofread:make-dataset generators."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "Integration outcome",
+    "sectionId": "integration-outcome",
+    "body": "With the guidelines published, Boost-powered editors generate: - Suites in the correct namespace and file layout. - Named-constructor usage (Contains::make(), not new Contains()). - Proper setUp / tearDown / assertionsFor hooks when database state is required. - Pest expectations (toPassSuite, toPassEval) rather than hand-rolled runner invocations. See the scaffolding notes in the eval suites page for the patterns the guidelines enforce."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "Customizing",
+    "sectionId": "customizing",
+    "body": "The published file is yours to edit. Adjust it to reflect your stack's conventions — namespace roots, dataset directories, in-house assertion packages — while keeping the Proofread-specific parts intact so generation stays idiomatic. > **[info]** Guidelines are project-scoped. Each consumer customizes > their copy without affecting others. Proofread ships a neutral > baseline; your repo's copy is the source of truth for your team."
+  },
+  {
+    "slug": "integrations/laravel-boost",
+    "title": "Laravel Boost",
+    "section": "Relationship to scaffolding",
+    "sectionId": "relationship-to-scaffolding",
+    "body": "The generators (proofread:make-*) produce canonical files from stubs. Boost guidelines teach the AI to produce code *equivalent to* those stubs when working in files outside the generator's reach. The two workflows are complementary: generators for new suites, guidelines for everything the assistant writes by hand."
+  },
+  {
     "slug": "guides/assertions-deep-dive",
     "title": "Assertions deep dive",
     "body": "Assertions are the unit of evaluation in Proofread. Each one inspects a subject's output (and optionally the runtime context) and returns an AssertionResult — a sealed value object carrying a boolean verdict, a human-readable reason, an optional score, and a metadata bag. This guide covers every assertion shipped with the package, when to reach for each one, and the edge cases that trip people up in practice. Every concrete assertion implements Mosaiqo\\Proofread\\Contracts\\Assertion: $output is whatever the subject returned — usually a string for text agents, but could be an array, object, or even null. The runner does not coerce; defensive is_string() / gettype() checks live inside each assertion. $context is a standard bag populated by the runner before run() is called. Assertions read from it opportunistically: | Key | Populated when | Notes | | ------------------- | ----------------------------------------------- | ----------------------------------- | | input | Always. | The case's input value. | | meta | When the case declares meta. | Arbitrary case annotations. | | case_index | Always. | Zero-based index in the dataset. | | subject_label | Multi-provider runs. | The label from subjects(). | | tokens_in | Agent subjects with usage. | Integer, may be null. | | tokens_out | Agent subjects with usage. | Integer, may be null. | | tokens_total | Agent subjects with usage. | Integer, may be null. | | cost_usd | Agent subjects with a pricing table match. | Float, may be null. | | latency_ms | Always. | Float, populated by the runner. | | raw | Agent subjects. | The raw TextResponse. | AssertionResult::pass() and AssertionResult::fail() are the only ways to build a result. Both accept a reason, an optional score, and a metadata array that surfaces in the dashboard drawer and exports. > **[info]** The sealed hierarchy allows exactly one subclass: > JudgeResult. Judge-backed assertions (Rubric, Hallucination, > Language) return that richer type so the dashboard can display the > judge model and retry count alongside the verdict. Fast, offline, zero-dependency. Reach for these first. Plain substring match. The cheapest guard there is — good for sanity checks (\"the answer must mention the customer's name\") and boilerplate presence (\"the email must include a signature\"). Minimal: Case-insensitive, multibyte-aware: **Edge cases.** - Empty-string needle is treated as always present (it passes). This matches str_contains semantics and prevents false failures when a case has no mandatory substring. - Non-string output fails with Expected string output, got <type>. - Case-insensitive comparison uses mb_strtolower, so accented characters compare correctly. **Reason format.** Output contains \"<needle>\" on pass, Output does not contain \"<needle>\" on fail. PCRE matching. Use it when a substring match is too loose and a full JSON schema is too strict — structured identifiers, ISO dates, allow- lists. The pattern must include delimiters (/.../, #...#, etc.) and is validated at construction time: an invalid pattern throws InvalidArgumentException rather than failing at run time. Minimal: Complex — allow-list with case-insensitive and Unicode flags: **Edge cases.** - Non-string output fails immediately. - Runtime regex errors (backtrack limits, catastrophic patterns) are caught and surfaced as Regex error while matching <pattern>: <preg_last_error_msg>. - Use \\A / \\z instead of ^ / $ when matching multi-line output and you need end-of-string (not end-of-line) anchoring. **Reason format.** Output matches <pattern> or Output does not match <pattern>. Character count bounds. mb_strlen under the hood, so it counts user- perceived characters, not bytes. Minimal: Complex — bound a summary: **Edge cases.** - Negative bounds throw at construction. - min > max throws at construction. - Non-string output fails. **Reason format.** Output length <n> is within bounds, Output length <n> is below minimum <m>, or Output length <n> exceeds maximum <m>. Element count bounds for array / Countable output. Pair it with subjects that return lists (extractors, taggers, search tools). Minimal: Complex — enforce an exact number of extracted entities: **Edge cases.** - Non-array, non-Countable output fails; Countable::count() is used when applicable. - Negative bounds throw. **Reason format.** Count <n> is within bounds, Count <n> is below minimum <m>, or Count <n> exceeds maximum <m>. Validates JSON-shaped output against an Opis JSON Schema. The assertion accepts strings (parsed with JSON_THROW_ON_ERROR), arrays, and objects; lists and nested associative arrays are normalized into stdClass trees before validation. Minimal: Complex — derive the schema straight from an Agent implementing HasStructuredOutput: **Edge cases.** - Top-level list schemas throw at construction; the validator expects an object. - Malformed JSON input fails with the decoder message rather than a cryptic schema error. - fromAgent instantiates the agent via the container to read its schema — side effects in the constructor are unsafe. **Reason format.** Output conforms to schema on pass; Schema violation at <JSON pointer>: <opis message> on fail. The assertion dives into sub-errors and reports the deepest leaf so you see the actual field that diverged rather than the root anyOf umbrella error. Guard cost, speed, and token usage. These read values populated by the runner and fail closed when data is missing — a subject that can't report tokens cannot be budgeted, and silence shouldn't look like a pass. Minimal: Complex — cap input and output separately: **Edge cases.** - Missing context keys (tokens_in, tokens_out, tokens_total) fail with an explicit diagnostic. - maxTotal falls back to tokens_in + tokens_out when the runner provides only the parts. - Closure subjects don't produce usage data; TokenBudget will always fail for them unless you synthesize usage yourself. Reads cost_usd from the context. The runner computes it from the pricing table configured in config/proofread.php, including cache- read/write rates and reasoning-token pricing when present. Minimal: Complex — combine with a token guard for belt-and-braces: **Edge cases.** - A model missing from the pricing table returns null cost; the assertion fails closed with a clear reason. Add the model to proofread.pricing.models to enable the check. - maxUsd <= 0 throws at construction. **Reason format.** Dollar amounts are rendered with four decimal places: Cost $0.0043 is within limit of $0.0100. Reads latency_ms from the context (always populated by the runner). Minimal: **Edge cases.** - Non-numeric latency_ms (should never happen via the runner) fails closed. - Latency is end-to-end from subject invocation to return, including network round-trips. It does not separate first-byte from total duration. LLM-as-judge and embedding-based. These call external services. All three LLM-as-judge variants go through the shared Judge service, so they share configuration (proofread.judge.default_model, retry count) and testing ergonomics. Scores output against a natural-language criteria string. The judge returns {passed, score, reason}; the assertion layers a numeric threshold on top. Minimal: Complex — pin a specific model and lower the threshold for a more permissive pass: **Edge cases.** - Judge failures (schema drift, network errors) exhaust retries and come back as JudgeResult::fail with retryCount reflecting the attempts made. The raw response from the last attempt is preserved in metadata under judge_raw_response for debugging. - A judge verdict of passed: true still fails if score < minScore. The reason reads Judge approved but score <x> is below threshold <y>. - minScore outside [0.0, 1.0] throws at construction. **Reason format.** The judge's own reason field on pass; either the judge's rejection reason or the threshold diagnostic on fail. **Metadata.** judge_model, judge_tokens_in, judge_tokens_out, judge_cost_usd, judge_raw_response (on failure), retry_count. > **[info]** Test Rubric-backed suites without real LLM calls by faking > the JudgeAgent: > > Embedding-based cosine similarity to a reference string. Use it when the expected output is semantically fixed but verbally flexible. Minimal: Complex — tune the threshold and embedding model: **Edge cases.** - Cosine similarity ranges from -1.0 (opposite) to 1.0 (identical). Scores are usually positive for natural language but negative scores are valid and allowed. - Default threshold is 0.8, which is a reasonable starting point for text-embedding-3-small. Bump it when switching to a larger model. - Non-string output fails fast with a type diagnostic. - Embedding-service errors become a fail with metadata keys embedding_model, embedding_cost_usd, embedding_tokens set to null so downstream reporting doesn't crash on missing values. **Reason format.** Similarity <score> meets threshold <t> on pass; Similarity <score> below threshold <t> on fail. Judge-backed check that every claim in the output is supported by the ground truth. Internally composes a fixed criteria string that instructs the judge to treat the ground truth as authoritative. Minimal: Complex — allow a slight deviation score: **Edge cases.** - Defaults to minScore(1.0) — any hallucination fails. Loosen it deliberately. - Ground truth is truncation-free: large strings are forwarded as-is to the judge. Watch token costs when the source is a long KB article. **Reason format.** The judge verdict; metadata matches Rubric. Judge-backed language detector. Prefer it to a regex for genuine natural-language output, which rarely has clean ASCII signals. Minimal: Complex — use a full name and a cheaper judge: **Edge cases.** - Input is normalized via strtolower(trim(...)); 'EN', 'en', and ' en ' all resolve identically. - \"Primarily in\" means >80% of meaningful content per the internal prompt — mixed-language outputs with a short quote in another language still pass. Validates how an Agent reached its answer, not just the answer itself. Requires an Agent subject (closures don't produce step data). Reads the TextResponse from $context['raw'] and inspects steps and toolCalls. Minimal: Complex — enforce a required tool chain: **Edge cases.** - Non-agent subjects produce Trajectory requires an Agent subject — got <type>. - callsTools accepts any observed order. callsToolsInOrder allows interleaved extra calls as long as the required subsequence appears in order. - Empty tool lists throw at construction. **Reason format.** Always includes the observed tools on failure so you can diagnose immediately without opening the drawer: Trajectory did not call required tool \"lookup_order\" (observed: search, explain). Captures a reference output on first run, then compares subsequent runs against it. Use it for prompts whose output should remain byte-stable across refactors (templates, deterministic pipelines). Minimal: Complex — derive the key from meta.name or case_index: **Edge cases.** - On first run the snapshot is written and the assertion passes with Snapshot '<key>' created and metadata snapshot_created: true. - When the environment variable PROOFREAD_UPDATE_SNAPSHOTS=true is set, a mismatched snapshot is overwritten instead of failing; the result carries snapshot_updated: true so CI can detect accidental rebaselines. - Diffs are line-based with - / + prefixes and are truncated to 30 lines (15 head + \"… N more lines\"). Lines over 120 chars are also truncated. The full diff is never persisted — only the rendered excerpt. - fromContext() looks up meta.snapshot_key, then meta.name, then falls back to case_<index>; none of the three being present fails with a clear diagnostic. - Snapshots live under config('proofread.snapshots.path'), which defaults to tests/Snapshots/proofread. Commit the directory so the baseline is shared. **Reason format.** Snapshot '<key>' matches on pass; Snapshot '<key>' does not match:\\n<diff> on fail. Metadata always includes snapshot_key and snapshot_path; on fail, snapshot_diff carries the rendered excerpt. Opinionated counterpart to JsonSchemaAssertion::fromAgent(). Derives the schema from an Agent implementing HasStructuredOutput and produces LLM-tailored error messages. Also stores the parsed output under the parsed_data metadata key so downstream tooling (clusterers, dataset generators) can read structured values without reparsing. Minimal: **Edge cases.** - The agent class must exist and implement HasStructuredOutput; both conditions throw at construction when unmet. - Failure metadata includes both parsed_data and violation_path (JSON pointer), which the dashboard uses to highlight the offending field in the drawer. **Reason format.** Output conforms to structured schema of <ShortName> on pass; Structured output violation at <path>: <message> on fail. Runs the configured PiiSanitizer over the output and fails if any placeholder was inserted. Use it to catch the reverse of sanitization: the model leaking PII into a response it shouldn't. Minimal (uses the container-resolved sanitizer, which reads proofread.shadow.sanitize): Complex — bespoke patterns scoped to this suite: **Edge cases.** - Only string output is supported. Nested array leakage belongs on the input side (handled by the shadow capture path), not the assertion. - The assertion considers the output \"leaked\" as soon as at least one placeholder ends up in the sanitized string. Metadata lists every placeholder found so the drawer can tell you which PII classes appeared. **Reason format.** No PII patterns detected on pass; PII detected in output: [EMAIL], [CARD] on fail. **Metadata.** placeholders_found, sanitized_output. The Assertion contract is tiny. A bespoke assertion is often fewer than 30 lines. Scaffolded: The generator drops a stub into app/Evals/Assertions/ wired up with strict types, a final readonly declaration, named constructors, and a Pest test file mirroring the class path. > **[info]** Design custom assertions as readonly value objects with > named constructors. The runner invokes run() repeatedly and may > serialize the assertion (via name()) into persistence — immutable > objects make this trivial. - Assertions overview — quick reference matrix. - Eval suites — wiring assertions into cases. - Shadow evals — running assertions against production traffic. - Multi-provider comparison — branching assertions per subject."
