@@ -411,6 +411,329 @@
     "body": "Both arguments accept: - A numeric run id: 42 - A commit SHA: abc1234 - The literal latest Typical CI use: compare the PR's run against the main branch's most recent run. > **[info]** latest resolves to the most recent run for both > evals:compare and evals:dataset:diff. Combine with --commit-sha on > evals:run --queue to make PR-vs-main comparisons deterministic."
   },
   {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "body": "Assertions are the unit of evaluation in Proofread. Each one inspects a subject's output (and optionally the runtime context) and returns an AssertionResult — a sealed value object carrying a boolean verdict, a human-readable reason, an optional score, and a metadata bag. This guide covers every assertion shipped with the package, when to reach for each one, and the edge cases that trip people up in practice. Every concrete assertion implements Mosaiqo\\Proofread\\Contracts\\Assertion: $output is whatever the subject returned — usually a string for text agents, but could be an array, object, or even null. The runner does not coerce; defensive is_string() / gettype() checks live inside each assertion. $context is a standard bag populated by the runner before run() is called. Assertions read from it opportunistically: | Key | Populated when | Notes | | ------------------- | ----------------------------------------------- | ----------------------------------- | | input | Always. | The case's input value. | | meta | When the case declares meta. | Arbitrary case annotations. | | case_index | Always. | Zero-based index in the dataset. | | subject_label | Multi-provider runs. | The label from subjects(). | | tokens_in | Agent subjects with usage. | Integer, may be null. | | tokens_out | Agent subjects with usage. | Integer, may be null. | | tokens_total | Agent subjects with usage. | Integer, may be null. | | cost_usd | Agent subjects with a pricing table match. | Float, may be null. | | latency_ms | Always. | Float, populated by the runner. | | raw | Agent subjects. | The raw TextResponse. | AssertionResult::pass() and AssertionResult::fail() are the only ways to build a result. Both accept a reason, an optional score, and a metadata array that surfaces in the dashboard drawer and exports. > **[info]** The sealed hierarchy allows exactly one subclass: > JudgeResult. Judge-backed assertions (Rubric, Hallucination, > Language) return that richer type so the dashboard can display the > judge model and retry count alongside the verdict. Fast, offline, zero-dependency. Reach for these first. Plain substring match. The cheapest guard there is — good for sanity checks (\"the answer must mention the customer's name\") and boilerplate presence (\"the email must include a signature\"). Minimal: Case-insensitive, multibyte-aware: **Edge cases.** - Empty-string needle is treated as always present (it passes). This matches str_contains semantics and prevents false failures when a case has no mandatory substring. - Non-string output fails with Expected string output, got <type>. - Case-insensitive comparison uses mb_strtolower, so accented characters compare correctly. **Reason format.** Output contains \"<needle>\" on pass, Output does not contain \"<needle>\" on fail. PCRE matching. Use it when a substring match is too loose and a full JSON schema is too strict — structured identifiers, ISO dates, allow- lists. The pattern must include delimiters (/.../, #...#, etc.) and is validated at construction time: an invalid pattern throws InvalidArgumentException rather than failing at run time. Minimal: Complex — allow-list with case-insensitive and Unicode flags: **Edge cases.** - Non-string output fails immediately. - Runtime regex errors (backtrack limits, catastrophic patterns) are caught and surfaced as Regex error while matching <pattern>: <preg_last_error_msg>. - Use \\A / \\z instead of ^ / $ when matching multi-line output and you need end-of-string (not end-of-line) anchoring. **Reason format.** Output matches <pattern> or Output does not match <pattern>. Character count bounds. mb_strlen under the hood, so it counts user- perceived characters, not bytes. Minimal: Complex — bound a summary: **Edge cases.** - Negative bounds throw at construction. - min > max throws at construction. - Non-string output fails. **Reason format.** Output length <n> is within bounds, Output length <n> is below minimum <m>, or Output length <n> exceeds maximum <m>. Element count bounds for array / Countable output. Pair it with subjects that return lists (extractors, taggers, search tools). Minimal: Complex — enforce an exact number of extracted entities: **Edge cases.** - Non-array, non-Countable output fails; Countable::count() is used when applicable. - Negative bounds throw. **Reason format.** Count <n> is within bounds, Count <n> is below minimum <m>, or Count <n> exceeds maximum <m>. Validates JSON-shaped output against an Opis JSON Schema. The assertion accepts strings (parsed with JSON_THROW_ON_ERROR), arrays, and objects; lists and nested associative arrays are normalized into stdClass trees before validation. Minimal: Complex — derive the schema straight from an Agent implementing HasStructuredOutput: **Edge cases.** - Top-level list schemas throw at construction; the validator expects an object. - Malformed JSON input fails with the decoder message rather than a cryptic schema error. - fromAgent instantiates the agent via the container to read its schema — side effects in the constructor are unsafe. **Reason format.** Output conforms to schema on pass; Schema violation at <JSON pointer>: <opis message> on fail. The assertion dives into sub-errors and reports the deepest leaf so you see the actual field that diverged rather than the root anyOf umbrella error. Guard cost, speed, and token usage. These read values populated by the runner and fail closed when data is missing — a subject that can't report tokens cannot be budgeted, and silence shouldn't look like a pass. Minimal: Complex — cap input and output separately: **Edge cases.** - Missing context keys (tokens_in, tokens_out, tokens_total) fail with an explicit diagnostic. - maxTotal falls back to tokens_in + tokens_out when the runner provides only the parts. - Closure subjects don't produce usage data; TokenBudget will always fail for them unless you synthesize usage yourself. Reads cost_usd from the context. The runner computes it from the pricing table configured in config/proofread.php, including cache- read/write rates and reasoning-token pricing when present. Minimal: Complex — combine with a token guard for belt-and-braces: **Edge cases.** - A model missing from the pricing table returns null cost; the assertion fails closed with a clear reason. Add the model to proofread.pricing.models to enable the check. - maxUsd <= 0 throws at construction. **Reason format.** Dollar amounts are rendered with four decimal places: Cost $0.0043 is within limit of $0.0100. Reads latency_ms from the context (always populated by the runner). Minimal: **Edge cases.** - Non-numeric latency_ms (should never happen via the runner) fails closed. - Latency is end-to-end from subject invocation to return, including network round-trips. It does not separate first-byte from total duration. LLM-as-judge and embedding-based. These call external services. All three LLM-as-judge variants go through the shared Judge service, so they share configuration (proofread.judge.default_model, retry count) and testing ergonomics. Scores output against a natural-language criteria string. The judge returns {passed, score, reason}; the assertion layers a numeric threshold on top. Minimal: Complex — pin a specific model and lower the threshold for a more permissive pass: **Edge cases.** - Judge failures (schema drift, network errors) exhaust retries and come back as JudgeResult::fail with retryCount reflecting the attempts made. The raw response from the last attempt is preserved in metadata under judge_raw_response for debugging. - A judge verdict of passed: true still fails if score < minScore. The reason reads Judge approved but score <x> is below threshold <y>. - minScore outside [0.0, 1.0] throws at construction. **Reason format.** The judge's own reason field on pass; either the judge's rejection reason or the threshold diagnostic on fail. **Metadata.** judge_model, judge_tokens_in, judge_tokens_out, judge_cost_usd, judge_raw_response (on failure), retry_count. > **[info]** Test Rubric-backed suites without real LLM calls by faking > the JudgeAgent: > > Embedding-based cosine similarity to a reference string. Use it when the expected output is semantically fixed but verbally flexible. Minimal: Complex — tune the threshold and embedding model: **Edge cases.** - Cosine similarity ranges from -1.0 (opposite) to 1.0 (identical). Scores are usually positive for natural language but negative scores are valid and allowed. - Default threshold is 0.8, which is a reasonable starting point for text-embedding-3-small. Bump it when switching to a larger model. - Non-string output fails fast with a type diagnostic. - Embedding-service errors become a fail with metadata keys embedding_model, embedding_cost_usd, embedding_tokens set to null so downstream reporting doesn't crash on missing values. **Reason format.** Similarity <score> meets threshold <t> on pass; Similarity <score> below threshold <t> on fail. Judge-backed check that every claim in the output is supported by the ground truth. Internally composes a fixed criteria string that instructs the judge to treat the ground truth as authoritative. Minimal: Complex — allow a slight deviation score: **Edge cases.** - Defaults to minScore(1.0) — any hallucination fails. Loosen it deliberately. - Ground truth is truncation-free: large strings are forwarded as-is to the judge. Watch token costs when the source is a long KB article. **Reason format.** The judge verdict; metadata matches Rubric. Judge-backed language detector. Prefer it to a regex for genuine natural-language output, which rarely has clean ASCII signals. Minimal: Complex — use a full name and a cheaper judge: **Edge cases.** - Input is normalized via strtolower(trim(...)); 'EN', 'en', and ' en ' all resolve identically. - \"Primarily in\" means >80% of meaningful content per the internal prompt — mixed-language outputs with a short quote in another language still pass. Validates how an Agent reached its answer, not just the answer itself. Requires an Agent subject (closures don't produce step data). Reads the TextResponse from $context['raw'] and inspects steps and toolCalls. Minimal: Complex — enforce a required tool chain: **Edge cases.** - Non-agent subjects produce Trajectory requires an Agent subject — got <type>. - callsTools accepts any observed order. callsToolsInOrder allows interleaved extra calls as long as the required subsequence appears in order. - Empty tool lists throw at construction. **Reason format.** Always includes the observed tools on failure so you can diagnose immediately without opening the drawer: Trajectory did not call required tool \"lookup_order\" (observed: search, explain). Captures a reference output on first run, then compares subsequent runs against it. Use it for prompts whose output should remain byte-stable across refactors (templates, deterministic pipelines). Minimal: Complex — derive the key from meta.name or case_index: **Edge cases.** - On first run the snapshot is written and the assertion passes with Snapshot '<key>' created and metadata snapshot_created: true. - When the environment variable PROOFREAD_UPDATE_SNAPSHOTS=true is set, a mismatched snapshot is overwritten instead of failing; the result carries snapshot_updated: true so CI can detect accidental rebaselines. - Diffs are line-based with - / + prefixes and are truncated to 30 lines (15 head + \"… N more lines\"). Lines over 120 chars are also truncated. The full diff is never persisted — only the rendered excerpt. - fromContext() looks up meta.snapshot_key, then meta.name, then falls back to case_<index>; none of the three being present fails with a clear diagnostic. - Snapshots live under config('proofread.snapshots.path'), which defaults to tests/Snapshots/proofread. Commit the directory so the baseline is shared. **Reason format.** Snapshot '<key>' matches on pass; Snapshot '<key>' does not match:\\n<diff> on fail. Metadata always includes snapshot_key and snapshot_path; on fail, snapshot_diff carries the rendered excerpt. Opinionated counterpart to JsonSchemaAssertion::fromAgent(). Derives the schema from an Agent implementing HasStructuredOutput and produces LLM-tailored error messages. Also stores the parsed output under the parsed_data metadata key so downstream tooling (clusterers, dataset generators) can read structured values without reparsing. Minimal: **Edge cases.** - The agent class must exist and implement HasStructuredOutput; both conditions throw at construction when unmet. - Failure metadata includes both parsed_data and violation_path (JSON pointer), which the dashboard uses to highlight the offending field in the drawer. **Reason format.** Output conforms to structured schema of <ShortName> on pass; Structured output violation at <path>: <message> on fail. Runs the configured PiiSanitizer over the output and fails if any placeholder was inserted. Use it to catch the reverse of sanitization: the model leaking PII into a response it shouldn't. Minimal (uses the container-resolved sanitizer, which reads proofread.shadow.sanitize): Complex — bespoke patterns scoped to this suite: **Edge cases.** - Only string output is supported. Nested array leakage belongs on the input side (handled by the shadow capture path), not the assertion. - The assertion considers the output \"leaked\" as soon as at least one placeholder ends up in the sanitized string. Metadata lists every placeholder found so the drawer can tell you which PII classes appeared. **Reason format.** No PII patterns detected on pass; PII detected in output: [EMAIL], [CARD] on fail. **Metadata.** placeholders_found, sanitized_output. The Assertion contract is tiny. A bespoke assertion is often fewer than 30 lines. Scaffolded: The generator drops a stub into app/Evals/Assertions/ wired up with strict types, a final readonly declaration, named constructors, and a Pest test file mirroring the class path. > **[info]** Design custom assertions as readonly value objects with > named constructors. The runner invokes run() repeatedly and may > serialize the assertion (via name()) into persistence — immutable > objects make this trivial. - Assertions overview — quick reference matrix. - Eval suites — wiring assertions into cases. - Shadow evals — running assertions against production traffic. - Multi-provider comparison — branching assertions per subject."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "The contract",
+    "sectionId": "the-contract",
+    "body": "Every concrete assertion implements Mosaiqo\\Proofread\\Contracts\\Assertion: $output is whatever the subject returned — usually a string for text agents, but could be an array, object, or even null. The runner does not coerce; defensive is_string() / gettype() checks live inside each assertion. $context is a standard bag populated by the runner before run() is called. Assertions read from it opportunistically: | Key | Populated when | Notes | | ------------------- | ----------------------------------------------- | ----------------------------------- | | input | Always. | The case's input value. | | meta | When the case declares meta. | Arbitrary case annotations. | | case_index | Always. | Zero-based index in the dataset. | | subject_label | Multi-provider runs. | The label from subjects(). | | tokens_in | Agent subjects with usage. | Integer, may be null. | | tokens_out | Agent subjects with usage. | Integer, may be null. | | tokens_total | Agent subjects with usage. | Integer, may be null. | | cost_usd | Agent subjects with a pricing table match. | Float, may be null. | | latency_ms | Always. | Float, populated by the runner. | | raw | Agent subjects. | The raw TextResponse. | AssertionResult::pass() and AssertionResult::fail() are the only ways to build a result. Both accept a reason, an optional score, and a metadata array that surfaces in the dashboard drawer and exports. > **[info]** The sealed hierarchy allows exactly one subclass: > JudgeResult. Judge-backed assertions (Rubric, Hallucination, > Language) return that richer type so the dashboard can display the > judge model and retry count alongside the verdict."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Deterministic",
+    "sectionId": "deterministic",
+    "body": "Fast, offline, zero-dependency. Reach for these first."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "ContainsAssertion",
+    "sectionId": "containsassertion",
+    "body": "Plain substring match. The cheapest guard there is — good for sanity checks (\"the answer must mention the customer's name\") and boilerplate presence (\"the email must include a signature\"). Minimal: Case-insensitive, multibyte-aware: **Edge cases.** - Empty-string needle is treated as always present (it passes). This matches str_contains semantics and prevents false failures when a case has no mandatory substring. - Non-string output fails with Expected string output, got <type>. - Case-insensitive comparison uses mb_strtolower, so accented characters compare correctly. **Reason format.** Output contains \"<needle>\" on pass, Output does not contain \"<needle>\" on fail."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "RegexAssertion",
+    "sectionId": "regexassertion",
+    "body": "PCRE matching. Use it when a substring match is too loose and a full JSON schema is too strict — structured identifiers, ISO dates, allow- lists. The pattern must include delimiters (/.../, #...#, etc.) and is validated at construction time: an invalid pattern throws InvalidArgumentException rather than failing at run time. Minimal: Complex — allow-list with case-insensitive and Unicode flags: **Edge cases.** - Non-string output fails immediately. - Runtime regex errors (backtrack limits, catastrophic patterns) are caught and surfaced as Regex error while matching <pattern>: <preg_last_error_msg>. - Use \\A / \\z instead of ^ / $ when matching multi-line output and you need end-of-string (not end-of-line) anchoring. **Reason format.** Output matches <pattern> or Output does not match <pattern>."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "LengthAssertion",
+    "sectionId": "lengthassertion",
+    "body": "Character count bounds. mb_strlen under the hood, so it counts user- perceived characters, not bytes. Minimal: Complex — bound a summary: **Edge cases.** - Negative bounds throw at construction. - min > max throws at construction. - Non-string output fails. **Reason format.** Output length <n> is within bounds, Output length <n> is below minimum <m>, or Output length <n> exceeds maximum <m>."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "CountAssertion",
+    "sectionId": "countassertion",
+    "body": "Element count bounds for array / Countable output. Pair it with subjects that return lists (extractors, taggers, search tools). Minimal: Complex — enforce an exact number of extracted entities: **Edge cases.** - Non-array, non-Countable output fails; Countable::count() is used when applicable. - Negative bounds throw. **Reason format.** Count <n> is within bounds, Count <n> is below minimum <m>, or Count <n> exceeds maximum <m>."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "JsonSchemaAssertion",
+    "sectionId": "jsonschemaassertion",
+    "body": "Validates JSON-shaped output against an Opis JSON Schema. The assertion accepts strings (parsed with JSON_THROW_ON_ERROR), arrays, and objects; lists and nested associative arrays are normalized into stdClass trees before validation. Minimal: Complex — derive the schema straight from an Agent implementing HasStructuredOutput: **Edge cases.** - Top-level list schemas throw at construction; the validator expects an object. - Malformed JSON input fails with the decoder message rather than a cryptic schema error. - fromAgent instantiates the agent via the container to read its schema — side effects in the constructor are unsafe. **Reason format.** Output conforms to schema on pass; Schema violation at <JSON pointer>: <opis message> on fail. The assertion dives into sub-errors and reports the deepest leaf so you see the actual field that diverged rather than the root anyOf umbrella error."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Operational",
+    "sectionId": "operational",
+    "body": "Guard cost, speed, and token usage. These read values populated by the runner and fail closed when data is missing — a subject that can't report tokens cannot be budgeted, and silence shouldn't look like a pass."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "TokenBudget",
+    "sectionId": "tokenbudget",
+    "body": "Minimal: Complex — cap input and output separately: **Edge cases.** - Missing context keys (tokens_in, tokens_out, tokens_total) fail with an explicit diagnostic. - maxTotal falls back to tokens_in + tokens_out when the runner provides only the parts. - Closure subjects don't produce usage data; TokenBudget will always fail for them unless you synthesize usage yourself."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "CostLimit",
+    "sectionId": "costlimit",
+    "body": "Reads cost_usd from the context. The runner computes it from the pricing table configured in config/proofread.php, including cache- read/write rates and reasoning-token pricing when present. Minimal: Complex — combine with a token guard for belt-and-braces: **Edge cases.** - A model missing from the pricing table returns null cost; the assertion fails closed with a clear reason. Add the model to proofread.pricing.models to enable the check. - maxUsd <= 0 throws at construction. **Reason format.** Dollar amounts are rendered with four decimal places: Cost $0.0043 is within limit of $0.0100."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "LatencyLimit",
+    "sectionId": "latencylimit",
+    "body": "Reads latency_ms from the context (always populated by the runner). Minimal: **Edge cases.** - Non-numeric latency_ms (should never happen via the runner) fails closed. - Latency is end-to-end from subject invocation to return, including network round-trips. It does not separate first-byte from total duration."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Semantic",
+    "sectionId": "semantic",
+    "body": "LLM-as-judge and embedding-based. These call external services. All three LLM-as-judge variants go through the shared Judge service, so they share configuration (proofread.judge.default_model, retry count) and testing ergonomics."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Rubric",
+    "sectionId": "rubric",
+    "body": "Scores output against a natural-language criteria string. The judge returns {passed, score, reason}; the assertion layers a numeric threshold on top. Minimal: Complex — pin a specific model and lower the threshold for a more permissive pass: **Edge cases.** - Judge failures (schema drift, network errors) exhaust retries and come back as JudgeResult::fail with retryCount reflecting the attempts made. The raw response from the last attempt is preserved in metadata under judge_raw_response for debugging. - A judge verdict of passed: true still fails if score < minScore. The reason reads Judge approved but score <x> is below threshold <y>. - minScore outside [0.0, 1.0] throws at construction. **Reason format.** The judge's own reason field on pass; either the judge's rejection reason or the threshold diagnostic on fail. **Metadata.** judge_model, judge_tokens_in, judge_tokens_out, judge_cost_usd, judge_raw_response (on failure), retry_count. > **[info]** Test Rubric-backed suites without real LLM calls by faking > the JudgeAgent: > >"
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Similar",
+    "sectionId": "similar",
+    "body": "Embedding-based cosine similarity to a reference string. Use it when the expected output is semantically fixed but verbally flexible. Minimal: Complex — tune the threshold and embedding model: **Edge cases.** - Cosine similarity ranges from -1.0 (opposite) to 1.0 (identical). Scores are usually positive for natural language but negative scores are valid and allowed. - Default threshold is 0.8, which is a reasonable starting point for text-embedding-3-small. Bump it when switching to a larger model. - Non-string output fails fast with a type diagnostic. - Embedding-service errors become a fail with metadata keys embedding_model, embedding_cost_usd, embedding_tokens set to null so downstream reporting doesn't crash on missing values. **Reason format.** Similarity <score> meets threshold <t> on pass; Similarity <score> below threshold <t> on fail."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "HallucinationAssertion",
+    "sectionId": "hallucinationassertion",
+    "body": "Judge-backed check that every claim in the output is supported by the ground truth. Internally composes a fixed criteria string that instructs the judge to treat the ground truth as authoritative. Minimal: Complex — allow a slight deviation score: **Edge cases.** - Defaults to minScore(1.0) — any hallucination fails. Loosen it deliberately. - Ground truth is truncation-free: large strings are forwarded as-is to the judge. Watch token costs when the source is a long KB article. **Reason format.** The judge verdict; metadata matches Rubric."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "LanguageAssertion",
+    "sectionId": "languageassertion",
+    "body": "Judge-backed language detector. Prefer it to a regex for genuine natural-language output, which rarely has clean ASCII signals. Minimal: Complex — use a full name and a cheaper judge: **Edge cases.** - Input is normalized via strtolower(trim(...)); 'EN', 'en', and ' en ' all resolve identically. - \"Primarily in\" means >80% of meaningful content per the internal prompt — mixed-language outputs with a short quote in another language still pass."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Trajectory",
+    "sectionId": "trajectory",
+    "body": ""
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Trajectory",
+    "sectionId": "trajectory",
+    "body": "Validates how an Agent reached its answer, not just the answer itself. Requires an Agent subject (closures don't produce step data). Reads the TextResponse from $context['raw'] and inspects steps and toolCalls. Minimal: Complex — enforce a required tool chain: **Edge cases.** - Non-agent subjects produce Trajectory requires an Agent subject — got <type>. - callsTools accepts any observed order. callsToolsInOrder allows interleaved extra calls as long as the required subsequence appears in order. - Empty tool lists throw at construction. **Reason format.** Always includes the observed tools on failure so you can diagnose immediately without opening the drawer: Trajectory did not call required tool \"lookup_order\" (observed: search, explain)."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Snapshot",
+    "sectionId": "snapshot",
+    "body": ""
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "GoldenSnapshot",
+    "sectionId": "goldensnapshot",
+    "body": "Captures a reference output on first run, then compares subsequent runs against it. Use it for prompts whose output should remain byte-stable across refactors (templates, deterministic pipelines). Minimal: Complex — derive the key from meta.name or case_index: **Edge cases.** - On first run the snapshot is written and the assertion passes with Snapshot '<key>' created and metadata snapshot_created: true. - When the environment variable PROOFREAD_UPDATE_SNAPSHOTS=true is set, a mismatched snapshot is overwritten instead of failing; the result carries snapshot_updated: true so CI can detect accidental rebaselines. - Diffs are line-based with - / + prefixes and are truncated to 30 lines (15 head + \"… N more lines\"). Lines over 120 chars are also truncated. The full diff is never persisted — only the rendered excerpt. - fromContext() looks up meta.snapshot_key, then meta.name, then falls back to case_<index>; none of the three being present fails with a clear diagnostic. - Snapshots live under config('proofread.snapshots.path'), which defaults to tests/Snapshots/proofread. Commit the directory so the baseline is shared. **Reason format.** Snapshot '<key>' matches on pass; Snapshot '<key>' does not match:\\n<diff> on fail. Metadata always includes snapshot_key and snapshot_path; on fail, snapshot_diff carries the rendered excerpt."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Structured",
+    "sectionId": "structured",
+    "body": ""
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "StructuredOutputAssertion",
+    "sectionId": "structuredoutputassertion",
+    "body": "Opinionated counterpart to JsonSchemaAssertion::fromAgent(). Derives the schema from an Agent implementing HasStructuredOutput and produces LLM-tailored error messages. Also stores the parsed output under the parsed_data metadata key so downstream tooling (clusterers, dataset generators) can read structured values without reparsing. Minimal: **Edge cases.** - The agent class must exist and implement HasStructuredOutput; both conditions throw at construction when unmet. - Failure metadata includes both parsed_data and violation_path (JSON pointer), which the dashboard uses to highlight the offending field in the drawer. **Reason format.** Output conforms to structured schema of <ShortName> on pass; Structured output violation at <path>: <message> on fail."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Safety",
+    "sectionId": "safety",
+    "body": ""
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "PiiLeakageAssertion",
+    "sectionId": "piileakageassertion",
+    "body": "Runs the configured PiiSanitizer over the output and fails if any placeholder was inserted. Use it to catch the reverse of sanitization: the model leaking PII into a response it shouldn't. Minimal (uses the container-resolved sanitizer, which reads proofread.shadow.sanitize): Complex — bespoke patterns scoped to this suite: **Edge cases.** - Only string output is supported. Nested array leakage belongs on the input side (handled by the shadow capture path), not the assertion. - The assertion considers the output \"leaked\" as soon as at least one placeholder ends up in the sanitized string. Metadata lists every placeholder found so the drawer can tell you which PII classes appeared. **Reason format.** No PII patterns detected on pass; PII detected in output: [EMAIL], [CARD] on fail. **Metadata.** placeholders_found, sanitized_output."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "Writing custom assertions",
+    "sectionId": "writing-custom-assertions",
+    "body": "The Assertion contract is tiny. A bespoke assertion is often fewer than 30 lines. Scaffolded: The generator drops a stub into app/Evals/Assertions/ wired up with strict types, a final readonly declaration, named constructors, and a Pest test file mirroring the class path. > **[info]** Design custom assertions as readonly value objects with > named constructors. The runner invokes run() repeatedly and may > serialize the assertion (via name()) into persistence — immutable > objects make this trivial."
+  },
+  {
+    "slug": "guides/assertions-deep-dive",
+    "title": "Assertions deep dive",
+    "section": "See also",
+    "sectionId": "see-also",
+    "body": "- Assertions overview — quick reference matrix. - Eval suites — wiring assertions into cases. - Shadow evals — running assertions against production traffic. - Multi-provider comparison — branching assertions per subject."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "body": "Static datasets catch the bugs you know about. Production traffic catches the ones you don't. Shadow evals capture a sampled slice of real agent invocations, sanitize them, evaluate them asynchronously against assertions you register per agent, and alert when the rolling pass rate drops. This is Proofread's answer to the \"my evals are green but the product is degrading\" problem. Two data stores back the feature: - **shadow_captures** — one row per sampled invocation. Holds the sanitized input, the output, token counts, cost, latency, model, and the timestamp at which the capture happened. These are written by a queued job, not on the request path. - **shadow_evals** — one row per (capture, assertion) pair produced by the shadow evaluator. Holds the verdict, score, reason, metadata, and the assertion name. Captures are cheap to keep around. Evals are where the cost lives — they run the same assertions you run in CI, including any judge or embedding calls. The evaluator is intentionally a separate process: it lets you re-evaluate historical captures when you add a new assertion (--force), tune thresholds, or switch judges without re-running the model. Compared with static-dataset evals, shadow evals give you: - **Drift detection.** Real traffic covers the edge cases your fixtures miss. - **Regression triage.** When alerts fire, the captured inputs become the bug report. - **Dataset mining.** Promote representative captures into a curated dataset and regression-test them forever after. Shadow capture is opt-in. Configure it in config/proofread.php: The per-agent sample_rate overrides the global default. Set it to a higher rate for agents you care about most, and keep the global rate conservative. Attach the middleware to the agents you want captured: > **[info]** The middleware is non-blocking. It lets the response reach > the caller first, then asynchronously dispatches > PersistShadowCaptureJob. Sampling and queueing failures never > impact the product. What the middleware captures per sampled request: - raw_input — the prompt and attachments, pre-sanitization. - output — the agent's textual response. - tokens_in, tokens_out — usage from the response. - model, latency_ms, captured_at. Sanitization happens inside the job, not in the middleware — see the next section. PiiSanitizer applies three passes in order: 1. **Key blacklist.** Recursively walks arrays/objects and replaces any value whose key matches pii_keys with the redacted placeholder. Good for structured prompts (['user' => ['email' => '…']]) that pass PII by convention. 2. **Pattern redaction.** Regex replacements from redact_patterns applied to every string value. The shipped defaults cover emails and card-shaped digit runs. 3. **Truncation.** Applies max_input_length to prompt strings and max_output_length to the output. Truncated content is suffixed with …. Because sanitization runs in the queued job, the request path is unaffected by regex cost. If the job fails, nothing persists; retries go through Laravel's usual queue retry policy. > **[warn]** Shadow sanitization is a best-effort net, not a compliance > boundary. Regex patterns miss novel PII formats and blacklists miss > novel keys. Review the sanitization rules every time your prompts > change shape, and never route captures through an unsanitized > pipeline for a regulated workload. Captures carry no assertion metadata of their own. You register assertions per agent class at boot time — typically in a service provider: The resolver is a closure, not an array — so you can build assertions lazily (pulling patterns from the database, swapping judges by environment, etc.) without running that code at every request. Run the evaluator: Flags: | Flag | Effect | | ----------- | ----------------------------------------------------------------------------------- | | --agent | Filter by agent FQCN. Omit to evaluate every registered agent's captures. | | --since | Relative window (1h, 24h, 7d). Accepted units are documented in the parser. | | --batch | Max captures processed per invocation. Defaults to 100. | | --force | Re-evaluate captures that already have a ShadowEval. Use when assertions changed. | | --dry-run | Wrap the evaluation in a transaction and roll back. Nothing persists. | Schedule it somewhere: At the end of each run the command prints a compact summary: > **[info]** Captures with no registered assertions are skipped rather > than failed. If you expected a number greater than zero and see > Skipped, check that your service provider actually registered the > agent. Shadow alerts watch the rolling pass rate per agent and dispatch a notification when it falls below the configured threshold. - pass_rate_threshold — fail below this fraction of passing evals. - window — rolling window over which the pass rate is computed. - min_sample_size — minimum number of evals required in the window before an alert can fire. Prevents a single failure from paging. - dedup_window — after an alert fires for an agent, the command will not fire again for that agent during this window. Cache-backed. Run the command on a schedule: --agent=<Class> scopes the check to a single agent. --dry-run prints what would fire and skips both the notification and the dedup marker. The notification (ShadowPassRateDroppedNotification) carries a ShadowAlert DTO with: - agentClass - passRate - threshold - passedCount - sampleSize > **[info]** Only the mail channel ships by default. Slack, Discord, > and generic webhooks are covered separately by > proofread.webhooks — or write a bespoke channel that reads the DTO > and pushes wherever you need. The Proofread dashboard at /evals/shadow lists captures, their evaluation status, and the rolling pass rate per agent. Clicking a row opens a drawer with: - Sanitized input and output. - Assertion verdicts with reasons and metadata. - The per-capture token / cost / latency numbers. A \"Promote to dataset\" action in the drawer generates a ready-to-paste PHP snippet for your suite's dataset() — preserving the sanitized input and the observed output as the baseline expected value. Paste it into the suite, review, commit. You now have a regression test against a real production scenario. Before enabling shadow capture in a real environment: - **Sample rate.** Start at 0.01–0.05. You can always raise it. Per-agent overrides let you hand-pick the agents worth sampling harder. - **Queue.** Point proofread.shadow.queue at a dedicated low-priority queue (e.g. evals-low). Shadow jobs should never delay real work when the queue is saturated. - **Retention.** Add a scheduled prune to drop old captures and evals. A simple DELETE FROM shadow_captures WHERE captured_at < ? keeps storage bounded; a join purge removes orphan evals. - **Privacy review.** Run a sample of recent captures past whoever owns your data-handling policy. Expand pii_keys and redact_patterns until that person signs off. - **Judge cost.** Rubric assertions in shadow are the single biggest spend. Either judge a subset (e.g. every Nth capture in a custom assertion) or pick a cheaper judge model in proofread.judge.default_model. - **Alerting plumbing.** Verify mail.to is a monitored address, or swap in a Slack webhook. Alerts on an abandoned inbox are worse than no alerts. - **Monitoring.** Watch queue-job failure rates for PersistShadowCaptureJob and the dedup cache hit rate. Both are proxies for \"shadow is healthy.\" - Assertions deep dive — every assertion you can register against a capture. - Persistence — the wider data model. - Multi-provider comparison — for model-migration decisions informed by shadow data."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Conceptual overview",
+    "sectionId": "conceptual-overview",
+    "body": "Two data stores back the feature: - **shadow_captures** — one row per sampled invocation. Holds the sanitized input, the output, token counts, cost, latency, model, and the timestamp at which the capture happened. These are written by a queued job, not on the request path. - **shadow_evals** — one row per (capture, assertion) pair produced by the shadow evaluator. Holds the verdict, score, reason, metadata, and the assertion name. Captures are cheap to keep around. Evals are where the cost lives — they run the same assertions you run in CI, including any judge or embedding calls. The evaluator is intentionally a separate process: it lets you re-evaluate historical captures when you add a new assertion (--force), tune thresholds, or switch judges without re-running the model. Compared with static-dataset evals, shadow evals give you: - **Drift detection.** Real traffic covers the edge cases your fixtures miss. - **Regression triage.** When alerts fire, the captured inputs become the bug report. - **Dataset mining.** Promote representative captures into a curated dataset and regression-test them forever after."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Enabling shadow capture",
+    "sectionId": "enabling-shadow-capture",
+    "body": "Shadow capture is opt-in. Configure it in config/proofread.php: The per-agent sample_rate overrides the global default. Set it to a higher rate for agents you care about most, and keep the global rate conservative. Attach the middleware to the agents you want captured: > **[info]** The middleware is non-blocking. It lets the response reach > the caller first, then asynchronously dispatches > PersistShadowCaptureJob. Sampling and queueing failures never > impact the product. What the middleware captures per sampled request: - raw_input — the prompt and attachments, pre-sanitization. - output — the agent's textual response. - tokens_in, tokens_out — usage from the response. - model, latency_ms, captured_at. Sanitization happens inside the job, not in the middleware — see the next section."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Sanitization",
+    "sectionId": "sanitization",
+    "body": "PiiSanitizer applies three passes in order: 1. **Key blacklist.** Recursively walks arrays/objects and replaces any value whose key matches pii_keys with the redacted placeholder. Good for structured prompts (['user' => ['email' => '…']]) that pass PII by convention. 2. **Pattern redaction.** Regex replacements from redact_patterns applied to every string value. The shipped defaults cover emails and card-shaped digit runs. 3. **Truncation.** Applies max_input_length to prompt strings and max_output_length to the output. Truncated content is suffixed with …. Because sanitization runs in the queued job, the request path is unaffected by regex cost. If the job fails, nothing persists; retries go through Laravel's usual queue retry policy. > **[warn]** Shadow sanitization is a best-effort net, not a compliance > boundary. Regex patterns miss novel PII formats and blacklists miss > novel keys. Review the sanitization rules every time your prompts > change shape, and never route captures through an unsanitized > pipeline for a regulated workload."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Evaluating captures",
+    "sectionId": "evaluating-captures",
+    "body": "Captures carry no assertion metadata of their own. You register assertions per agent class at boot time — typically in a service provider: The resolver is a closure, not an array — so you can build assertions lazily (pulling patterns from the database, swapping judges by environment, etc.) without running that code at every request. Run the evaluator: Flags: | Flag | Effect | | ----------- | ----------------------------------------------------------------------------------- | | --agent | Filter by agent FQCN. Omit to evaluate every registered agent's captures. | | --since | Relative window (1h, 24h, 7d). Accepted units are documented in the parser. | | --batch | Max captures processed per invocation. Defaults to 100. | | --force | Re-evaluate captures that already have a ShadowEval. Use when assertions changed. | | --dry-run | Wrap the evaluation in a transaction and roll back. Nothing persists. | Schedule it somewhere: At the end of each run the command prints a compact summary: > **[info]** Captures with no registered assertions are skipped rather > than failed. If you expected a number greater than zero and see > Skipped, check that your service provider actually registered the > agent."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Alerts",
+    "sectionId": "alerts",
+    "body": "Shadow alerts watch the rolling pass rate per agent and dispatch a notification when it falls below the configured threshold. - pass_rate_threshold — fail below this fraction of passing evals. - window — rolling window over which the pass rate is computed. - min_sample_size — minimum number of evals required in the window before an alert can fire. Prevents a single failure from paging. - dedup_window — after an alert fires for an agent, the command will not fire again for that agent during this window. Cache-backed. Run the command on a schedule: --agent=<Class> scopes the check to a single agent. --dry-run prints what would fire and skips both the notification and the dedup marker. The notification (ShadowPassRateDroppedNotification) carries a ShadowAlert DTO with: - agentClass - passRate - threshold - passedCount - sampleSize > **[info]** Only the mail channel ships by default. Slack, Discord, > and generic webhooks are covered separately by > proofread.webhooks — or write a bespoke channel that reads the DTO > and pushes wherever you need."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Dashboard and promote-to-dataset",
+    "sectionId": "dashboard-and-promote-to-dataset",
+    "body": "The Proofread dashboard at /evals/shadow lists captures, their evaluation status, and the rolling pass rate per agent. Clicking a row opens a drawer with: - Sanitized input and output. - Assertion verdicts with reasons and metadata. - The per-capture token / cost / latency numbers. A \"Promote to dataset\" action in the drawer generates a ready-to-paste PHP snippet for your suite's dataset() — preserving the sanitized input and the observed output as the baseline expected value. Paste it into the suite, review, commit. You now have a regression test against a real production scenario."
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "Production checklist",
+    "sectionId": "production-checklist",
+    "body": "Before enabling shadow capture in a real environment: - **Sample rate.** Start at 0.01–0.05. You can always raise it. Per-agent overrides let you hand-pick the agents worth sampling harder. - **Queue.** Point proofread.shadow.queue at a dedicated low-priority queue (e.g. evals-low). Shadow jobs should never delay real work when the queue is saturated. - **Retention.** Add a scheduled prune to drop old captures and evals. A simple DELETE FROM shadow_captures WHERE captured_at < ? keeps storage bounded; a join purge removes orphan evals. - **Privacy review.** Run a sample of recent captures past whoever owns your data-handling policy. Expand pii_keys and redact_patterns until that person signs off. - **Judge cost.** Rubric assertions in shadow are the single biggest spend. Either judge a subset (e.g. every Nth capture in a custom assertion) or pick a cheaper judge model in proofread.judge.default_model. - **Alerting plumbing.** Verify mail.to is a monitored address, or swap in a Slack webhook. Alerts on an abandoned inbox are worse than no alerts. - **Monitoring.** Watch queue-job failure rates for PersistShadowCaptureJob and the dedup cache hit rate. Both are proxies for \"shadow is healthy.\""
+  },
+  {
+    "slug": "guides/shadow-evals",
+    "title": "Shadow evals",
+    "section": "See also",
+    "sectionId": "see-also",
+    "body": "- Assertions deep dive — every assertion you can register against a capture. - Persistence — the wider data model. - Multi-provider comparison — for model-migration decisions informed by shadow data."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "body": "Run the same dataset and assertion stack against multiple Agents — different models, different providers, different prompt variations — in parallel. Get a matrix view of how each subject performed, export the result, and make migration decisions from data rather than gut. Multi-provider comparison earns its keep when you need a side-by-side: - **Model migration.** Should you move from Sonnet to Haiku? How much pass-rate do you lose, and how much cost do you save? - **Provider A/B.** Claude vs GPT vs Gemini on the same dataset. The same criteria, the same judge, the same seed. - **Prompt variation.** A single model, two different system prompts, identical assertions. Which prompt holds up better? - **Pre-release regression.** Check a candidate model version against the shipped version on a curated dataset before you ship. Extend MultiSubjectEvalSuite instead of EvalSuite and declare a subjects() map of label → subject: Subject labels become column headers in the matrix and are injected into the per-case context as subject_label. This is how you branch assertions per subject — override assertionsFor(): Subjects can be anything EvalSuite::subject() accepts: class-string FQCNs (resolved from the container), Agent instances, or closures. Mix them freely inside a single subjects() map. From the CLI: | Flag | Effect | | ------------------------- | ----------------------------------------------------------------------------------- | | --persist | Persist the comparison and its per-subject runs to the database. | | --commit-sha=<sha> | Attach a commit SHA to the persisted comparison (for CI drill-downs). | | --concurrency=<n> | Inner parallelism: cases run in parallel within each subject. Default 1. | | --provider-concurrency=<n> | Outer parallelism: subjects run in parallel. 0 (default) runs all at once. | | --fake-judge=<spec> | Short-circuit the judge: pass, fail, or a JSON file path (dev / CI only). | | --format=<table\\|json> | Output format. table renders a matrix; json is CI-friendly. | Programmatically: The in-memory EvalComparison support object is the same shape the dashboard renders — suitable for building custom reporters without touching the database. --format=table renders a matrix, one row per case, one column per subject: --format=json emits a structured payload suitable for piping into a CI artifact: With --persist, the runner creates one eval_comparisons row plus one eval_runs row per subject (distinguished by the subject_label column). Each per-subject run holds its own eval_results, so drill- down to a specific cell is a single join. Query the persisted data: The three helpers are intentionally independent — Proofread does not pick \"the winner.\" You do, because the right answer depends on which axis you're optimizing for today. - bestByPassRate() ties go to the fastest run. - cheapest() ignores runs with a null cost (i.e. models missing from the pricing table). - fastest() is strict on duration_ms. Two pages in the Proofread dashboard surface comparisons: - /evals/comparisons — list of persisted comparisons. Each row shows subject pills with their individual pass rates. - /evals/comparisons/{id} — matrix view, one row per case, one column per subject. Click any cell to open a drawer showing that case's assertion results for that subject. Winner cards at the top surface the best / cheapest / fastest subject. The exporter auto-detects whether the reference is a run ULID, a commit SHA, or a comparison ID (you can also pin it via --type=run or --type=comparison). Formats are md and html. The rendered document includes the full matrix, per-subject summaries, and a winners section based on the same helpers described above. For MCP-compatible editors, the package exposes run_provider_comparison as a native MCP tool (see Mosaiqo\\Proofread\\Mcp\\Tools\\RunProviderComparisonTool). The client passes a suite FQCN and the same flags accepted by the CLI command; the response is the same JSON payload. The two concurrency knobs compound. Consider: - --provider-concurrency=3 runs three subjects concurrently. - --concurrency=5 runs five cases concurrently *within each subject*. That is up to **15 simultaneous API calls** at any moment. For same-provider subjects this easily trips per-account rate limits; for cross-provider setups it can be fine. Two practical defaults: - **Cross-provider.** --provider-concurrency=0 --concurrency=5 — all providers at once, five cases in flight per provider. Each provider has its own rate-limit bucket. - **Same provider.** --provider-concurrency=1 --concurrency=5 — subjects sequentially, five cases in parallel. Keeps the in-flight total at five and prevents one subject starving another. > **[warn]** Inner × outer concurrency compounds. --concurrency=5 > --provider-concurrency=3 means up to 15 simultaneous API calls. > Respect your provider's rate limits and your wallet's limits. Judge calls from Rubric / Hallucination / Language assertions also count against the judge's rate limit, which is usually a separate bucket. Fake the judge with --fake-judge=pass in CI to isolate model performance from judge noise when you only care about latency / cost comparisons. - Assertions deep dive — picking the right assertions for a matrix. - Shadow evals — the other production signal feeding into model-migration decisions. - Eval suites — the single-subject base your MultiSubjectEvalSuite extends."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "When to use it",
+    "sectionId": "when-to-use-it",
+    "body": "Multi-provider comparison earns its keep when you need a side-by-side: - **Model migration.** Should you move from Sonnet to Haiku? How much pass-rate do you lose, and how much cost do you save? - **Provider A/B.** Claude vs GPT vs Gemini on the same dataset. The same criteria, the same judge, the same seed. - **Prompt variation.** A single model, two different system prompts, identical assertions. Which prompt holds up better? - **Pre-release regression.** Check a candidate model version against the shipped version on a curated dataset before you ship."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Writing a MultiSubjectEvalSuite",
+    "sectionId": "writing-a-multisubjectevalsuite",
+    "body": "Extend MultiSubjectEvalSuite instead of EvalSuite and declare a subjects() map of label → subject: Subject labels become column headers in the matrix and are injected into the per-case context as subject_label. This is how you branch assertions per subject — override assertionsFor(): Subjects can be anything EvalSuite::subject() accepts: class-string FQCNs (resolved from the container), Agent instances, or closures. Mix them freely inside a single subjects() map."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Running",
+    "sectionId": "running",
+    "body": "From the CLI: | Flag | Effect | | ------------------------- | ----------------------------------------------------------------------------------- | | --persist | Persist the comparison and its per-subject runs to the database. | | --commit-sha=<sha> | Attach a commit SHA to the persisted comparison (for CI drill-downs). | | --concurrency=<n> | Inner parallelism: cases run in parallel within each subject. Default 1. | | --provider-concurrency=<n> | Outer parallelism: subjects run in parallel. 0 (default) runs all at once. | | --fake-judge=<spec> | Short-circuit the judge: pass, fail, or a JSON file path (dev / CI only). | | --format=<table\\|json> | Output format. table renders a matrix; json is CI-friendly. | Programmatically: The in-memory EvalComparison support object is the same shape the dashboard renders — suitable for building custom reporters without touching the database."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Output formats",
+    "sectionId": "output-formats",
+    "body": "--format=table renders a matrix, one row per case, one column per subject: --format=json emits a structured payload suitable for piping into a CI artifact:"
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Persisting comparisons",
+    "sectionId": "persisting-comparisons",
+    "body": "With --persist, the runner creates one eval_comparisons row plus one eval_runs row per subject (distinguished by the subject_label column). Each per-subject run holds its own eval_results, so drill- down to a specific cell is a single join. Query the persisted data: The three helpers are intentionally independent — Proofread does not pick \"the winner.\" You do, because the right answer depends on which axis you're optimizing for today. - bestByPassRate() ties go to the fastest run. - cheapest() ignores runs with a null cost (i.e. models missing from the pricing table). - fastest() is strict on duration_ms."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Dashboard view",
+    "sectionId": "dashboard-view",
+    "body": "Two pages in the Proofread dashboard surface comparisons: - /evals/comparisons — list of persisted comparisons. Each row shows subject pills with their individual pass rates. - /evals/comparisons/{id} — matrix view, one row per case, one column per subject. Click any cell to open a drawer showing that case's assertion results for that subject. Winner cards at the top surface the best / cheapest / fastest subject."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Exporting",
+    "sectionId": "exporting",
+    "body": "The exporter auto-detects whether the reference is a run ULID, a commit SHA, or a comparison ID (you can also pin it via --type=run or --type=comparison). Formats are md and html. The rendered document includes the full matrix, per-subject summaries, and a winners section based on the same helpers described above."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "MCP tool",
+    "sectionId": "mcp-tool",
+    "body": "For MCP-compatible editors, the package exposes run_provider_comparison as a native MCP tool (see Mosaiqo\\Proofread\\Mcp\\Tools\\RunProviderComparisonTool). The client passes a suite FQCN and the same flags accepted by the CLI command; the response is the same JSON payload."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "Parallelism cautions",
+    "sectionId": "parallelism-cautions",
+    "body": "The two concurrency knobs compound. Consider: - --provider-concurrency=3 runs three subjects concurrently. - --concurrency=5 runs five cases concurrently *within each subject*. That is up to **15 simultaneous API calls** at any moment. For same-provider subjects this easily trips per-account rate limits; for cross-provider setups it can be fine. Two practical defaults: - **Cross-provider.** --provider-concurrency=0 --concurrency=5 — all providers at once, five cases in flight per provider. Each provider has its own rate-limit bucket. - **Same provider.** --provider-concurrency=1 --concurrency=5 — subjects sequentially, five cases in parallel. Keeps the in-flight total at five and prevents one subject starving another. > **[warn]** Inner × outer concurrency compounds. --concurrency=5 > --provider-concurrency=3 means up to 15 simultaneous API calls. > Respect your provider's rate limits and your wallet's limits. Judge calls from Rubric / Hallucination / Language assertions also count against the judge's rate limit, which is usually a separate bucket. Fake the judge with --fake-judge=pass in CI to isolate model performance from judge noise when you only care about latency / cost comparisons."
+  },
+  {
+    "slug": "guides/multi-provider",
+    "title": "Multi-provider comparison",
+    "section": "See also",
+    "sectionId": "see-also",
+    "body": "- Assertions deep dive — picking the right assertions for a matrix. - Shadow evals — the other production signal feeding into model-migration decisions. - Eval suites — the single-subject base your MultiSubjectEvalSuite extends."
+  },
+  {
     "slug": "cheatsheet",
     "title": "Cheatsheet",
     "body": "Single-page copy-paste reference. 80% of what you will reach for, day-to-day. | Command | Notable flags | | ------------------------------------------- | ------------------------------------------------------------------------ | | evals:run {suites*} | --persist, --junit, --fail-fast, --filter, --queue, --concurrency, --fake-judge, --gate-pass-rate, --gate-cost-max, --commit-sha | | evals:compare {base} {head} | latest keyword supported. | | evals:dataset:diff {name} | Diff consecutive dataset versions. | | evals:providers {suite} | Run a MultiSubjectEvalSuite. | | evals:benchmark | Performance benchmarking. | | evals:cluster | Failure clustering. | | evals:coverage | Coverage report. | | evals:export | Export a run. | | evals:cost-simulate | Dry-run cost projection. | | dataset:generate | LLM-assisted dataset generation. | | dataset:import | Import from JSON / CSV / Promptfoo. | | dataset:export | Export to JSON / CSV. | | shadow:evaluate | Evaluate captured shadow traffic. | | shadow:alert | Alert on shadow pass-rate drops. | | proofread:lint {agents*} | Static checks on Agent classes. | | proofread:make-suite | Scaffold an EvalSuite. --multi for MultiSubjectEvalSuite. | | proofread:make-dataset | Scaffold a Dataset provider. | | proofread:make-assertion | Scaffold a custom Assertion. | Register a resolver and attach the middleware: Attach the capture middleware to the route that invokes the agent, then evaluate asynchronously: For subscription-based providers that only ship a CLI, not an API:"
