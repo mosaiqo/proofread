@@ -294,3 +294,16 @@ it('uses the injected pricing table when provided', function (): void {
     // (1_000_000 / 1e6) * 10 + (500_000 / 1e6) * 20 = 10 + 10 = 20.0
     expect($invocation->metadata['cost_usd'])->toBe(20.0);
 });
+
+it('keeps the metadata of a SubjectInvocation returned by a callable', function (): void {
+    $resolver = new SubjectResolver;
+    $callable = fn (string $input): SubjectInvocation => SubjectInvocation::make(
+        strtoupper($input),
+        ['cost_usd' => 0.002, 'tool_calls' => ['search']],
+    );
+
+    $invocation = $resolver->resolve($callable)('hi', ['input' => 'hi']);
+
+    expect($invocation->output)->toBe('HI')
+        ->and($invocation->metadata)->toBe(['cost_usd' => 0.002, 'tool_calls' => ['search']]);
+});

@@ -295,3 +295,39 @@ it('returns an AssertionResult', function (): void {
     expect(Trajectory::maxSteps(5)->run('final', ['raw' => $response]))
         ->toBeInstanceOf(AssertionResult::class);
 });
+
+// --- Callable subjects reporting their own trajectory ---
+
+it('reads the tool calls a callable subject reports in its metadata', function (): void {
+    $context = ['tool_calls' => ['search', 'detail']];
+
+    expect(Trajectory::callsTool('detail')->run('final', $context)->passed)->toBeTrue()
+        ->and(Trajectory::doesNotCallTool('search')->run('final', $context)->passed)->toBeFalse()
+        ->and(Trajectory::callsToolsInOrder(['search', 'detail'])->run('final', $context)->passed)->toBeTrue();
+});
+
+it('treats an empty reported tool list as a trajectory without tool calls', function (): void {
+    $result = Trajectory::callsTool('search')->run('final', ['tool_calls' => []]);
+
+    expect($result->passed)->toBeFalse()
+        ->and($result->reason)->toContain('observed: (none)');
+});
+
+it('reads the step count a callable subject reports in its metadata', function (): void {
+    expect(Trajectory::maxSteps(2)->run('final', ['tool_calls' => ['search'], 'steps' => 3])->passed)->toBeFalse()
+        ->and(Trajectory::maxSteps(3)->run('final', ['tool_calls' => ['search'], 'steps' => 3])->passed)->toBeTrue();
+});
+
+it('fails a step assertion when a callable subject reports tool calls but no step count', function (): void {
+    $result = Trajectory::maxSteps(2)->run('final', ['tool_calls' => ['search']]);
+
+    expect($result->passed)->toBeFalse()
+        ->and($result->reason)->toContain("'steps'");
+});
+
+it('rejects a reported tool list that is not a list of strings', function (): void {
+    $result = Trajectory::callsTool('search')->run('final', ['tool_calls' => ['search', 3]]);
+
+    expect($result->passed)->toBeFalse()
+        ->and($result->reason)->toContain('Trajectory requires an Agent subject');
+});

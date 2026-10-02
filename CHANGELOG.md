@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Callable subjects can report their own metadata.** A callable subject may
+  return a `SubjectInvocation`; its metadata (`cost_usd`, `tokens_in`,
+  `model`, ...) reaches the assertions' context instead of being wrapped as
+  the output.
+- **`Trajectory` on callable subjects.** When the context has no agent
+  response, `Trajectory` reads `tool_calls` (list of tool names) and `steps`
+  (int, for the step assertions) from the subject's metadata, so flows that
+  wrap an agent behind guards or post-processing can still assert on tools.
+
 ### Changed
 
 - **PHP 8.3 support.** The minimum PHP version drops from 8.4 to 8.3;
