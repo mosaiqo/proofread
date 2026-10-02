@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `require-dev` and `suggest`. The dashboard routes and components are
   registered only when Livewire is installed, so Inertia and API-only apps
   can install Proofread without pulling in Livewire.
+  **Upgrade note:** require `livewire/livewire` (v3 or v4) yourself if you
+  use the dashboard; without it the `/evals` routes are not registered.
 - **Livewire 4 support.** The dashboard components resolve under Livewire 4
   through a `proofread` component namespace, alongside the existing explicit
   registrations used by Livewire 3.
