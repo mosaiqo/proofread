@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Callable subjects can report their own metadata.** A callable subject may
+  return a `SubjectInvocation`; its metadata (`cost_usd`, `tokens_in`,
+  `model`, ...) reaches the assertions' context instead of being wrapped as
+  the output.
+- **`Trajectory` on callable subjects.** When the context has no agent
+  response, `Trajectory` reads `tool_calls` (list of tool names) and `steps`
+  (int, for the step assertions) from the subject's metadata, so flows that
+  wrap an agent behind guards or post-processing can still assert on tools.
+
+### Changed
+
+- **PHP 8.3 support.** The minimum PHP version drops from 8.4 to 8.3;
+  the codebase used no 8.4-only syntax or functions. CI runs on 8.3 and 8.4.
+- **Livewire is optional.** `livewire/livewire` moves from `require` to
+  `require-dev` and `suggest`. The dashboard routes and components are
+  registered only when Livewire is installed, so Inertia and API-only apps
+  can install Proofread without pulling in Livewire.
+  **Upgrade note:** require `livewire/livewire` (v3 or v4) yourself if you
+  use the dashboard; without it the `/evals` routes are not registered.
+- **Livewire 4 support.** The dashboard components resolve under Livewire 4
+  through a `proofread` component namespace, alongside the existing explicit
+  registrations used by Livewire 3.
+- **laravel/ai 0.10 and 0.11 verified.** The `~0.5` constraint already allowed
+  them; the suite now runs against `laravel/ai` 0.10 in CI as well.
+
 ## [0.9.0] - 2026-04-17
 
 ### Added

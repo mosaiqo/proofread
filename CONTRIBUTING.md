@@ -10,7 +10,7 @@ feedback. Breaking changes can land in minor versions until 1.0.0.
 
 ## Requirements
 
-- PHP 8.4+
+- PHP 8.3+
 - Composer 2.x
 - SQLite (default test driver; MySQL/PostgreSQL also supported)
 

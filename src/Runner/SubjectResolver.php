@@ -83,7 +83,11 @@ final class SubjectResolver
     private function wrapCallable(Closure $callable): Closure
     {
         return function (mixed $input, array $case) use ($callable): SubjectInvocation {
-            return SubjectInvocation::make($callable($input, $case));
+            $result = $callable($input, $case);
+
+            // A callable that wraps an agent can report its own usage and
+            // trajectory by returning the invocation itself.
+            return $result instanceof SubjectInvocation ? $result : SubjectInvocation::make($result);
         };
     }
 

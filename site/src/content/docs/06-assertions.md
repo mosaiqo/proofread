@@ -103,6 +103,27 @@ $assertions = [
 ];
 ```
 
+A callable subject that runs an agent inside a larger flow (guards, retries,
+post-processing) can report its own trajectory by returning a
+`SubjectInvocation` whose metadata carries `tool_calls` (a list of tool
+names, in call order) and, for the step assertions, `steps` (an int):
+
+```php
+use Mosaiqo\Proofread\Runner\SubjectInvocation;
+
+public function subject(): mixed
+{
+    return function (string $message): SubjectInvocation {
+        $turn = $this->chat->handle($message);
+
+        return SubjectInvocation::make($turn->text, [
+            'tool_calls' => $turn->toolNames,
+            'cost_usd' => $turn->costUsd,
+        ]);
+    };
+}
+```
+
 ## Snapshot
 
 Golden-file regression testing.

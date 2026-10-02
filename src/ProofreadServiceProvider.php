@@ -102,7 +102,6 @@ class ProofreadServiceProvider extends PackageServiceProvider
             ->hasCommand(ProofreadMakeSuiteCommand::class)
             ->hasCommand(ProofreadMakeAssertionCommand::class)
             ->hasCommand(ProofreadMakeDatasetCommand::class)
-            ->hasRoute('dashboard')
             ->hasViews('proofread');
     }
 
@@ -147,7 +146,7 @@ class ProofreadServiceProvider extends PackageServiceProvider
             Event::listen(EvalRunRegressed::class, NotifyWebhookOnRegression::class);
         }
 
-        $this->registerLivewireComponents();
+        $this->registerDashboard();
 
         $this->publishes([
             __DIR__.'/Stubs/eval-suite.stub' => $this->app->basePath('stubs/proofread/eval-suite.stub'),
@@ -169,10 +168,24 @@ class ProofreadServiceProvider extends PackageServiceProvider
         ], 'proofread-pulse');
     }
 
-    private function registerLivewireComponents(): void
+    /**
+     * The dashboard is built on Livewire, which is an optional dependency so
+     * host apps on other stacks (Inertia, API-only) can install Proofread.
+     */
+    private function registerDashboard(): void
     {
         if (! class_exists(Livewire::class)) {
             return;
+        }
+
+        $this->loadRoutesFrom(__DIR__.'/../routes/dashboard.php');
+
+        // Livewire 4 resolves "proofread::" aliases through a namespace,
+        // ignoring explicit registrations for namespaced names.
+        $livewire = Livewire::getFacadeRoot();
+
+        if (is_object($livewire) && method_exists($livewire, 'addNamespace')) {
+            $livewire->addNamespace('proofread', classNamespace: 'Mosaiqo\\Proofread\\Http\\Livewire');
         }
 
         Livewire::component('proofread::overview', Overview::class);

@@ -104,25 +104,35 @@ final readonly class Trajectory implements Assertion
 
         $raw = $context['raw'] ?? null;
 
-        if (! $raw instanceof TextResponse) {
+        if ($raw instanceof TextResponse) {
+            $stepCount = $raw->steps->count();
+            /** @var array<int, string> $toolCallNames */
+            $toolCallNames = $raw->toolCalls
+                ->map(fn (object $call): string => self::extractToolName($call))
+                ->filter(fn (string $name): bool => $name !== '')
+                ->values()
+                ->all();
+        } elseif (self::isToolNameList($context['tool_calls'] ?? null)) {
+            /** @var list<string> $toolCallNames */
+            $toolCallNames = $context['tool_calls'];
+            $stepCount = is_int($context['steps'] ?? null) ? $context['steps'] : null;
+        } else {
             return AssertionResult::fail(sprintf(
-                'Trajectory requires an Agent subject — got %s',
+                "Trajectory requires an Agent subject, or a callable subject reporting 'tool_calls' (list of tool names) in its metadata — got %s",
                 get_debug_type($raw),
             ));
         }
 
-        $stepCount = $raw->steps->count();
-        /** @var array<int, string> $toolCallNames */
-        $toolCallNames = $raw->toolCalls
-            ->map(fn (object $call): string => self::extractToolName($call))
-            ->filter(fn (string $name): bool => $name !== '')
-            ->values()
-            ->all();
+        if ($stepCount === null && in_array($this->mode, [self::MODE_MAX_STEPS, self::MODE_MIN_STEPS, self::MODE_STEPS_BETWEEN], true)) {
+            return AssertionResult::fail(
+                "Trajectory step assertions on a callable subject require 'steps' (int) in its metadata"
+            );
+        }
 
         return match ($this->mode) {
-            self::MODE_MAX_STEPS => $this->evaluateMaxSteps($stepCount),
-            self::MODE_MIN_STEPS => $this->evaluateMinSteps($stepCount),
-            self::MODE_STEPS_BETWEEN => $this->evaluateStepsBetween($stepCount),
+            self::MODE_MAX_STEPS => $this->evaluateMaxSteps((int) $stepCount),
+            self::MODE_MIN_STEPS => $this->evaluateMinSteps((int) $stepCount),
+            self::MODE_STEPS_BETWEEN => $this->evaluateStepsBetween((int) $stepCount),
             self::MODE_CALLS_TOOL => $this->evaluateCallsTool($toolCallNames),
             self::MODE_DOES_NOT_CALL_TOOL => $this->evaluateDoesNotCallTool($toolCallNames),
             self::MODE_CALLS_TOOLS => $this->evaluateCallsTools($toolCallNames),
@@ -310,6 +320,21 @@ final readonly class Trajectory implements Assertion
         }
 
         return '';
+    }
+
+    private static function isToolNameList(mixed $value): bool
+    {
+        if (! is_array($value) || ! array_is_list($value)) {
+            return false;
+        }
+
+        foreach ($value as $name) {
+            if (! is_string($name) || $name === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static function guardNonNegative(string $label, int $value): void

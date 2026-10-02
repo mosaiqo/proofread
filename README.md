@@ -37,7 +37,9 @@ Three things make Proofread different:
 composer require mosaiqo/proofread
 ```
 
-Requires PHP 8.4 and Laravel 13.x.
+Requires PHP 8.3+ and Laravel 13.x. The dashboard additionally needs
+`livewire/livewire` (v3 or v4); without it the rest of the package works
+and the dashboard routes are simply not registered.
 
 Optional MCP integration (expose eval tools to MCP-compatible editors
 and assistants):
@@ -387,6 +389,12 @@ surfaced separately.
 ## Dashboard
 
 A Livewire-powered dashboard ships with the package at `/evals` (configurable).
+It is registered only when `livewire/livewire` (v3 or v4) is installed:
+
+```bash
+composer require livewire/livewire
+```
+
 Routes:
 
 - `/evals/overview` — home with trend chart and recent regressions

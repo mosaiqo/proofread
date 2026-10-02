@@ -7,9 +7,10 @@ section: Start here
 
 ## Requirements
 
-- PHP 8.4
+- PHP 8.3+
 - Laravel 13.x
 - Pest v4 (for the Pest expectations; optional if you only use the CLI)
+- Livewire v3 or v4 (only for the dashboard; optional)
 
 ## Install the package
 

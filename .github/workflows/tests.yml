@@ -13,14 +13,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [8.4]
+        php: [8.3, 8.4]
         laravel: [13.*]
         dependency-version: [prefer-stable]
+        laravel-ai: ['']
+        livewire: [installed]
         include:
           - laravel: 13.*
             testbench: 11.*
+          # Oldest laravel/ai line verified by downstream apps.
+          - php: 8.3
+            laravel: 13.*
+            testbench: 11.*
+            dependency-version: prefer-stable
+            laravel-ai: '0.10.*'
+            livewire: installed
+          # Livewire (and Pulse, which depends on it) removed: the package
+          # must still boot and work without its optional dashboard.
+          - php: 8.3
+            laravel: 13.*
+            testbench: 11.*
+            dependency-version: prefer-stable
+            laravel-ai: ''
+            livewire: absent
 
-    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - ${{ matrix.dependency-version }}
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - ${{ matrix.dependency-version }}${{ matrix.laravel-ai && format(' - laravel/ai {0}', matrix.laravel-ai) || '' }}${{ matrix.livewire == 'absent' && ' - without Livewire' || '' }}
 
     steps:
       - name: Checkout code
@@ -36,7 +53,11 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction ${{ matrix.laravel-ai && format('--with laravel/ai:{0}', matrix.laravel-ai) || '' }}
+
+      - name: Remove Livewire
+        if: matrix.livewire == 'absent'
+        run: composer remove --dev livewire/livewire laravel/pulse --no-interaction
 
       - name: Run tests
-        run: vendor/bin/pest
+        run: vendor/bin/pest ${{ matrix.livewire == 'absent' && '--exclude-group=dashboard --exclude-group=pulse' || '' }}
