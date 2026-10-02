@@ -23,10 +23,9 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.3",
         "illuminate/contracts": "^13.0",
         "laravel/ai": "~0.5",
-        "livewire/livewire": "^3.7",
         "opis/json-schema": "^2.6",
         "spatie/laravel-package-tools": "^1.92"
     },
@@ -35,6 +34,7 @@
         "laravel/pint": "^1.29",
         "laravel/pulse": "^1.7",
         "laravel/telescope": "^5.20",
+        "livewire/livewire": "^3.7 || ^4.0",
         "open-telemetry/sdk": "^1.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
@@ -47,6 +47,7 @@
         "laravel/boost": "Ship Proofread AI Guidelines and Agent Skill to Boost-powered editors.",
         "laravel/pulse": "Surface persisted eval runs in Pulse's dashboard alongside queries, jobs, and requests.",
         "laravel/telescope": "Record persisted eval runs as Telescope entries for inline debugging.",
+        "livewire/livewire": "Required for the optional eval dashboard (runs, datasets, comparisons, costs, shadow panel).",
         "open-telemetry/api": "Emit OpenTelemetry spans for persisted eval runs, propagating to whatever exporter the host app configures."
     },
     "autoload": {

@@ -17,12 +17,12 @@ abstract class TestCase extends Orchestra
 {
     protected function getPackageProviders($app): array
     {
-        return [
+        return array_values(array_filter([
             AiServiceProvider::class,
-            LivewireServiceProvider::class,
+            class_exists(LivewireServiceProvider::class) ? LivewireServiceProvider::class : null,
             McpServiceProvider::class,
             ProofreadServiceProvider::class,
-        ];
+        ]));
     }
 
     protected function defineEnvironment($app): void

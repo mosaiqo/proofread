@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **PHP 8.3 support.** The minimum PHP version drops from 8.4 to 8.3;
+  the codebase used no 8.4-only syntax or functions. CI runs on 8.3 and 8.4.
+- **Livewire is optional.** `livewire/livewire` moves from `require` to
+  `require-dev` and `suggest`. The dashboard routes and components are
+  registered only when Livewire is installed, so Inertia and API-only apps
+  can install Proofread without pulling in Livewire.
+- **Livewire 4 support.** The dashboard components resolve under Livewire 4
+  through a `proofread` component namespace, alongside the existing explicit
+  registrations used by Livewire 3.
+- **laravel/ai 0.10 and 0.11 verified.** The `~0.5` constraint already allowed
+  them; the suite now runs against `laravel/ai` 0.10 in CI as well.
+
 ## [0.9.0] - 2026-04-17
 
 ### Added

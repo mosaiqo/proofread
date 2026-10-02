@@ -30,16 +30,32 @@ dataset('livewire_components', [
     'shadow-panel' => ['proofread::shadow-panel', ShadowPanel::class],
 ]);
 
-it('resolves the dashboard component class from its alias', function (string $alias, string $class): void {
-    $registry = app(ComponentRegistry::class);
+// Livewire 3 resolves aliases through ComponentRegistry; Livewire 4 replaced
+// it with a Factory (alias to class) and a Finder (class to alias).
+function livewireClassFor(string $alias): string
+{
+    if (class_exists(ComponentRegistry::class)) {
+        return app(ComponentRegistry::class)->getClass($alias);
+    }
 
-    expect($registry->getClass($alias))->toBe($class);
+    return app('livewire.factory')->resolveComponentClass($alias);
+}
+
+function livewireAliasFor(string $class): ?string
+{
+    if (class_exists(ComponentRegistry::class)) {
+        return app(ComponentRegistry::class)->getName($class);
+    }
+
+    return app('livewire.finder')->normalizeName($class);
+}
+
+it('resolves the dashboard component class from its alias', function (string $alias, string $class): void {
+    expect(livewireClassFor($alias))->toBe($class);
 })->with('livewire_components');
 
 it('resolves the registered alias from the component class', function (string $alias, string $class): void {
-    $registry = app(ComponentRegistry::class);
-
-    expect($registry->getName($class))->toBe($alias);
+    expect(livewireAliasFor($class))->toBe($alias);
 })->with('livewire_components');
 
 it('emits the registered alias in the wire:snapshot payload when rendering RunDetail', function (): void {

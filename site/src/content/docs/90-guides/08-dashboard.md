@@ -14,6 +14,10 @@ gated by whatever policy you define.
 
 ## Enabling
 
+The dashboard is built on Livewire, which Proofread does not require.
+Install `livewire/livewire` (v3 or v4) to get it; without Livewire the
+dashboard routes are not registered and everything else keeps working.
+
 The dashboard ships enabled by default and guarded by a Laravel gate
 that allows only the `local` environment out of the box. That is
 deliberately conservative: the UI surfaces production traffic, so

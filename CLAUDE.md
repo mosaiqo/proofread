@@ -11,7 +11,7 @@ Guidance for Claude Code sessions working in this repository.
 
 ## Stack constraints
 
-- PHP 8.4 only.
+- PHP 8.3+ (CI runs 8.3 and 8.4).
 - Laravel 13.x only (no 12, no 14 yet).
 - Pest v4 for tests.
 - Orchestra Testbench v11 for package testing.
