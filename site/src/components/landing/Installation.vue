@@ -57,7 +57,7 @@ composer format      # Laravel Pint`
           From zero to your first eval in three commands.
         </h2>
         <p class="text-lg text-muted-foreground">
-          Requires PHP 8.4 and Laravel 13.x. Pest v4 recommended.
+          Requires PHP 8.3+ and Laravel 13.x. Pest v4 recommended.
         </p>
       </div>
 

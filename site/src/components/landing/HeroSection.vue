@@ -57,7 +57,7 @@ const installSnippet = `composer require mosaiqo/proofread`
         <dl class="flex flex-wrap items-center gap-x-8 gap-y-3 pt-4 text-sm text-muted-foreground">
           <div class="flex items-center gap-2">
             <dt class="font-mono text-xs uppercase tracking-wide">PHP</dt>
-            <dd class="font-medium text-foreground">8.4</dd>
+            <dd class="font-medium text-foreground">8.3+</dd>
           </div>
           <div class="flex items-center gap-2">
             <dt class="font-mono text-xs uppercase tracking-wide">Laravel</dt>
