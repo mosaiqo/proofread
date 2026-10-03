@@ -22,7 +22,7 @@ const installSnippet = `composer require mosaiqo/proofread`
       <div class="space-y-8">
         <Badge variant="outline" class="gap-1.5">
           <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" />
-          v0.9.0 &middot; pre-1.0, API unstable
+          v0.10.0 &middot; pre-1.0, API unstable
         </Badge>
 
         <h1 class="text-balance text-4xl font-semibold leading-[1.05] tracking-tight md:text-5xl">

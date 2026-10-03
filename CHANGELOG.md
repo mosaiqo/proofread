@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-03
+
 ### Added
 
 - **Callable subjects can report their own metadata.** A callable subject may
@@ -625,7 +627,8 @@ expectations, and shadow evals on production traffic.
 - Package scaffold built on `spatie/laravel-package-tools`, Pest v4,
   Orchestra Testbench v11, PHPStan, and GitHub Actions CI.
 
-[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/mosaiqo/proofread/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/mosaiqo/proofread/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/mosaiqo/proofread/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/mosaiqo/proofread/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/mosaiqo/proofread/compare/v0.6.1...v0.7.0

@@ -5,6 +5,26 @@ document lists every upgrade that requires consumer action.
 
 Versions without an entry upgrade cleanly with `composer update`.
 
+## Upgrading to 0.10.0 from 0.9.x
+
+One change requires consumer action:
+
+- `livewire/livewire` is no longer a hard dependency. It moved from
+  `require` to `require-dev` and `suggest`, and the dashboard routes
+  and components are registered only when Livewire is installed. If
+  you use the dashboard, require it yourself:
+  `composer require livewire/livewire` (v3 or v4). Without it the
+  `/evals` routes are not registered; the rest of the package works
+  unchanged.
+
+No action needed:
+
+- The minimum PHP version drops from 8.4 to 8.3. Projects already
+  on PHP 8.4 are unaffected.
+- Callable subjects may now return a `SubjectInvocation` to report
+  metadata and tool calls. Existing callables that return plain
+  output continue to work identically.
+
 ## Upgrading to 0.9.0 from 0.8.x
 
 No breaking changes. All additions. Optional adoption:

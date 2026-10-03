@@ -5,7 +5,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/mosaiqo/proofread?style=flat-square&label=release)](https://github.com/mosaiqo/proofread/releases)
 [![Tests](https://img.shields.io/github/actions/workflow/status/mosaiqo/proofread/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/mosaiqo/proofread/actions/workflows/tests.yml)
 [![License](https://img.shields.io/github/license/mosaiqo/proofread?style=flat-square&color=blue)](LICENSE)
-[![PHP](https://img.shields.io/badge/php-8.4-blue.svg?style=flat-square)](https://www.php.net)
+[![PHP](https://img.shields.io/badge/php-8.3%2B-blue.svg?style=flat-square)](https://www.php.net)
 [![Laravel](https://img.shields.io/badge/laravel-13.x-red.svg?style=flat-square)](https://laravel.com)
 
 > **Status:** Early development — pre-1.0, API unstable.
